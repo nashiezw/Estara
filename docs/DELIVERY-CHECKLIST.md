@@ -219,18 +219,18 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 12. Phase 3 — Property management
 
-- [ ] Managed-property relationships
-- [ ] Landlords without duplicate contacts
-- [ ] Tenants without duplicate contacts
-- [ ] Leases
-- [ ] Rent schedules
-- [ ] Manual and provider payments
-- [ ] Payment allocation and reconciliation
-- [ ] Receipts
-- [ ] Deposits
-- [ ] Arrears and reminders
-- [ ] Expenses
-- [ ] Landlord statements and immutable finalization
+- [x] Managed-property relationships
+  - [x] Landlords without duplicate contacts
+  - [x] Tenants without duplicate contacts
+  - [x] Leases
+  - [x] Rent schedules
+  - [x] Manual and provider payments
+  - [x] Payment allocation and reconciliation
+  - [x] Receipts
+  - [x] Deposits
+  - [x] Arrears and reminders
+  - [x] Expenses
+  - [x] Landlord statements and immutable finalization
 - [ ] Landlord portal
 - [ ] Tenant portal
 - [ ] Maintenance requests, approvals and contractors
