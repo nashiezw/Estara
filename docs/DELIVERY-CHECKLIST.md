@@ -89,7 +89,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] DNS verification lifecycle
 - [-] Automated TLS activation request tracked; provider certificate activation pending
 - [x] Unknown-host fail-closed behavior
-- [-] Dynamic metadata and bounded revalidation; explicit mutation invalidation pending
+- [x] Dynamic metadata and bounded revalidation with explicit mutation invalidation
 
 ## 5. Marketing Studio
 
