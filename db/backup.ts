@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import type { WorkspaceContext } from "./workspace";
 const AGENCY_TABLES = ["agency_settings", "agency_memberships", "team_invitations", "roles", "audit_logs", "agency_subscriptions", "billing_invoices", "billing_events", "contacts", "contact_activities", "properties", "property_feature_definitions", "enquiries", "next_actions", "public_intake_attempts", "public_events", "media_assets", "mandates", "property_verification_items", "property_activation_channels", "property_status_events", "viewings", "documents", "document_permissions", "branches", "branch_memberships", "offers", "seller_access_grants", "seller_reports", "seller_report_schedules", "seller_deliveries", "property_requirements", "property_matches", "shortlists", "shortlist_items", "deal_stages", "deals", "deal_stage_events", "deal_commission_splits", "domain_events", "automation_rule_versions", "automation_executions", "notifications", "notification_deliveries", "marketing_template_versions", "marketing_render_jobs", "marketing_outputs", "marketing_copy_versions", "managed_properties", "leases", "rent_charges", "rent_payments", "payment_allocations", "rent_receipts", "tenancy_deposits", "property_expenses", "landlord_statements"] as const;
 const PROPERTY_CARE_TABLES = ["property_portal_grants", "contractors", "maintenance_requests", "maintenance_updates", "maintenance_media_assets", "property_inspections", "inspection_media_assets", "inspection_reports", "lease_renewals", "property_portal_updates", "portal_document_shares"] as const;
+const PHASE4_TABLES = ["ai_drafts", "api_credentials", "api_request_events", "api_idempotency_keys", "integration_connections", "integration_sync_runs", "developments", "development_units", "enterprise_branding"] as const;
 const runtime = () => env as unknown as {
     MEDIA?: R2Bucket;
     BACKUP_ENCRYPTION_KEY?: string;
@@ -23,7 +24,7 @@ export async function createAgencyBackup(workspace: WorkspaceContext, actorUserI
     await env.DB.prepare("INSERT INTO backup_snapshots(id,agency_id,status,created_by) VALUES(?,?,'pending',?)").bind(id, a, actorUserId).run();
     try {
         const agency = await env.DB.prepare("SELECT * FROM agencies WHERE id=?").bind(a).first(), data: Record<string, unknown[]> = {};
-        for (const table of [...AGENCY_TABLES, ...PROPERTY_CARE_TABLES]) {
+        for (const table of [...AGENCY_TABLES, ...PROPERTY_CARE_TABLES, ...PHASE4_TABLES]) {
             const rows = await env.DB.prepare(`SELECT * FROM ${table} WHERE agency_id=?`).bind(a).all();
             data[table] = rows.results;
             counts[table] = rows.results.length;

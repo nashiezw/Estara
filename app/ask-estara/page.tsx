@@ -1,0 +1,1 @@
+import{requireChatGPTUser}from"../chatgpt-auth";import AskClient from"./ask-client";import"../management/management.css";export const dynamic="force-dynamic";export default async function Page(){await requireChatGPTUser("/ask-estara");return <AskClient/>}

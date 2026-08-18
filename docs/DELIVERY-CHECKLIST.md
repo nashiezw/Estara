@@ -242,12 +242,12 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 - [ ] Governed AI description and caption assistance
 - [ ] Lead and report summaries
-- [ ] Authorized Ask ESTARA interface
+  - [x] Authorized Ask ESTARA interface
 - [ ] Advanced automation builder
 - [ ] Official WhatsApp integration, if approved and feasible
 - [ ] Property portal integrations
 - [ ] Accounting integrations
-- [ ] Public API and scoped credentials
+  - [x] Public API and scoped credentials
 - [ ] Development module
 - [ ] Enterprise permissions and white labelling
 
