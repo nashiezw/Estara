@@ -13,10 +13,12 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] Low-data mode, loading/error/retry states, non-disclosing not-found states and security headers are covered by tests.
 - [x] New-agency acceptance test covers the final product path from agency setup through property activation, enquiry, follow-up, viewing and seller reporting.
 - [x] Master specification traceability gate exists so the 123-section source document remains visible to release work.
+- [x] Platform identity defaults, metadata, tenant-domain suffix and public powered-by wording are centralized.
 
 ## Must Complete Before Public Launch
 
 - [ ] Choose and configure production providers for email, push, malware scanning, external error retention, alerting and online payments.
+- [ ] Complete the remaining UI copy branding sweep so default product labels can be changed without source edits.
 - [-] Custom-domain ownership token, DNS verification and unknown-host fail-closed routing are implemented; complete real provider domain attachment and TLS activation.
 - [ ] Run an isolated D1 restore rehearsal and repeat the tenant attack suite against the restored environment.
 - [ ] Commission independent external penetration testing and resolve all launch-blocking findings.

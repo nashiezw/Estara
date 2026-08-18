@@ -21,7 +21,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 1. Foundation
 
-- [-] Platform settings: metadata exists, but identity is still partly hard-coded
+- [-] Platform settings: central identity, metadata, domain suffix and powered-by wording exist; remaining legacy UI labels need branding sweep
 - [x] Authenticated private workspace using platform-provided identity
 - [x] Server-resolved tenant workspace
 - [x] Agency membership table
