@@ -1,0 +1,1 @@
+import{requireChatGPTUser}from"../chatgpt-auth";import InspectionsClient from"./inspections-client";import"../management/management.css";export const dynamic="force-dynamic";export default async function Page(){await requireChatGPTUser("/inspections");return <InspectionsClient/>}

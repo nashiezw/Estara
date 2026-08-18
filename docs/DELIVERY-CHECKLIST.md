@@ -231,12 +231,12 @@ This is the authoritative implementation checklist for the ESTARA master specifi
   - [x] Arrears and reminders
   - [x] Expenses
   - [x] Landlord statements and immutable finalization
-- [ ] Landlord portal
-- [ ] Tenant portal
-- [ ] Maintenance requests, approvals and contractors
-- [ ] Inspections and private media
-- [ ] Lease renewal and vacancy automation
-- [ ] Diaspora-owner experience
+  - [x] Landlord portal
+  - [x] Tenant portal
+  - [x] Maintenance requests, approvals and contractors
+  - [x] Inspections and private media
+  - [x] Lease renewal and vacancy automation
+  - [x] Diaspora-owner experience
 
 ## 13. Phase 4
 
