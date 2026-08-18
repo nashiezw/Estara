@@ -130,7 +130,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [-] Enquiry list, search and filters; Kanban pending
 - [x] Contact action creates next-day follow-up
 - [x] Manager unresolved-enquiry visibility
-- [ ] Enquiry notifications
+- [x] Enquiry notifications
 - [x] Enquiry acceptance and cross-tenant tests
 
 ## 7. Next actions and automation
@@ -140,12 +140,12 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Today, overdue and upcoming action views
 - [x] Complete/reassign/reschedule actions
 - [x] Resource-specific action policies
-- [ ] Domain event outbox
-- [ ] Versioned automation rules
-- [ ] Trigger, condition and action engine
-- [ ] Idempotent automation executions
-- [ ] Retry and dead-letter handling
-- [ ] Human approval gates for sensitive actions
+- [x] Domain event outbox
+- [x] Versioned automation rules
+- [x] Trigger, condition and action engine
+- [x] Idempotent automation executions
+- [x] Retry and dead-letter handling
+- [x] Human approval gates for sensitive actions
 
 ## 8. Viewings
 
@@ -178,8 +178,8 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 ## 10. MVP hardening and launch
 
 - [ ] Global tenant-safe search
-- [ ] In-app notification centre
-- [ ] Email and push delivery infrastructure
+- [x] In-app notification centre
+- [-] Email and push delivery ledger implemented; provider delivery pending selection
 - [ ] Low-data mode with measured reductions
 - [ ] Accessible keyboard/touch journeys
 - [ ] Loading, success, error and retry states everywhere
