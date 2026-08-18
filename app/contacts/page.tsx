@@ -1,0 +1,1 @@
+import{requireChatGPTUser}from"../chatgpt-auth";import ContactsClient from"./contacts-client";import"./contacts.css";export const dynamic="force-dynamic";export default async function Page(){await requireChatGPTUser("/contacts");return <ContactsClient/>}

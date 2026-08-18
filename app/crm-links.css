@@ -1,0 +1,1 @@
+.heading-actions{display:flex;gap:8px;align-items:center}.heading-actions>a{text-decoration:none;color:#17342d}@media(max-width:640px){.heading-actions{flex-wrap:wrap;justify-content:flex-end}.heading-actions .outline{padding:9px 11px}}

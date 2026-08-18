@@ -114,9 +114,9 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Canonical contact table
 - [x] Contact roles: buyer, tenant, seller, landlord, investor and developer
 - [x] Phone/email normalization
-- [-] Safe contact deduplication and conflict detection; manual merge pending
+- [x] Safe contact deduplication, conflict review and atomic manual merge
 - [x] Contact requirements
-- [-] Contact activity history persists; timeline interface pending
+- [x] Unified contact activity timeline interface
 - [x] Tenant-owned enquiry persistence
 - [x] Manual enquiry capture linked to a property
 - [x] Fast enquiry form with phone and next follow-up
@@ -127,7 +127,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Configurable response SLA
 - [x] Overdue escalation rules
 - [x] Enquiry stages and transitions
-- [-] Enquiry list, search and filters; Kanban pending
+- [x] Enquiry list, search, filters and stage Kanban
 - [x] Contact action creates next-day follow-up
 - [x] Manager unresolved-enquiry visibility
 - [x] Enquiry notifications
