@@ -7,7 +7,7 @@ assert.match(settings,/typography=\?/);
 assert.match(onboarding,/typography=\?/);
 assert.match(app,/Typography<select/);
 assert.match(app,/typography-\$\{brand\.typography\}/);
-assert.match(site,/typography-\$\{agency\.typography\|\|"classic"\}/g);
+assert.match(site,/typography-\$\{agency\.typography \|\| "classic"\}/g);
 assert.match(property,/typography-\$\{agency\.typography \|\| "classic"\}/);
 assert.match(marketing,/s\.typography/);
 assert.match(renderer,/headingFont=typography==="modern"\?"Arial"/);

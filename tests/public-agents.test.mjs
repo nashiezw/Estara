@@ -1,0 +1,16 @@
+import assert from"node:assert/strict";import{readFile}from"node:fs/promises";import test from"node:test";const read=p=>readFile(new URL(p,import.meta.url),"utf8");
+test("public agent profiles are tenant-scoped and expose bounded display data",async()=>{const[site,page,view,css,checklist]=await Promise.all([read("../db/public-site.ts"),read("../app/site/[slug]/[section]/page.tsx"),read("../app/site/[slug]/public-website.tsx"),read("../app/globals.css"),read("../docs/DELIVERY-CHECKLIST.md")]);
+assert.match(site,/export type PublicAgent/);
+assert.match(site,/function listPublicAgents|listPublicAgents/);
+assert.match(site,/WHERE m\.agency_id=\?/);
+assert.match(site,/p\.agency_id=m\.agency_id/);
+assert.match(site,/p\.listing_agent_id=m\.user_id/);
+assert.match(site,/p\.status='Available'/);
+assert.doesNotMatch(site,/SELECT \*/);
+assert.match(page,/section === "agents" \? listPublicAgents\(agency\.id\)/);
+assert.match(view,/function AgentGrid/);
+assert.match(view,/agent\.listings/);
+assert.doesNotMatch(view,/agent\.email/);
+assert.match(css,/public-agent-grid/);
+assert.match(checklist,/public agent profile/);
+});
