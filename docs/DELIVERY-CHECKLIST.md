@@ -182,7 +182,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [-] Email and push delivery ledger implemented; provider delivery pending selection
 - [-] Persistent low-data mode suppresses listing image requests; production byte-reduction measurement pending
 - [-] Focus-visible, reduced-motion, labelled capture and mobile input improvements; full journey audit pending
-- [-] Global loading, failure, retry and non-disclosing not-found boundaries complete; remaining client-mutation state audit pending
+- [x] Global loading, failure, retry, non-disclosing not-found boundaries and client-mutation state audit complete
 - [x] Property-capture unsaved-work protection and device draft recovery
 - [x] Private document storage and expiring single-use access URLs
 - [-] File type, size and magic-byte validation; external malware scanning provider pending
