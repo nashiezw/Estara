@@ -1,0 +1,3 @@
+﻿export const PERMISSIONS=["agency.settings.manage","team.manage","property.read","property.create","property.publish","enquiry.read","enquiry.create","enquiry.contact","audit.read"] as const;export type Permission=typeof PERMISSIONS[number];
+const MAP:Record<string,readonly Permission[]>={principal:PERMISSIONS,admin:PERMISSIONS,agent:["property.read","property.create","property.publish","enquiry.read","enquiry.create","enquiry.contact"],marketing:["property.read","property.publish"],viewer:["property.read","enquiry.read"]};
+export function roleHasPermission(role:string,permission:Permission){return MAP[role]?.includes(permission)??false}
