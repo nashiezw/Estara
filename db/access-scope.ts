@@ -9,6 +9,16 @@ async function membership(workspace: WorkspaceContext) {
     .bind(workspace.agencyId, workspace.userId).first<Membership>();
 }
 
+export async function accessiblePropertyIds(workspace: WorkspaceContext): Promise<Set<string> | null> {
+  const member = await membership(workspace);
+  if (!member) throw new AuthorizationError();
+  if (["principal", "admin"].includes(member.role) || !member.branchScopeEnabled) return null;
+  const rows = await env.DB.prepare(`SELECT p.id FROM properties p
+    JOIN branch_memberships bm ON bm.agency_id=p.agency_id AND bm.branch_id=p.branch_id AND bm.user_id=?
+    WHERE p.agency_id=?`).bind(workspace.userId, workspace.agencyId).all<{ id: string }>();
+  return new Set(rows.results.map(row => row.id));
+}
+
 export async function requireBranchAccess(workspace: WorkspaceContext, branchId: string | null | undefined) {
   const member = await membership(workspace);
   if (!member) throw new AuthorizationError();
@@ -24,6 +34,21 @@ export async function requirePropertyBranchAccess(workspace: WorkspaceContext, p
     .bind(propertyId, workspace.agencyId).first<{ branchId: string | null }>();
   if (!property) throw new AuthorizationError("The linked property was not found.");
   await requireBranchAccess(workspace, property.branchId);
+}
+
+export async function requireDealBranchAccess(workspace: WorkspaceContext, dealId: string) {
+  const row = await env.DB.prepare("SELECT property_id AS propertyId FROM deals WHERE id=? AND agency_id=? LIMIT 1")
+    .bind(dealId, workspace.agencyId).first<{ propertyId: string }>();
+  if (!row) throw new AuthorizationError("Deal was not found.");
+  await requirePropertyBranchAccess(workspace, row.propertyId);
+}
+
+export async function requireEnquiryBranchAccess(workspace: WorkspaceContext, enquiryId: string) {
+  const row = await env.DB.prepare("SELECT property_id AS propertyId FROM enquiries WHERE id=? AND agency_id=? LIMIT 1")
+    .bind(enquiryId, workspace.agencyId).first<{ propertyId: string | null }>();
+  if (!row) throw new AuthorizationError("Enquiry was not found.");
+  if (!row.propertyId) throw new AuthorizationError("This enquiry is outside your assigned branches.");
+  await requirePropertyBranchAccess(workspace, row.propertyId);
 }
 
 export async function canReadDocument(workspace: WorkspaceContext, documentId: string) {
