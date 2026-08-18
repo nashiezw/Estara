@@ -41,7 +41,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 - [x] Guided account and agency onboarding
 - [x] Agency details and business activities
-- [ ] Logo upload to private object storage
+- [x] Logo upload to private object storage
 - [-] Agency colour tokens persist; typography and full output application pending
 - [x] Team invitation and membership acceptance
 - [x] Website template selection
@@ -60,8 +60,8 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [ ] Canonical contact-to-owner relationship
 - [ ] Mandate relationship
 - [ ] Branch and listing-agent assignment
-- [ ] Property media metadata
-- [ ] Real camera/file uploads to private object storage
+- [x] Property media metadata
+- [x] Real camera/file uploads to private object storage
 - [ ] Image validation, compression and thumbnails
 - [-] Mobile-first property capture interface
 - [ ] Guided photo categories
@@ -97,12 +97,12 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [-] Branded creative preview
 - [-] WhatsApp copy/share interaction
 - [ ] Versioned structured templates
-- [ ] WhatsApp card and status asset
+- [-] WhatsApp card asset implemented; dedicated status variant pending
 - [ ] Facebook 1:1 and 4:5 assets
-- [ ] Instagram post and story assets
+- [x] Instagram post and story assets
 - [ ] Flyer
 - [ ] Real PDF brochure
-- [ ] Social caption and listing description
+- [-] Fact-bound social caption implemented; full listing description pending
 - [ ] Shareable link and QR code
 - [ ] Rendering jobs, retries and failure states
 - [ ] AI copy constrained to verified property facts

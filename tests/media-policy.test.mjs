@@ -1,0 +1,3 @@
+import test from "node:test";import assert from "node:assert/strict";import {mediaObjectKey,safeDownloadName,validateMediaFile} from "../db/media-policy.ts";
+test("media validation accepts only bounded raster images",()=>{assert.equal(validateMediaFile({type:"image/jpeg",size:1024}),null);assert.match(validateMediaFile({type:"image/svg+xml",size:1024}),/JPG/);assert.match(validateMediaFile({type:"image/png",size:13*1024*1024}),/12 MB/)});
+test("object keys are tenant-prefixed and filenames are safe",()=>{assert.equal(mediaObjectKey("agency-a","asset-b","image/webp"),"tenants/agency-a/media/asset-b.webp");assert.equal(safeDownloadName("../../ My logo.png"),"..-..-My-logo.png")});

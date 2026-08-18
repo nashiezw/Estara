@@ -1,3 +1,48 @@
-import type{Metadata}from"next";import{notFound}from"next/navigation";import{getPublicAgency,getPublicProperty,listPublicProperties}from"../../../../../db/public-site";import{PageView,PublicEnquiryForm,ShareButton,TrackedLink}from"../../public-client";import{PropertyGrid,PublicFooter,PublicHeader}from"../../public-website";export const dynamic="force-dynamic";export const revalidate=300;
-export async function generateMetadata({params}:{params:Promise<{slug:string;id:string}>}):Promise<Metadata>{const{slug,id}=await params,a=await getPublicAgency(slug);if(!a)return{robots:{index:false,follow:false}};const p=await getPublicProperty(a.id,id);if(!p)return{robots:{index:false,follow:false}};return{title:`${p.title} | ${a.name}`,description:`${p.transactionType} in ${p.location}. ${p.beds} bedrooms, ${p.baths} bathrooms.`,alternates:{canonical:`/site/${slug}/properties/${id}`},openGraph:{title:p.title,description:`${p.price} · ${p.location}`,type:"website"}}}
-export default async function Page({params}:{params:Promise<{slug:string;id:string}>}){const{slug,id}=await params,a=await getPublicAgency(slug);if(!a)notFound();const p=await getPublicProperty(a.id,id);if(!p)notFound();const similar=(await listPublicProperties(a.id,p.transactionType)).filter(x=>x.id!==p.id).slice(0,3),whatsapp=(a.whatsapp||a.phone).replace(/\D/g,"");return <div className={`public-site template-${a.websiteTemplate}`} style={{"--agency-primary":a.primaryColor,"--agency-accent":a.accentColor} as any}><PageView slug={slug} propertyId={id}/><PublicHeader agency={a}/><main className="public-property"><section className="public-property-hero"><div className="public-property-photo"><span>{p.transactionType}</span></div><aside><small>{p.ref}</small><h1>{p.title}</h1><p>{p.location}</p><strong>{p.price}</strong><div className="public-facts"><span>{p.beds}<small>Bedrooms</small></span><span>{p.baths}<small>Bathrooms</small></span><span>{p.size||"Ask"}<small>Land size</small></span></div><div className="public-actions">{a.phone&&<TrackedLink slug={slug} propertyId={id} eventType="call" href={`tel:${a.phone}`}>Call agency</TrackedLink>}{whatsapp&&<TrackedLink slug={slug} propertyId={id} eventType="whatsapp" href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`I'm interested in ${p.title} (${p.ref})`)}`}>WhatsApp</TrackedLink>}<ShareButton title={p.title}/></div></aside></section><section className="public-property-body"><article><span>ABOUT THE PROPERTY</span><h2>A well-positioned opportunity in {p.location}.</h2><p>Contact {a.name} for verified details, viewing availability and professional guidance. This listing is currently live and available through the agency.</p><ul><li>{p.beds} bedrooms</li><li>{p.baths} bathrooms</li>{p.size&&<li>{p.size} land size</li>}<li>Reference {p.ref}</li></ul></article><aside><h2>Enquire or request a viewing</h2><PublicEnquiryForm slug={slug} propertyId={id}/></aside></section>{similar.length>0&&<section className="public-listings"><div className="public-section-head"><div><span>SIMILAR PROPERTIES</span><h2>You may also like</h2></div></div><PropertyGrid agency={a} properties={similar}/></section>}</main><PublicFooter agency={a}/></div>}
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getPublicAgency, getPublicProperty, listPublicProperties } from "../../../../../db/public-site";
+import { PageView, PublicEnquiryForm, ShareButton, TrackedLink } from "../../public-client";
+import { PropertyGrid, PublicFooter, PublicHeader } from "../../public-website";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string; id: string }> }): Promise<Metadata> {
+  const { slug, id } = await params;
+  const agency = await getPublicAgency(slug);
+  if (!agency) return { robots: { index: false, follow: false } };
+  const property = await getPublicProperty(agency.id, id);
+  if (!property) return { robots: { index: false, follow: false } };
+  const image = property.heroMediaId ? `/api/public/${slug}/media?id=${encodeURIComponent(property.heroMediaId)}` : undefined;
+  return {
+    title: `${property.title} | ${agency.name}`,
+    description: `${property.transactionType} in ${property.location}. ${property.beds} bedrooms, ${property.baths} bathrooms.`,
+    alternates: { canonical: `/site/${slug}/properties/${id}` },
+    openGraph: { title: property.title, description: `${property.price} · ${property.location}`, type: "website", ...(image ? { images: [image] } : {}) },
+  };
+}
+
+export default async function Page({ params }: { params: Promise<{ slug: string; id: string }> }) {
+  const { slug, id } = await params;
+  const agency = await getPublicAgency(slug);
+  if (!agency) notFound();
+  const property = await getPublicProperty(agency.id, id);
+  if (!property) notFound();
+  const similar = (await listPublicProperties(agency.id, property.transactionType)).filter(item => item.id !== property.id).slice(0, 3);
+  const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
+  const photoStyle = property.heroMediaId ? { backgroundImage: `url(/api/public/${slug}/media?id=${encodeURIComponent(property.heroMediaId)})` } : undefined;
+  return <div className={`public-site template-${agency.websiteTemplate}`} style={{ "--agency-primary": agency.primaryColor, "--agency-accent": agency.accentColor } as any}>
+    <PageView slug={slug} propertyId={id}/><PublicHeader agency={agency}/>
+    <main className="public-property">
+      <section className="public-property-hero">
+        <div className="public-property-photo" style={photoStyle}><span>{property.transactionType}</span></div>
+        <aside><small>{property.ref}</small><h1>{property.title}</h1><p>{property.location}</p><strong>{property.price}</strong>
+          <div className="public-facts"><span>{property.beds}<small>Bedrooms</small></span><span>{property.baths}<small>Bathrooms</small></span><span>{property.size || "Ask"}<small>Land size</small></span></div>
+          <div className="public-actions">{agency.phone && <TrackedLink slug={slug} propertyId={id} eventType="call" href={`tel:${agency.phone}`}>Call agency</TrackedLink>}{whatsapp && <TrackedLink slug={slug} propertyId={id} eventType="whatsapp" href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`I'm interested in ${property.title} (${property.ref})`)}`}>WhatsApp</TrackedLink>}<ShareButton title={property.title}/></div>
+        </aside>
+      </section>
+      <section className="public-property-body"><article><span>ABOUT THE PROPERTY</span><h2>A well-positioned opportunity in {property.location}.</h2><p>Contact {agency.name} for verified details, viewing availability and professional guidance. This listing is currently live and available through the agency.</p><ul><li>{property.beds} bedrooms</li><li>{property.baths} bathrooms</li>{property.size && <li>{property.size} land size</li>}<li>Reference {property.ref}</li></ul></article><aside><h2>Enquire or request a viewing</h2><PublicEnquiryForm slug={slug} propertyId={id}/></aside></section>
+      {similar.length > 0 && <section className="public-listings"><div className="public-section-head"><div><span>SIMILAR PROPERTIES</span><h2>You may also like</h2></div></div><PropertyGrid agency={agency} properties={similar}/></section>}
+    </main><PublicFooter agency={agency}/>
+  </div>;
+}
