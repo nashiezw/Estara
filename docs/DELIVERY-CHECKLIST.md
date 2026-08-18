@@ -46,7 +46,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Team invitation and membership acceptance
 - [x] Website template selection
 - [x] Subdomain selection
-- [ ] Own-domain onboarding
+- [-] Own-domain onboarding implemented for DNS proof; hosting-provider attachment pending
 - [x] Completion screen and first-property handoff
 - [x] Agency-branded workspace screens
 - [x] Persisted agency branding used across all implemented public outputs
@@ -85,10 +85,10 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Call, WhatsApp, enquire, viewing and share actions
 - [x] Similar properties
 - [-] Tenant slug routing and preview URLs; real subdomain routing pending
-- [ ] Custom-domain ownership token
-- [ ] DNS verification lifecycle
-- [ ] Automated TLS activation
-- [ ] Unknown-host fail-closed behavior
+- [x] Custom-domain ownership token
+- [x] DNS verification lifecycle
+- [-] Automated TLS activation request tracked; provider certificate activation pending
+- [x] Unknown-host fail-closed behavior
 - [-] Dynamic metadata and bounded revalidation; explicit mutation invalidation pending
 
 ## 5. Marketing Studio

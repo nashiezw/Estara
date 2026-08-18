@@ -17,7 +17,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 ## Must Complete Before Public Launch
 
 - [ ] Choose and configure production providers for email, push, malware scanning, external error retention, alerting and online payments.
-- [ ] Complete custom-domain ownership token, DNS verification, TLS activation and unknown-host fail-closed routing with a real provider.
+- [-] Custom-domain ownership token, DNS verification and unknown-host fail-closed routing are implemented; complete real provider domain attachment and TLS activation.
 - [ ] Run an isolated D1 restore rehearsal and repeat the tenant attack suite against the restored environment.
 - [ ] Commission independent external penetration testing and resolve all launch-blocking findings.
 - [ ] Approve public-site access level and production access policy.
