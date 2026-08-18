@@ -29,6 +29,13 @@
       "when": 1787043269288,
       "tag": "0003_right_silvermane",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1787043836568,
+      "tag": "0004_plain_the_anarchist",
+      "breakpoints": true
     }
   ]
 }

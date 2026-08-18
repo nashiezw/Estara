@@ -125,7 +125,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Responsible-agent assignment
 - [x] Thirty-minute response deadline
 - [x] Configurable response SLA
-- [-] Overdue visibility and high-priority response actions; notification escalation pending
+- [x] Overdue escalation rules
 - [x] Enquiry stages and transitions
 - [-] Enquiry list, search and filters; Kanban pending
 - [x] Contact action creates next-day follow-up
@@ -135,11 +135,11 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 7. Next actions and automation
 
-- [-] Persistent NextAction model
-- [-] System-created response and follow-up actions
-- [ ] Today, overdue and upcoming action views
-- [ ] Complete/reassign/reschedule actions
-- [ ] Resource-specific action policies
+- [x] Persistent NextAction model
+- [x] System-created response and follow-up actions
+- [x] Today, overdue and upcoming action views
+- [x] Complete/reassign/reschedule actions
+- [x] Resource-specific action policies
 - [ ] Domain event outbox
 - [ ] Versioned automation rules
 - [ ] Trigger, condition and action engine
@@ -149,16 +149,16 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 8. Viewings
 
-- [-] Viewing/schedule presentation prototype
-- [ ] Persistent viewing records
-- [ ] Request, confirm, complete, cancel and no-show transitions
+- [x] Live viewing schedule
+- [x] Persistent viewing records
+- [x] Request, confirm, complete, cancel and no-show transitions
 - [ ] Online viewing requests
-- [ ] Conflict checks
-- [ ] Notifications and reminders
-- [ ] After-viewing feedback workflow
-- [ ] Alternative-property suggestion handoff
-- [ ] Offer workflow handoff
-- [ ] Next-action generation
+- [x] Conflict checks
+- [-] Persistent viewing reminders; notification delivery pending
+- [x] After-viewing feedback workflow
+- [x] Alternative-property suggestion handoff
+- [x] Offer workflow handoff
+- [x] Next-action generation
 
 ## 9. Seller experience
 
