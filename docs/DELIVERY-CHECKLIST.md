@@ -65,8 +65,8 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [ ] Image validation, compression and thumbnails
 - [x] Mobile-first property capture interface
 - [ ] Guided photo categories
-- [ ] Device-local offline draft
-- [ ] Resumable upload queue and retry states
+- [x] Device-local offline draft and recovery
+- [-] Real multi-file upload queue with bounded automatic retries; cross-reload blob resumption pending
 - [x] Listing completeness calculation
 - [x] Activation command with server validation
 - [x] Activation channel selection and durable results
@@ -180,10 +180,10 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Global tenant-safe search
 - [x] In-app notification centre
 - [-] Email and push delivery ledger implemented; provider delivery pending selection
-- [ ] Low-data mode with measured reductions
-- [ ] Accessible keyboard/touch journeys
+- [-] Persistent low-data mode suppresses listing image requests; production byte-reduction measurement pending
+- [-] Focus-visible, reduced-motion, labelled capture and mobile input improvements; full journey audit pending
 - [ ] Loading, success, error and retry states everywhere
-- [ ] Unsaved-work protection and draft recovery
+- [x] Property-capture unsaved-work protection and device draft recovery
 - [x] Private document storage and expiring single-use access URLs
 - [-] File type, size and magic-byte validation; external malware scanning provider pending
 - [-] Tenant-scoped audit trail and searchable audit UI; remaining domain mutations pending coverage audit
