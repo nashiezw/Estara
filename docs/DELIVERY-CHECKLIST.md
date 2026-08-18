@@ -166,14 +166,14 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Seller portal identity and invitation
 - [x] Explicit property-level access grants
 - [x] Revocation and access audit
-- [-] Real listing views, enquiries and viewings; offers pending
-- [ ] Approved seller documents
-- [ ] Mandates and expiry reminders
-- [ ] Property momentum rules
-- [-] Weekly seller report drafts implemented; fortnightly/monthly schedules pending
+- [x] Real listing views, enquiries, viewings and offer activity
+- [x] Approved seller documents
+- [x] Mandates and expiry reminders
+- [x] Property momentum rules
+- [x] Weekly, fortnightly and monthly report schedules
 - [x] Agency review and approval
-- [-] Secure branded portal report implemented; PDF pending
-- [ ] Seller notification delivery tracking
+- [x] Secure branded portal report and genuine PDF
+- [x] Seller notification delivery tracking
 
 ## 10. MVP hardening and launch
 

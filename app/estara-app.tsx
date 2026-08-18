@@ -1,5 +1,6 @@
 "use client";
 import {FormEvent,useEffect,useState} from "react";
+import SellerOperations from "./seller-operations";
 type View="today"|"properties"|"enquiries"|"marketing"|"seller"|"settings"|"team"|"actions"|"viewings";
 type MediaAsset={id:string;propertyId?:string|null;kind:string;sortOrder?:number;url:string};
 type Property={id:string|number;title:string;location:string;price:string;beds:number;baths:number;status:"Draft"|"Available";transactionType?:"Sale"|"Rent";ref:string;photos:number;owner:string;size:string;completeness?:number;media?:MediaAsset[]};
@@ -36,7 +37,7 @@ export default function EstaraApp(){
  {view==="properties"&&<><Properties rows={properties} selected={selected} pick={setSelected} add={()=>setCapture(true)} activate={activate} notify={notify} reload={loadWorkspace} lowData={lowData}/>{typeof selected.id==="string"&&<a className="subscription-inline" href={`/properties/${selected.id}`}>Open full property record →</a>}</>}
  {view==="enquiries"&&<Enquiries rows={leads} contact={contact} transition={transition} record={()=>setEnquiryOpen(true)}/>}
  {view==="marketing"&&<><Marketing property={selected} notify={notify} brand={brand}/><a className="subscription-inline" href="/marketing-studio">Open production studio →</a></>}
- {view==="seller"&&<Seller properties={properties} notify={notify}/>}
+ {view==="seller"&&<SellerOperations properties={properties} notify={notify}/>}
  {view==="settings"&&<><Settings brand={brand} setBrand={setBrand} notify={notify}/><a className="subscription-inline" href="/subscription">View plan, limits, invoices and receipts →</a></>}
  {view==="team"&&<><Team notify={notify}/><a className="subscription-inline roles-inline" href="/roles">Create custom roles →</a></>}
  {view==="actions"&&<><ActionCentre rows={nextActions} members={members} reload={loadOps} notify={notify}/><a className="subscription-inline" href="/operations">Open notifications & automations →</a></>}
