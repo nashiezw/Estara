@@ -1,0 +1,1 @@
+import{requireChatGPTUser}from"../chatgpt-auth";import MarketingStudioClient from"./studio-client";import"./studio.css";export const dynamic="force-dynamic";export default async function MarketingStudioPage(){await requireChatGPTUser("/marketing-studio");return <MarketingStudioClient/>}

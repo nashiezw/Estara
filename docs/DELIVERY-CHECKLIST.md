@@ -93,21 +93,21 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 5. Marketing Studio
 
-- [-] Interactive Marketing Studio prototype
-- [-] Branded creative preview
-- [-] WhatsApp copy/share interaction
-- [ ] Versioned structured templates
-- [-] WhatsApp card asset implemented; dedicated status variant pending
-- [ ] Facebook 1:1 and 4:5 assets
+- [x] Interactive production Marketing Studio
+- [x] Branded creative preview
+- [x] WhatsApp copy/share interaction
+- [x] Versioned structured templates
+- [x] WhatsApp card and dedicated status assets
+- [x] Facebook 1:1 and 4:5 assets
 - [x] Instagram post and story assets
-- [ ] Flyer
-- [ ] Real PDF brochure
-- [-] Fact-bound social caption implemented; full listing description pending
-- [ ] Shareable link and QR code
-- [ ] Rendering jobs, retries and failure states
-- [ ] AI copy constrained to verified property facts
-- [ ] Agent review and approval before publication
-- [ ] Analytics based only on measurable events
+- [x] Flyer
+- [x] Real PDF brochure
+- [x] Fact-bound social caption and full listing description
+- [x] Shareable link and QR code
+- [x] Rendering jobs, retries and failure states
+- [x] Marketing copy constrained to verified property facts
+- [x] Agent review and approval before publication
+- [x] Analytics based only on measurable events
 
 ## 6. Contacts and enquiries
 

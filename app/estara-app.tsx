@@ -33,7 +33,7 @@ export default function EstaraApp(){
  {view==="today"&&<Today properties={properties} leads={leads} actions={nextActions} viewings={viewings} go={setView} pick={(p:Property)=>{setSelected(p);setView("properties")}} add={()=>setCapture(true)} completeAction={completeAction}/>}
  {view==="properties"&&<><Properties rows={properties} selected={selected} pick={setSelected} add={()=>setCapture(true)} activate={activate} notify={notify} reload={loadWorkspace}/>{typeof selected.id==="string"&&<a className="subscription-inline" href={`/properties/${selected.id}`}>Open full property record →</a>}</>}
  {view==="enquiries"&&<Enquiries rows={leads} contact={contact} transition={transition} record={()=>setEnquiryOpen(true)}/>}
- {view==="marketing"&&<Marketing property={selected} notify={notify} brand={brand}/>}
+ {view==="marketing"&&<><Marketing property={selected} notify={notify} brand={brand}/><a className="subscription-inline" href="/marketing-studio">Open production studio →</a></>}
  {view==="seller"&&<Seller properties={properties} notify={notify}/>}
  {view==="settings"&&<><Settings brand={brand} setBrand={setBrand} notify={notify}/><a className="subscription-inline" href="/subscription">View plan, limits, invoices and receipts →</a></>}
  {view==="team"&&<><Team notify={notify}/><a className="subscription-inline roles-inline" href="/roles">Create custom roles →</a></>}
