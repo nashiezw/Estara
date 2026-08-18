@@ -260,4 +260,4 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] An agent can respond, create a follow-up, book and complete a viewing
 - [x] A seller can securely see an approved report built from real activity
 - [x] Permissions, mobile UX, cross-tenant isolation, audit, backups and monitoring all pass
-- [ ] No incomplete or simulated feature is reported as complete
+- [x] No incomplete or simulated feature is reported as complete
