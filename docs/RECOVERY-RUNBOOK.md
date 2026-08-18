@@ -6,6 +6,14 @@ This runbook covers D1 structured data, R2 private objects and the exact applica
 
 Target recovery point: 24 hours for MVP. Target recovery time: 4 hours. Tighter targets require provider capabilities and rehearsal evidence.
 
+## Point-in-time recovery policy
+
+Cloudflare D1 Time Travel is the selected point-in-time recovery capability for structured data where the database uses the D1 production storage backend. Before launch, run `wrangler d1 info <DATABASE>` and confirm `version: production`; alpha databases do not satisfy this gate.
+
+D1 Time Travel can retrieve bookmarks and restore by bookmark or timestamp through `wrangler d1 time-travel info` and `wrangler d1 time-travel restore`. The retention window is plan-dependent: 7 days on the free plan and 30 days on the paid Workers plan.
+
+Treat every Time Travel restore as a destructive in-place operation. Record the current bookmark before restoring, preserve the previous bookmark returned by the restore command, and rehearse only against an isolated recovery environment until launch approval explicitly authorizes production recovery.
+
 ## Incident declaration
 
 1. Restrict risky writes by suspending affected agencies or temporarily disabling the failing workflow.
@@ -25,7 +33,7 @@ Target recovery point: 24 hours for MVP. Target recovery time: 4 hours. Tighter 
 
 1. Obtain two-person approval from the incident commander and data owner.
 2. Take a final forensic snapshot of the impaired system.
-3. Restore D1, then reconcile R2 objects against the snapshot manifest.
+3. Restore D1 using the approved Time Travel bookmark or timestamp, then reconcile R2 objects against the snapshot manifest.
 4. Deploy the matching tested application revision.
 5. Validate authentication, membership resolution, one read/write journey per core domain, background queues and the protected health surface.
 6. Re-enable writes gradually and monitor errors, latency, queue depth and dead letters.

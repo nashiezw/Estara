@@ -190,7 +190,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [-] Structured correlation logs and protected error events; external retention and alerting provider pending
 - [x] Protected live queue, API, storage and database health monitoring
 - [x] Automated encrypted backups
-- [ ] Point-in-time recovery where supported
+- [-] Point-in-time recovery policy documented for D1 Time Travel; production-backend verification and isolated restore rehearsal pending
 - [-] Recovery runbook, encrypted snapshot custody and decrypt/integrity drill complete; isolated D1 restore rehearsal pending
 - [-] Internal security review, dependency audit and automated adversarial suite complete; independent external penetration test pending
 - [x] Cross-tenant automated suite
