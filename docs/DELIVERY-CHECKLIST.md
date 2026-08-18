@@ -189,11 +189,11 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [-] Tenant-scoped audit trail and searchable audit UI; remaining domain mutations pending coverage audit
 - [-] Structured correlation logs and protected error events; external retention and alerting provider pending
 - [x] Protected live queue, API, storage and database health monitoring
-- [ ] Automated encrypted backups
+- [x] Automated encrypted backups
 - [ ] Point-in-time recovery where supported
-- [-] Recovery runbook defined; real encrypted-snapshot restore drill pending provider configuration
+- [-] Recovery runbook, encrypted snapshot custody and decrypt/integrity drill complete; isolated D1 restore rehearsal pending
 - [ ] Security review and penetration testing
-- [ ] Cross-tenant automated suite
+- [x] Cross-tenant automated suite
 - [x] Mobile and slow-network performance budgets
 - [ ] Five-minute sales demo acceptance test
 - [ ] Daily-value demo acceptance test

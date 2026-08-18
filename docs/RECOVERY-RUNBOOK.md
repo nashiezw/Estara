@@ -2,7 +2,7 @@
 
 ## Scope and objectives
 
-This runbook covers D1 structured data, R2 private objects and the exact application revision. Until automated encrypted backup custody is configured with the selected production provider, the recovery gate remains open and this document must not be treated as proof that backups exist.
+This runbook covers D1 structured data, R2 private objects and the exact application revision. ESTARA now creates daily tenant-isolated AES-256-GCM snapshots in private object storage, records SHA-256 integrity data and retains snapshots for 35 days. The recovery gate remains open until an isolated D1 restore rehearsal is completed.
 
 Target recovery point: 24 hours for MVP. Target recovery time: 4 hours. Tighter targets require provider capabilities and rehearsal evidence.
 
@@ -32,4 +32,6 @@ Target recovery point: 24 hours for MVP. Target recovery time: 4 hours. Tighter 
 
 ## Drill evidence required
 
-Record date, operators, snapshot ID, source revision, restore target, start/end times, achieved RPO/RTO, validation results, exceptions and follow-up owner. The checklist item becomes complete only after a real encrypted backup configuration and a successful isolated restore drill.
+Use the protected Backups workspace to create a fresh snapshot and run the non-destructive recovery drill. The drill retrieves the tenant-prefixed object, verifies its SHA-256 checksum, decrypts it in memory, validates the agency manifest and counts every table and record. ESTARA writes `backup.restore_drill.completed` to the tenant audit trail.
+
+Record date, operators, snapshot ID, source revision, restore target, start/end times, achieved RPO/RTO, validation results, exceptions and follow-up owner. The full recovery checklist item becomes complete only after the same verified manifest is restored into an isolated D1 environment and the full cross-tenant suite passes there.
