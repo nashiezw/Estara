@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { getPublicAgency, getPublicProperty, listPublicProperties } from "../../../../../db/public-site";
 import { PageView, PublicEnquiryForm, ShareButton, TrackedLink } from "../../public-client";
 import { PropertyGrid, PublicFooter, PublicHeader } from "../../public-website";
@@ -13,12 +14,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!agency) return { robots: { index: false, follow: false } };
   const property = await getPublicProperty(agency.id, id);
   if (!property) return { robots: { index: false, follow: false } };
-  const image = property.heroMediaId ? `/api/public/${slug}/media?id=${encodeURIComponent(property.heroMediaId)}` : undefined;
+  const requestHeaders=await headers(),host=requestHeaders.get("host")||"localhost:3000",protocol=requestHeaders.get("x-forwarded-proto")||"https";
+  const image = property.heroMediaId ? `${protocol}://${host}/api/public/${slug}/media?id=${encodeURIComponent(property.heroMediaId)}` : undefined;
+  const description=`${property.transactionType} in ${property.location}. ${property.beds} bedrooms, ${property.baths} bathrooms.`;
   return {
     title: `${property.title} | ${agency.name}`,
-    description: `${property.transactionType} in ${property.location}. ${property.beds} bedrooms, ${property.baths} bathrooms.`,
+    description,
     alternates: { canonical: `/site/${slug}/properties/${id}` },
-    openGraph: { title: property.title, description: `${property.price} · ${property.location}`, type: "website", ...(image ? { images: [image] } : {}) },
+    openGraph: { title: property.title, description, type: "website", images:image?[image]:[] },
+    twitter:{card:"summary_large_image",title:property.title,description,images:image?[image]:[]},
   };
 }
 
