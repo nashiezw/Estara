@@ -22,6 +22,13 @@
       "when": 1787042735289,
       "tag": "0002_loud_shadow_king",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1787043269288,
+      "tag": "0003_right_silvermane",
+      "breakpoints": true
     }
   ]
 }

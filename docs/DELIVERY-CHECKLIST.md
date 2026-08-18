@@ -111,27 +111,27 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 6. Contacts and enquiries
 
-- [ ] Canonical contact table
-- [ ] Contact roles: buyer, tenant, seller, landlord, investor and developer
-- [ ] Phone/email normalization
-- [ ] Safe contact deduplication and merge
-- [ ] Contact requirements
-- [ ] Contact activity timeline
-- [-] Tenant-owned enquiry persistence
-- [-] Manual enquiry capture linked to a property
-- [ ] Fast WhatsApp enquiry form with phone and next follow-up
+- [x] Canonical contact table
+- [x] Contact roles: buyer, tenant, seller, landlord, investor and developer
+- [x] Phone/email normalization
+- [-] Safe contact deduplication and conflict detection; manual merge pending
+- [x] Contact requirements
+- [-] Contact activity history persists; timeline interface pending
+- [x] Tenant-owned enquiry persistence
+- [x] Manual enquiry capture linked to a property
+- [x] Fast enquiry form with phone and next follow-up
 - [ ] Public website enquiry submission
-- [ ] Contact create-or-update during enquiry intake
-- [ ] Responsible-agent assignment
-- [-] Thirty-minute response deadline
-- [ ] Configurable response SLA
-- [ ] Overdue escalation rules
-- [ ] Enquiry stages and transitions
-- [ ] Enquiry list, Kanban, search and filters
-- [-] Contact action creates next-day follow-up
-- [ ] Manager unresolved-enquiry visibility
+- [x] Contact create-or-update during enquiry intake
+- [x] Responsible-agent assignment
+- [x] Thirty-minute response deadline
+- [x] Configurable response SLA
+- [-] Overdue visibility and high-priority response actions; notification escalation pending
+- [x] Enquiry stages and transitions
+- [-] Enquiry list, search and filters; Kanban pending
+- [x] Contact action creates next-day follow-up
+- [x] Manager unresolved-enquiry visibility
 - [ ] Enquiry notifications
-- [ ] Enquiry acceptance and cross-tenant tests
+- [x] Enquiry acceptance and cross-tenant tests
 
 ## 7. Next actions and automation
 
