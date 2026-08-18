@@ -1,10 +1,11 @@
-import { env } from "cloudflare:workers";
 import { DEFAULT_PLATFORM_IDENTITY, type PlatformIdentity } from "./platform-defaults";
 
 const pick = (value: unknown, fallback: string) => typeof value === "string" && value.trim() ? value.trim() : fallback;
+const runtimeEnv = async () => (await import("cloudflare:workers")).env;
 
 export async function getPlatformIdentity(): Promise<PlatformIdentity> {
   try {
+    const env = await runtimeEnv();
     const row = await env.DB.prepare("SELECT platform_name AS platformName,short_name AS shortName,parent_brand AS parentBrand,tagline,primary_color AS primaryColor,default_country AS defaultCountry,default_currency AS defaultCurrency,timezone,domain,tenant_domain_suffix AS tenantDomainSuffix,powered_by_wording AS poweredByWording FROM platform_settings WHERE id='default'").first<any>();
     if (!row) return DEFAULT_PLATFORM_IDENTITY;
     return {
@@ -27,6 +28,7 @@ export async function getPlatformIdentity(): Promise<PlatformIdentity> {
 }
 
 export async function ensurePlatformIdentity() {
+  const env = await runtimeEnv();
   const p = DEFAULT_PLATFORM_IDENTITY;
   await env.DB.prepare("INSERT OR IGNORE INTO platform_settings (id,platform_name,short_name,parent_brand,tagline,primary_color,default_country,default_currency,timezone,domain,tenant_domain_suffix,powered_by_wording) VALUES ('default',?,?,?,?,?,?,?,?,?,?,?)")
     .bind(p.platformName, p.shortName, p.parentBrand, p.tagline, p.primaryColor, p.defaultCountry, p.defaultCurrency, p.timezone, p.domain, p.tenantDomainSuffix, p.poweredByWording)
