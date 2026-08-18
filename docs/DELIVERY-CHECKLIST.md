@@ -59,12 +59,12 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Configurable country/property features
 - [x] Canonical contact-to-owner relationship
 - [x] Mandate relationship
-- [ ] Branch and listing-agent assignment
+- [x] Tenant-safe branch and listing-agent assignment
 - [x] Property media metadata
 - [x] Real camera/file uploads to private object storage
-- [ ] Image validation, compression and thumbnails
+- [x] Image validation, WebP compression and responsive thumbnails
 - [x] Mobile-first property capture interface
-- [ ] Guided photo categories
+- [x] Guided property photo categories
 - [x] Device-local offline draft and recovery
 - [-] Real multi-file upload queue with bounded automatic retries; cross-reload blob resumption pending
 - [x] Listing completeness calculation

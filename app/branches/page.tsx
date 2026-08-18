@@ -1,0 +1,1 @@
+import{requireChatGPTUser}from"../chatgpt-auth";import BranchesClient from"./branches-client";import"./branches.css";export const dynamic="force-dynamic";export default async function Page(){await requireChatGPTUser("/branches");return <BranchesClient/>}
