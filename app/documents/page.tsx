@@ -1,0 +1,1 @@
+import{requireChatGPTUser}from"../chatgpt-auth";import DocumentsClient from"./documents-client";import"../workspace-tools.css";export const dynamic="force-dynamic";export default async function Page(){await requireChatGPTUser("/documents");return <DocumentsClient/>}

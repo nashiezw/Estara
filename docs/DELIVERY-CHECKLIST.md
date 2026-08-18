@@ -35,7 +35,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Trials, subscriptions, grace periods and suspension
 - [-] Billing invoices, manual receipts and coupons; payment provider pending selection
 - [-] Audit log covers implemented protected changes
-- [-] Public intake rate limiting and abuse controls; global security headers pending
+- [x] Public intake rate limiting, abuse controls and global security headers
 
 ## 2. Agency onboarding and branding
 
@@ -177,16 +177,16 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 10. MVP hardening and launch
 
-- [ ] Global tenant-safe search
+- [x] Global tenant-safe search
 - [x] In-app notification centre
 - [-] Email and push delivery ledger implemented; provider delivery pending selection
 - [ ] Low-data mode with measured reductions
 - [ ] Accessible keyboard/touch journeys
 - [ ] Loading, success, error and retry states everywhere
 - [ ] Unsaved-work protection and draft recovery
-- [ ] Private document storage and signed URLs
-- [ ] File validation and malware scanning
-- [ ] Full audit coverage
+- [x] Private document storage and expiring single-use access URLs
+- [-] File type, size and magic-byte validation; external malware scanning provider pending
+- [-] Tenant-scoped audit trail and searchable audit UI; remaining domain mutations pending coverage audit
 - [ ] Structured logs and error monitoring
 - [ ] Queue, API, storage and database monitoring
 - [ ] Automated encrypted backups
