@@ -1,0 +1,1 @@
+import{requireChatGPTUser}from"../../chatgpt-auth";import PropertyRecordClient from"./property-record-client";import"./property-record.css";export const dynamic="force-dynamic";export default async function PropertyRecordPage({params}:{params:Promise<{id:string}>}){await requireChatGPTUser("/workspace");const{id}=await params;return <PropertyRecordClient id={id}/>}

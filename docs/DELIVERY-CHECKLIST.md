@@ -53,27 +53,27 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 3. Property
 
-- [-] Tenant-owned property persistence
-- [-] Core property fields
-- [ ] Full property field set from specification
-- [ ] Configurable country/property features
-- [ ] Canonical contact-to-owner relationship
-- [ ] Mandate relationship
+- [x] Tenant-owned property persistence
+- [x] Core property fields
+- [x] Full property field set from specification
+- [x] Configurable country/property features
+- [x] Canonical contact-to-owner relationship
+- [x] Mandate relationship
 - [ ] Branch and listing-agent assignment
 - [x] Property media metadata
 - [x] Real camera/file uploads to private object storage
 - [ ] Image validation, compression and thumbnails
-- [-] Mobile-first property capture interface
+- [x] Mobile-first property capture interface
 - [ ] Guided photo categories
 - [ ] Device-local offline draft
 - [ ] Resumable upload queue and retry states
-- [-] Listing completeness calculation
-- [-] Activation command with server validation
-- [ ] Activation channel selection and durable results
-- [ ] Complete status transition state machine
-- [ ] Downstream reactions for under offer, sold, let, withdrawn and expired
-- [ ] Property activity timeline
-- [ ] Property verification checklist
+- [x] Listing completeness calculation
+- [x] Activation command with server validation
+- [x] Activation channel selection and durable results
+- [x] Complete status transition state machine
+- [x] Downstream reactions for under offer, sold, let, withdrawn and expired
+- [x] Property activity timeline
+- [x] Property verification checklist
 
 ## 4. Agency website and domains
 
