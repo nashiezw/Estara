@@ -1,0 +1,1 @@
+ALTER TABLE `properties` ADD `transaction_type` text DEFAULT 'Sale' NOT NULL;

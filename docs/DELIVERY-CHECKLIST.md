@@ -35,7 +35,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [ ] Trials, subscriptions, grace periods and suspension
 - [ ] Billing invoices, receipts, coupons and payment providers
 - [-] Audit log covers implemented protected changes
-- [ ] Rate limiting, security headers and abuse controls
+- [-] Public intake rate limiting and abuse controls; global security headers pending
 
 ## 2. Agency onboarding and branding
 
@@ -49,7 +49,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [ ] Own-domain onboarding
 - [x] Completion screen and first-property handoff
 - [x] Agency-branded workspace screens
-- [ ] Persisted agency branding used across all public outputs
+- [x] Persisted agency branding used across all implemented public outputs
 
 ## 3. Property
 
@@ -77,19 +77,19 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 4. Agency website and domains
 
-- [ ] Public agency website
-- [ ] Home, properties, sale, rent, agents, services, about and contact pages
-- [ ] Template-driven website settings
-- [ ] Published-property read model
-- [ ] Public property detail page
-- [ ] Call, WhatsApp, enquire, viewing and share actions
-- [ ] Similar properties
-- [ ] Tenant subdomain routing
+- [-] Public agency website implemented and privately deployed; public access approval pending
+- [-] Home, properties, sale, rent, services, about and contact pages; public agent profiles pending
+- [x] Template-driven website settings
+- [x] Published-property read model
+- [x] Public property detail page
+- [x] Call, WhatsApp, enquire, viewing and share actions
+- [x] Similar properties
+- [-] Tenant slug routing and preview URLs; real subdomain routing pending
 - [ ] Custom-domain ownership token
 - [ ] DNS verification lifecycle
 - [ ] Automated TLS activation
 - [ ] Unknown-host fail-closed behavior
-- [ ] SEO, caching and invalidation
+- [-] Dynamic metadata and bounded revalidation; explicit mutation invalidation pending
 
 ## 5. Marketing Studio
 
@@ -120,7 +120,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Tenant-owned enquiry persistence
 - [x] Manual enquiry capture linked to a property
 - [x] Fast enquiry form with phone and next follow-up
-- [ ] Public website enquiry submission
+- [-] Website enquiry submission implemented; public access enablement pending
 - [x] Contact create-or-update during enquiry intake
 - [x] Responsible-agent assignment
 - [x] Thirty-minute response deadline
@@ -152,7 +152,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Live viewing schedule
 - [x] Persistent viewing records
 - [x] Request, confirm, complete, cancel and no-show transitions
-- [ ] Online viewing requests
+- [-] Online viewing requests implemented; public access enablement pending
 - [x] Conflict checks
 - [-] Persistent viewing reminders; notification delivery pending
 - [x] After-viewing feedback workflow
