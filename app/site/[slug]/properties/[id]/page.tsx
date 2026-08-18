@@ -35,7 +35,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string;
   const similar = (await listPublicProperties(agency.id, property.transactionType)).filter(item => item.id !== property.id).slice(0, 3);
   const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
   const photoStyle = property.heroMediaId ? { backgroundImage: `url(/api/public/${slug}/media?id=${encodeURIComponent(property.heroMediaId)})` } : undefined;
-  return <div className={`public-site template-${agency.websiteTemplate}`} style={{ "--agency-primary": agency.primaryColor, "--agency-accent": agency.accentColor } as any}>
+  return <div className={`public-site template-${agency.websiteTemplate} typography-${agency.typography || "classic"}`} style={{ "--agency-primary": agency.primaryColor, "--agency-accent": agency.accentColor } as any}>
     <PageView slug={slug} propertyId={id}/><PublicHeader agency={agency}/>
     <main className="public-property">
       <section className="public-property-hero">

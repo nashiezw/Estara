@@ -42,7 +42,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Guided account and agency onboarding
 - [x] Agency details and business activities
 - [x] Logo upload to private object storage
-- [-] Agency colour tokens persist; typography and full output application pending
+- [x] Agency colour tokens and typography persist and apply across implemented workspace, public website, marketing SVG and PDF outputs
 - [x] Team invitation and membership acceptance
 - [x] Website template selection
 - [x] Subdomain selection

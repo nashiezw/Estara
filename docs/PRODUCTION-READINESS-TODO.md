@@ -14,6 +14,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] New-agency acceptance test covers the final product path from agency setup through property activation, enquiry, follow-up, viewing and seller reporting.
 - [x] Master specification traceability gate exists so the 123-section source document remains visible to release work.
 - [x] Platform identity defaults, metadata, tenant-domain suffix and public powered-by wording are centralized.
+- [x] Agency colour and typography settings persist and are applied across implemented workspace, public website, Marketing Studio SVG and PDF outputs.
 
 ## Must Complete Before Public Launch
 

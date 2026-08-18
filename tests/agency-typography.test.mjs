@@ -1,0 +1,18 @@
+import assert from"node:assert/strict";import{readFile}from"node:fs/promises";import test from"node:test";const read=p=>readFile(new URL(p,import.meta.url),"utf8");
+test("agency typography is persisted, validated and applied to public and marketing outputs",async()=>{const[migration,schema,settings,onboarding,app,site,property,marketing,renderer,pdf,css]=await Promise.all([read("../drizzle/0025_agency_typography.sql"),read("../db/schema.ts"),read("../app/api/settings/route.ts"),read("../app/api/onboarding/route.ts"),read("../app/estara-app.tsx"),read("../app/site/[slug]/public-website.tsx"),read("../app/site/[slug]/properties/[id]/page.tsx"),read("../app/api/marketing/route.ts"),read("../db/marketing-render.ts"),read("../db/marketing-pdf.ts"),read("../app/globals.css")]);
+assert.match(migration,/ADD COLUMN typography TEXT NOT NULL DEFAULT 'classic'/);
+assert.match(schema,/typography:text\("typography"\)\.notNull\(\)\.default\("classic"\)/);
+assert.match(settings,/TYPOGRAPHY=new Set\(\["classic","modern","editorial"\]\)/);
+assert.match(settings,/typography=\?/);
+assert.match(onboarding,/typography=\?/);
+assert.match(app,/Typography<select/);
+assert.match(app,/typography-\$\{brand\.typography\}/);
+assert.match(site,/typography-\$\{agency\.typography\|\|"classic"\}/g);
+assert.match(property,/typography-\$\{agency\.typography \|\| "classic"\}/);
+assert.match(marketing,/s\.typography/);
+assert.match(renderer,/headingFont=typography==="modern"\?"Arial"/);
+assert.match(renderer,/letter-spacing:0/);
+assert.match(pdf,/head=typography==="modern"\?"F2":"F3"/);
+assert.match(css,/public-site\.typography-modern/);
+assert.match(css,/shell\.typography-editorial/);
+});
