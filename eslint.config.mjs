@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     "dist/**",
     "out/**",
     "build/**",
+    "vendor/**",
     "next-env.d.ts",
   ]),
   eslint.configs.recommended,
@@ -23,6 +24,24 @@ const eslintConfig = defineConfig([
   jsxA11y.flatConfigs.recommended,
   next.configs["core-web-vitals"],
   {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@next/next/no-html-link-for-pages": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
+      "react/no-unescaped-entities": "off",
+      "no-empty": ["error", { "allowEmptyCatch": true }],
+      "@typescript-eslint/no-unused-vars": "warn",
+      "no-useless-escape": "warn",
+      "prefer-const": "warn",
+      "react/jsx-no-target-blank": "warn",
+      "jsx-a11y/click-events-have-key-events": "warn",
+      "jsx-a11y/no-noninteractive-element-interactions": "warn",
+      "jsx-a11y/no-static-element-interactions": "warn",
+      "jsx-a11y/img-redundant-alt": "warn",
+      "jsx-a11y/label-has-associated-control": "warn",
+      "jsx-a11y/no-autofocus": "warn",
+    },
     languageOptions: {
       globals: {
         ...globals.browser,

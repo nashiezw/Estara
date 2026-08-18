@@ -194,7 +194,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [-] Recovery runbook defined; real encrypted-snapshot restore drill pending provider configuration
 - [ ] Security review and penetration testing
 - [ ] Cross-tenant automated suite
-- [ ] Mobile and slow-network performance budgets
+- [x] Mobile and slow-network performance budgets
 - [ ] Five-minute sales demo acceptance test
 - [ ] Daily-value demo acceptance test
 - [ ] New-agency final product test
