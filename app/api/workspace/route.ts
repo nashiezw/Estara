@@ -3,6 +3,7 @@ import { getChatGPTUser } from "../../chatgpt-auth";
 import { calculateCompleteness,requireWorkspace } from "../../../db/workspace";
 import { requirePermission,type Permission,writeAudit } from "../../../db/authorization";
 import { normalizeEmail,normalizePhone,normalizeRoles } from "../../../db/contact-policy";
+import { PlanLimitError,requireCapacity } from "../../../db/entitlements";
 export const dynamic="force-dynamic";
 const unauthorized=()=>Response.json({error:"Sign in is required."},{status:401});
 const clean=(v:unknown,max=180)=>typeof v==="string"?v.trim().slice(0,max):"";
@@ -22,5 +23,6 @@ export async function POST(request:Request){
   return Response.json({enquiry:{id,name,initials,property:property.title,status:"New",stage:"New",responseDueAt:due,nextFollowUpAt:new Date(followUpMs).toISOString(),phone,email,roles:rolesJson,requirements,assignedUserId,time:"Just now"},contact:{id:contactId,reused:Boolean(existing)}},{status:201});
  }
  if(!await allowed(w,"property.create"))return Response.json({error:"You do not have permission to add properties."},{status:403});
+ try{await requireCapacity(w.agencyId,w.userId,"properties")}catch(error){if(error instanceof PlanLimitError)return Response.json({error:error.message},{status:409});throw error}
  const title=clean(b.title),location=clean(b.location),owner=clean(b.owner),size=clean(b.size),transactionType=clean(b.transactionType,20)==="Rent"?"Rent":"Sale";const priceMinor=Math.round(Number(b.priceMinor)),beds=Math.max(0,Math.round(Number(b.beds))),baths=Math.max(0,Math.round(Number(b.baths))),photos=Math.max(0,Math.round(Number(b.photos)));if(!title||!location||!Number.isSafeInteger(priceMinor)||priceMinor<=0)return Response.json({error:"Title, location and a valid price are required."},{status:400});const completeness=calculateCompleteness({title,location,priceMinor,bedrooms:beds,bathrooms:baths,photoCount:photos,ownerPhone:owner,landSize:size}),id=crypto.randomUUID(),ref=`EST-${String(Date.now()).slice(-4)}`,price=`US$${(priceMinor/100).toLocaleString("en-US")}`;await env.DB.prepare(`INSERT INTO properties (id,agency_id,reference,title,location,price_minor,currency,transaction_type,price_label,bedrooms,bathrooms,status,photo_count,owner_phone,land_size,completeness,created_by) VALUES (?,?,?,?,?,?,'USD',?,?,?,?,'Draft',?,?,?,?,?)`).bind(id,w.agencyId,ref,title,location,priceMinor,transactionType,price,beds,baths,photos,owner,size,completeness,user.userId).run();await writeAudit(w,"property.created","property",id);return Response.json({property:{id,ref,title,location,price,beds,baths,status:"Draft",transactionType,photos,owner,size,completeness}},{status:201})
 }

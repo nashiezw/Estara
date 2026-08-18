@@ -28,12 +28,12 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Tenant isolation on implemented property/enquiry APIs
 - [x] Automated cross-tenant attack test suite
 - [x] Permission catalogue and server-side RBAC policies
-- [-] System agency roles implemented; custom roles pending
-- [ ] Super Admin console
-- [ ] Support and finance platform roles
-- [ ] Plans, versioned entitlements and limits
-- [ ] Trials, subscriptions, grace periods and suspension
-- [ ] Billing invoices, receipts, coupons and payment providers
+- [x] System and tenant-owned custom agency roles
+- [x] Super Admin console
+- [x] Support and finance platform roles
+- [x] Plans, immutable versioned entitlements and server-enforced limits
+- [x] Trials, subscriptions, grace periods and suspension
+- [-] Billing invoices, manual receipts and coupons; payment provider pending selection
 - [-] Audit log covers implemented protected changes
 - [-] Public intake rate limiting and abuse controls; global security headers pending
 

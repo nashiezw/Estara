@@ -35,8 +35,8 @@ export default function EstaraApp(){
  {view==="enquiries"&&<Enquiries rows={leads} contact={contact} transition={transition} record={()=>setEnquiryOpen(true)}/>}
  {view==="marketing"&&<Marketing property={selected} notify={notify} brand={brand}/>}
  {view==="seller"&&<Seller properties={properties} notify={notify}/>}
- {view==="settings"&&<Settings brand={brand} setBrand={setBrand} notify={notify}/>}
- {view==="team"&&<Team notify={notify}/>}
+ {view==="settings"&&<><Settings brand={brand} setBrand={setBrand} notify={notify}/><a className="subscription-inline" href="/subscription">View plan, limits, invoices and receipts →</a></>}
+ {view==="team"&&<><Team notify={notify}/><a className="subscription-inline roles-inline" href="/roles">Create custom roles →</a></>}
  {view==="actions"&&<ActionCentre rows={nextActions} members={members} reload={loadOps} notify={notify}/>}
  {view==="viewings"&&<Viewings rows={viewings} reload={loadOps} notify={notify} add={()=>setViewingOpen(true)}/>}
  <nav className="mobile-nav">{nav.slice(0,4).map(n=><button className={view===n[0]?"active":""} onClick={()=>setView(n[0])} key={n[0]}><i>{n[2]}</i>{n[1]}</button>)}</nav><button className="fab" onClick={()=>setCapture(true)}>＋</button></main>{enquiryOpen&&<RecordEnquiry properties={properties} members={members} close={()=>setEnquiryOpen(false)} save={saveEnquiry}/>} {capture&&<Capture close={()=>setCapture(false)} save={saveProperty}/>} {viewingOpen&&<ViewingModal properties={properties} leads={leads} members={members} close={()=>setViewingOpen(false)} save={saveViewing}/>}{toast&&<div className="toast">✓ {toast}</div>}</div>
