@@ -34,7 +34,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Plans, immutable versioned entitlements and server-enforced limits
 - [x] Trials, subscriptions, grace periods and suspension
 - [-] Billing invoices, manual receipts and coupons; payment provider pending selection
-- [-] Audit log covers implemented protected changes
+- [x] Audit log covers implemented protected changes
 - [x] Public intake rate limiting, abuse controls and global security headers
 
 ## 2. Agency onboarding and branding
@@ -186,7 +186,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Property-capture unsaved-work protection and device draft recovery
 - [x] Private document storage and expiring single-use access URLs
 - [-] File type, size and magic-byte validation; external malware scanning provider pending
-- [-] Tenant-scoped audit trail and searchable audit UI; remaining domain mutations pending coverage audit
+- [x] Tenant-scoped audit trail and searchable audit UI
 - [-] Structured correlation logs and protected error events; external retention and alerting provider pending
 - [x] Protected live queue, API, storage and database health monitoring
 - [x] Automated encrypted backups

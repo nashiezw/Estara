@@ -49,7 +49,10 @@ export async function POST(request: Request) { try {
             throw new Error("This invitation is invalid or expired.");
         if (row.email.toLowerCase() !== u.email.toLowerCase())
             throw new Error("Sign in with the email address that received this invitation.");
-        await env.DB.prepare("UPDATE property_portal_grants SET accepted_user_id=?,accepted_at=CURRENT_TIMESTAMP WHERE id=? AND accepted_at IS NULL").bind(u.userId, row.id).run();
+        await env.DB.batch([
+            env.DB.prepare("UPDATE property_portal_grants SET accepted_user_id=?,accepted_at=CURRENT_TIMESTAMP WHERE id=? AND accepted_at IS NULL").bind(u.userId, row.id),
+            env.DB.prepare("INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) SELECT ?,agency_id,?,'property_portal.accepted','property_portal_grant',id,'{}' FROM property_portal_grants WHERE id=?").bind(uid(), u.userId, row.id),
+        ]);
         return Response.json({ accepted: true });
     }
     const access = await grants(u.userId);
@@ -63,7 +66,10 @@ export async function POST(request: Request) { try {
         const lease = await env.DB.prepare("SELECT id FROM leases WHERE agency_id=? AND managed_property_id=? AND tenant_contact_id=? AND status='active' ORDER BY starts_at DESC LIMIT 1").bind(grant.agencyId, managedPropertyId, grant.contactId).first<{
             id: string;
         }>(), recordId = uid();
-        await env.DB.prepare("INSERT INTO maintenance_requests(id,agency_id,managed_property_id,lease_id,reported_by_contact_id,title,description,priority,approval_status,created_by) VALUES(?,?,?,?,?,?,?,?,?,?)").bind(recordId, grant.agencyId, managedPropertyId, lease?.id || null, grant.contactId, title, description, priority, priority === "urgent" ? "pending" : "not_required", u.userId).run();
+        await env.DB.batch([
+            env.DB.prepare("INSERT INTO maintenance_requests(id,agency_id,managed_property_id,lease_id,reported_by_contact_id,title,description,priority,approval_status,created_by) VALUES(?,?,?,?,?,?,?,?,?,?)").bind(recordId, grant.agencyId, managedPropertyId, lease?.id || null, grant.contactId, title, description, priority, priority === "urgent" ? "pending" : "not_required", u.userId),
+            env.DB.prepare("INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) VALUES(?,?,?,?,?,?,?)").bind(uid(), grant.agencyId, u.userId, "maintenance.reported_from_portal", "maintenance_request", recordId, JSON.stringify({ managedPropertyId, priority })),
+        ]);
         return Response.json({ id: recordId }, { status: 201 });
     }
     if (action === "landlord_approval") {
@@ -71,7 +77,11 @@ export async function POST(request: Request) { try {
         if (!grant)
             throw new Error("Landlord access is required.");
         const decision = b.approved ? "approved" : "declined";
-        await env.DB.batch([env.DB.prepare("UPDATE maintenance_requests SET approval_status=?,status=CASE WHEN ?='approved' THEN 'approved' ELSE 'cancelled' END,approved_minor=CASE WHEN ?='approved' THEN COALESCE(estimated_minor,approved_minor) ELSE approved_minor END,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND approval_status='pending'").bind(decision, decision, decision, id, row.agencyId), env.DB.prepare("INSERT INTO maintenance_updates(id,agency_id,request_id,actor_user_id,status,note) VALUES(?,?,?,?,?,?)").bind(uid(), row.agencyId, id, u.userId, decision, clean(b.note, 500))]);
+        await env.DB.batch([
+            env.DB.prepare("UPDATE maintenance_requests SET approval_status=?,status=CASE WHEN ?='approved' THEN 'approved' ELSE 'cancelled' END,approved_minor=CASE WHEN ?='approved' THEN COALESCE(estimated_minor,approved_minor) ELSE approved_minor END,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND approval_status='pending'").bind(decision, decision, decision, id, row.agencyId),
+            env.DB.prepare("INSERT INTO maintenance_updates(id,agency_id,request_id,actor_user_id,status,note) VALUES(?,?,?,?,?,?)").bind(uid(), row.agencyId, id, u.userId, decision, clean(b.note, 500)),
+            env.DB.prepare("INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) VALUES(?,?,?,?,?,?,?)").bind(uid(), row.agencyId, u.userId, "maintenance.landlord_approval", "maintenance_request", id, JSON.stringify({ decision })),
+        ]);
         return Response.json({ decision });
     }
     if (action === "renewal_decision") {
@@ -79,7 +89,10 @@ export async function POST(request: Request) { try {
         if (!grant)
             throw new Error("Tenant access is required.");
         const status = b.accepted ? "accepted" : "declined";
-        await env.DB.prepare("UPDATE lease_renewals SET status=?,tenant_decision_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status='offered'").bind(status, id, row.agencyId).run();
+        await env.DB.batch([
+            env.DB.prepare("UPDATE lease_renewals SET status=?,tenant_decision_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status='offered'").bind(status, id, row.agencyId),
+            env.DB.prepare("INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) VALUES(?,?,?,?,?,?,?)").bind(uid(), row.agencyId, u.userId, "lease_renewal.tenant_decision", "lease_renewal", id, JSON.stringify({ status })),
+        ]);
         return Response.json({ status });
     }
     throw new Error("Unknown portal action.");

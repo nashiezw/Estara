@@ -20,7 +20,10 @@ export async function POST(request: Request) { try {
     const id = crypto.randomUUID(), key = `tenants/${access.agencyId}/maintenance/${requestId}/${id}`;
     await env.MEDIA.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type }, customMetadata: { agencyId: access.agencyId, requestId, private: "true" } });
     try {
-        await env.DB.prepare("INSERT INTO maintenance_media_assets(id,agency_id,request_id,object_key,original_name,mime_type,byte_size,created_by) VALUES(?,?,?,?,?,?,?,?)").bind(id, access.agencyId, requestId, key, file.name, file.type, file.size, user.userId).run();
+        await env.DB.batch([
+            env.DB.prepare("INSERT INTO maintenance_media_assets(id,agency_id,request_id,object_key,original_name,mime_type,byte_size,created_by) VALUES(?,?,?,?,?,?,?,?)").bind(id, access.agencyId, requestId, key, file.name, file.type, file.size, user.userId),
+            env.DB.prepare("INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), access.agencyId, user.userId, "maintenance.media_uploaded", "maintenance_request", requestId, JSON.stringify({ mediaId: id, staff: access.staff, audience: access.audience || "staff" })),
+        ]);
     }
     catch (e) {
         await env.MEDIA.delete(key);
