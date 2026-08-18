@@ -1,0 +1,1 @@
+import ShortlistClient from"./shortlist-client";export const dynamic="force-dynamic";export default async function Shortlist({searchParams}:{searchParams:Promise<{token?:string}>}){const{token=""}=await searchParams;return <ShortlistClient token={token}/>}

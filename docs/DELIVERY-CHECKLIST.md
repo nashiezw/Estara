@@ -202,12 +202,12 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 11. Phase 2
 
-- [ ] Buyer and tenant requirements
-- [ ] Explainable matching
-- [ ] Reverse matching
-- [ ] Lost-opportunity recovery
-- [ ] Branded shortlists
-- [ ] Offers
+- [x] Buyer and tenant requirements
+- [x] Explainable matching
+- [x] Reverse matching
+- [x] Lost-opportunity recovery
+- [x] Branded shortlists
+- [x] Offers
 - [ ] Deals and configurable stages
 - [ ] Deal next actions
 - [ ] Decimal-safe commissions and splits
