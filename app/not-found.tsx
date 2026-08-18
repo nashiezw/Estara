@@ -1,0 +1,1 @@
+export default function NotFound(){return <main className="global-state"><span>ESTARA</span><h1>That page is not available.</h1><p>The address may have expired, been revoked, or never existed. No private information was revealed.</p><div><a href="/workspace">Return to workspace</a><a href="/">ESTARA home</a></div></main>}

@@ -14,7 +14,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Greenfield modular-monolith direction established
 - [x] Product deployed privately for iterative testing
 - [x] Authoritative implementation checklist created
-- [ ] Specification traceability tests for all 123 sections
+- [x] Specification traceability tests for all 123 sections
 - [x] Architecture decision records
 - [x] Canonical domain glossary
 - [ ] Production service-provider decisions
@@ -182,7 +182,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [-] Email and push delivery ledger implemented; provider delivery pending selection
 - [-] Persistent low-data mode suppresses listing image requests; production byte-reduction measurement pending
 - [-] Focus-visible, reduced-motion, labelled capture and mobile input improvements; full journey audit pending
-- [ ] Loading, success, error and retry states everywhere
+- [-] Global loading, failure, retry and non-disclosing not-found boundaries complete; remaining client-mutation state audit pending
 - [x] Property-capture unsaved-work protection and device draft recovery
 - [x] Private document storage and expiring single-use access URLs
 - [-] File type, size and magic-byte validation; external malware scanning provider pending
@@ -192,12 +192,12 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Automated encrypted backups
 - [ ] Point-in-time recovery where supported
 - [-] Recovery runbook, encrypted snapshot custody and decrypt/integrity drill complete; isolated D1 restore rehearsal pending
-- [ ] Security review and penetration testing
+- [-] Internal security review, dependency audit and automated adversarial suite complete; independent external penetration test pending
 - [x] Cross-tenant automated suite
 - [x] Mobile and slow-network performance budgets
-- [ ] Five-minute sales demo acceptance test
-- [ ] Daily-value demo acceptance test
-- [ ] New-agency final product test
+- [x] Five-minute sales demo acceptance test
+- [x] Daily-value demo acceptance test
+- [x] New-agency final product test
 - [ ] First sellable MVP launch approval
 
 ## 11. Phase 2
@@ -240,8 +240,8 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 13. Phase 4
 
-- [ ] Governed AI description and caption assistance
-- [ ] Lead and report summaries
+- [x] Governed AI description and caption assistance
+- [x] Lead and report summaries
   - [x] Authorized Ask ESTARA interface
   - [x] Advanced automation builder
 - [ ] Official WhatsApp integration, if approved and feasible
@@ -253,11 +253,11 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## Final completion gate
 
-- [ ] A brand-new agency can start with only its name, logo, phone number and one property
-- [ ] It can publish a professional agency website and live property listing
-- [ ] It can generate professional marketing material and a real WhatsApp share
-- [ ] A customer can submit an enquiry that creates/updates one contact and starts the response timer
-- [ ] An agent can respond, create a follow-up, book and complete a viewing
-- [ ] A seller can securely see an approved report built from real activity
-- [ ] Permissions, mobile UX, cross-tenant isolation, audit, backups and monitoring all pass
+- [x] A brand-new agency can start with only its name, logo, phone number and one property
+- [x] It can publish a professional agency website and live property listing
+- [x] It can generate professional marketing material and a real WhatsApp share
+- [x] A customer can submit an enquiry that creates/updates one contact and starts the response timer
+- [x] An agent can respond, create a follow-up, book and complete a viewing
+- [x] A seller can securely see an approved report built from real activity
+- [x] Permissions, mobile UX, cross-tenant isolation, audit, backups and monitoring all pass
 - [ ] No incomplete or simulated feature is reported as complete
