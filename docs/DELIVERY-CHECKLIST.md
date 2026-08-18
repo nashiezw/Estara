@@ -66,7 +66,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Mobile-first property capture interface
 - [x] Guided property photo categories
 - [x] Device-local offline draft and recovery
-- [-] Real multi-file upload queue with bounded automatic retries; cross-reload blob resumption pending
+- [x] Real multi-file upload queue with bounded automatic retries and cross-reload blob resumption
 - [x] Listing completeness calculation
 - [x] Activation command with server validation
 - [x] Activation channel selection and durable results
