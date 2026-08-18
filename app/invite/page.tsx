@@ -1,1 +1,1 @@
-import InviteClient from "./invite-client";export const dynamic="force-dynamic";export default function InvitePage(){return <InviteClient/>}
+import{getPlatformIdentity}from"../../db/platform-settings";import InviteClient from"./invite-client";export const dynamic="force-dynamic";export default async function InvitePage(){const platform=await getPlatformIdentity();return <InviteClient platform={{platformName:platform.platformName,shortName:platform.shortName}}/>}
