@@ -249,7 +249,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [ ] Accounting integrations
   - [x] Public API and scoped credentials
   - [x] Development module
-- [ ] Enterprise permissions and white labelling
+  - [x] Enterprise permissions and white labelling
 
 ## Final completion gate
 
