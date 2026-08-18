@@ -180,7 +180,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Global tenant-safe search
 - [x] In-app notification centre
 - [-] Email and push delivery ledger implemented; provider delivery pending selection
-- [-] Persistent low-data mode suppresses listing image requests; production byte-reduction measurement pending
+- [-] Persistent low-data mode suppresses listing image requests; local low-data byte-reduction budget and measurement viewports defined; production hosted measurement pending
 - [-] Focus-visible, reduced-motion, labelled capture and mobile input improvements; full journey audit pending
 - [x] Global loading, failure, retry, non-disclosing not-found boundaries and client-mutation state audit complete
 - [x] Property-capture unsaved-work protection and device draft recovery
