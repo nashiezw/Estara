@@ -19,7 +19,7 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
-const secure=(response:Response)=>{const headers=new Headers(response.headers);headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self'; frame-ancestors 'none'; object-src 'self'; base-uri 'self'; form-action 'self'");headers.set("Strict-Transport-Security","max-age=31536000; includeSubDomains");headers.set("X-Content-Type-Options","nosniff");headers.set("X-Frame-Options","DENY");headers.set("Referrer-Policy","strict-origin-when-cross-origin");headers.set("Permissions-Policy","camera=(), microphone=(), geolocation=()");return new Response(response.body,{status:response.status,statusText:response.statusText,headers})};
+const secure=(response:Response,requestId:string)=>{const headers=new Headers(response.headers);headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self'; frame-ancestors 'none'; object-src 'self'; base-uri 'self'; form-action 'self'");headers.set("Strict-Transport-Security","max-age=31536000; includeSubDomains");headers.set("X-Content-Type-Options","nosniff");headers.set("X-Frame-Options","DENY");headers.set("Referrer-Policy","strict-origin-when-cross-origin");headers.set("Permissions-Policy","camera=(), microphone=(), geolocation=()");headers.set("X-Request-Id",requestId);return new Response(response.body,{status:response.status,statusText:response.statusText,headers})};
 
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
@@ -29,20 +29,21 @@ const secure=(response:Response)=>{const headers=new Headers(response.headers);h
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const requestId=crypto.randomUUID(),started=Date.now();
     const url = new URL(request.url);
-
+    try{let response:Response;
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
-      return secure(await handleImageOptimization(request, {
+      response=await handleImageOptimization(request, {
         fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),
         transformImage: async (body, { width, format, quality }) => {
           const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
           return result.response();
         },
-      }, allowedWidths));
-    }
-
-    return secure(await handler.fetch(request, env, ctx));
+      }, allowedWidths);
+    }else response=await handler.fetch(request, env, ctx);
+    console.log(JSON.stringify({event:"http.request",requestId,method:request.method,path:url.pathname,status:response.status,durationMs:Date.now()-started,timestamp:new Date().toISOString()}));
+    return secure(response,requestId)}catch(error){console.error(JSON.stringify({event:"http.error",requestId,method:request.method,path:url.pathname,durationMs:Date.now()-started,error:error instanceof Error?error.name:"UnknownError",timestamp:new Date().toISOString()}));throw error}
   },
 };
 

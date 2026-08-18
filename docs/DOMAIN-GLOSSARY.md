@@ -1,0 +1,23 @@
+# ESTARA Canonical Domain Glossary
+
+- **Agency** — A tenant that owns workspace data, branding, users and subscription state.
+- **Membership** — A user-to-agency relationship with one system or custom role.
+- **Platform operator** — A super-admin, support or finance user acting outside an agency boundary.
+- **Contact** — One canonical person record per agency, capable of multiple roles such as buyer, seller, landlord or tenant.
+- **Property** — An agency-owned real-estate record progressing through an explicit listing lifecycle.
+- **Mandate** — Time-bounded authority from an owner to market a property, with terms and commission.
+- **Activation** — The validated command that makes a complete, verified property available through selected channels.
+- **Enquiry** — A customer expression of interest linked to one canonical contact and optionally a property.
+- **Next action** — Durable, assigned work with a reason, priority, due time and completion state.
+- **Viewing** — A scheduled property appointment with explicit confirmation and outcome states.
+- **Domain event** — An immutable fact emitted by a completed business operation for downstream automation.
+- **Automation execution** — An idempotent attempt to apply one immutable rule version to one domain event.
+- **Notification** — An in-app message; a **delivery** is a separate attempt to send it through an external channel.
+- **Seller grant** — Revocable, property-specific authority for a seller identity to use the seller portal.
+- **Seller report** — A fact-bound period summary that becomes visible only after agency approval.
+- **Marketing copy version** — A reviewable description and caption bound to a snapshot of verified property facts.
+- **Render job** — Durable work that produces a format-specific marketing output.
+- **Document access token** — A hash-at-rest, expiring, single-use bearer credential for one private document.
+- **Plan version** — An immutable commercial definition of entitlements, limits and price.
+- **Subscription state** — Trialing, active, grace, suspended or canceled access state for an agency.
+- **Audit event** — An append-only record identifying actor, action, resource and time for a protected change.

@@ -15,8 +15,8 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Product deployed privately for iterative testing
 - [x] Authoritative implementation checklist created
 - [ ] Specification traceability tests for all 123 sections
-- [ ] Architecture decision records
-- [ ] Canonical domain glossary
+- [x] Architecture decision records
+- [x] Canonical domain glossary
 - [ ] Production service-provider decisions
 
 ## 1. Foundation
@@ -187,11 +187,11 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Private document storage and expiring single-use access URLs
 - [-] File type, size and magic-byte validation; external malware scanning provider pending
 - [-] Tenant-scoped audit trail and searchable audit UI; remaining domain mutations pending coverage audit
-- [ ] Structured logs and error monitoring
-- [ ] Queue, API, storage and database monitoring
+- [-] Structured correlation logs and protected error events; external retention and alerting provider pending
+- [x] Protected live queue, API, storage and database health monitoring
 - [ ] Automated encrypted backups
 - [ ] Point-in-time recovery where supported
-- [ ] Restore drill and recovery runbook
+- [-] Recovery runbook defined; real encrypted-snapshot restore drill pending provider configuration
 - [ ] Security review and penetration testing
 - [ ] Cross-tenant automated suite
 - [ ] Mobile and slow-network performance budgets
