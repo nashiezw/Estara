@@ -25,30 +25,30 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Authenticated private workspace using platform-provided identity
 - [x] Server-resolved tenant workspace
 - [x] Agency membership table
-- [-] Tenant isolation on implemented property/enquiry APIs
-- [ ] Automated cross-tenant attack test suite
-- [ ] Permission catalogue and server-side RBAC policies
-- [ ] Agency roles and custom roles
+- [x] Tenant isolation on implemented property/enquiry APIs
+- [x] Automated cross-tenant attack test suite
+- [x] Permission catalogue and server-side RBAC policies
+- [-] System agency roles implemented; custom roles pending
 - [ ] Super Admin console
 - [ ] Support and finance platform roles
 - [ ] Plans, versioned entitlements and limits
 - [ ] Trials, subscriptions, grace periods and suspension
 - [ ] Billing invoices, receipts, coupons and payment providers
-- [ ] Audit log for all protected changes
+- [-] Audit log covers implemented protected changes
 - [ ] Rate limiting, security headers and abuse controls
 
 ## 2. Agency onboarding and branding
 
-- [ ] Guided account and agency onboarding
-- [ ] Agency details and business activities
+- [x] Guided account and agency onboarding
+- [x] Agency details and business activities
 - [ ] Logo upload to private object storage
-- [ ] Agency colour and typography tokens
-- [ ] Team invitation and membership acceptance
-- [ ] Website template selection
-- [ ] Subdomain selection
+- [-] Agency colour tokens persist; typography and full output application pending
+- [x] Team invitation and membership acceptance
+- [x] Website template selection
+- [x] Subdomain selection
 - [ ] Own-domain onboarding
-- [ ] Completion screen and first-property handoff
-- [-] Agency-branded prototype screens
+- [x] Completion screen and first-property handoff
+- [x] Agency-branded workspace screens
 - [ ] Persisted agency branding used across all public outputs
 
 ## 3. Property
