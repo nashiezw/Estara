@@ -1,0 +1,1 @@
+import{requireChatGPTUser}from"../chatgpt-auth";import DealsClient from"./deals-client";export const dynamic="force-dynamic";export default async function DealsPage(){await requireChatGPTUser("/deals");return <DealsClient/>}

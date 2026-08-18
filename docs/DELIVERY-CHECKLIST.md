@@ -208,14 +208,14 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Lost-opportunity recovery
 - [x] Branded shortlists
 - [x] Offers
-- [ ] Deals and configurable stages
-- [ ] Deal next actions
-- [ ] Decimal-safe commissions and splits
+- [x] Deals and configurable stages
+- [x] Deal next actions
+- [x] Decimal-safe commissions and splits
 - [ ] Documents and fine-grained access
 - [ ] Branches and branch-scoped permissions
 - [ ] React Native/Expo mobile app
-- [ ] Advanced business reports
-- [ ] Authorized data exports
+- [x] Advanced business reports
+- [x] Authorized data exports
 
 ## 12. Phase 3 — Property management
 

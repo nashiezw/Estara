@@ -1,0 +1,4 @@
+import assert from"node:assert/strict";import test from"node:test";import{commissionMinor,safeCsv,splitCommission}from"../db/deal-policy.ts";
+test("commission calculations use integer minor units and basis points",()=>{assert.equal(commissionMinor(24_500_000,300),735_000);assert.equal(commissionMinor(101,3333),34);assert.throws(()=>commissionMinor(Number.MAX_SAFE_INTEGER+1,300),/Invalid/)});
+test("commission splits total exactly 100 percent without losing a cent",()=>{const rows=splitCommission(10001,[{userId:"a",basisPoints:3333},{userId:"b",basisPoints:3333},{userId:"c",basisPoints:3334}]);assert.equal(rows.reduce((n,x)=>n+x.amountMinor,0),10001);assert.throws(()=>splitCommission(10000,[{userId:"a",basisPoints:9000}]),/100%/)});
+test("CSV exports neutralize spreadsheet formulas and quote values",()=>{assert.equal(safeCsv("=IMPORTXML('x')"),`"'=IMPORTXML('x')"`);assert.equal(safeCsv('Moyo "Homes"'),`"Moyo ""Homes"""`)});
