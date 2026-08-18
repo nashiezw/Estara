@@ -211,7 +211,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Deals and configurable stages
 - [x] Deal next actions
 - [x] Decimal-safe commissions and splits
-- [ ] Documents and fine-grained access
+- [x] Documents and fine-grained access
 - [ ] Branches and branch-scoped permissions
 - [ ] React Native/Expo mobile app
 - [x] Advanced business reports
