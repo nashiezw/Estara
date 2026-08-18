@@ -17,7 +17,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Specification traceability tests for all 123 sections
 - [x] Architecture decision records
 - [x] Canonical domain glossary
-- [ ] Production service-provider decisions
+- [-] Production service-provider decisions documented; account provisioning, live secrets, webhooks and smoke tests pending
 
 ## 1. Foundation
 
