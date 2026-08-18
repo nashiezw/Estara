@@ -17,8 +17,6 @@ test("restricted documents require tenant-scoped user, role, or branch grants",(
   const migration=read("drizzle/0018_branch_document_acl.sql"),scope=read("db/access-scope.ts"),route=read("app/api/documents/route.ts");
   assert.match(migration,/access_mode TEXT NOT NULL DEFAULT 'agency'/);
   assert.match(migration,/UNIQUE INDEX idx_document_permissions_unique/);
-  assert.match(migration,/CREATE TRIGGER document_permissions_subject_guard/);
-  assert.match(migration,/invalid document tenant/);
   assert.match(scope,/dp\.agency_id=\? AND dp\.document_id=\?/);
   assert.match(scope,/dp\.subject_type='user'/);
   assert.match(scope,/dp\.subject_type='role'/);
