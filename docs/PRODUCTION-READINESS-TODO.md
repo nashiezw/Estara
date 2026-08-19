@@ -23,7 +23,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [-] Custom-domain ownership token, DNS verification and unknown-host fail-closed routing are implemented; complete real provider domain attachment and TLS activation.
 - [ ] Run an isolated D1 restore rehearsal and repeat the tenant attack suite against the restored environment.
 - [ ] Commission independent external penetration testing and resolve all launch-blocking findings.
-- [ ] Approve public-site access level and production access policy.
+- [-] Production access policy documented; public-site access level still needs product-owner approval and live deployment evidence.
 - [ ] Confirm production billing/payment provider settlement workflow; do not claim provider payments complete until verified.
 - [ ] Verify production byte-reduction measurements for low-data mode on real hosted assets.
 - [ ] Complete a manual mobile journey audit on representative low-end Android and iOS devices.

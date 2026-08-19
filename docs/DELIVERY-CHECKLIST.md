@@ -77,7 +77,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 4. Agency website and domains
 
-- [-] Public agency website implemented and privately deployed; public access approval pending
+- [-] Public agency website implemented and production access policy documented; private/owner-only access remains required until public launch approval
 - [x] Home, properties, sale, rent, services, about, contact and public agent profile pages
 - [x] Template-driven website settings
 - [x] Published-property read model
