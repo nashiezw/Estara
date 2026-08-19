@@ -12,6 +12,7 @@
     "test": "npm run build && node --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "launch:readiness": "node scripts/launch-readiness.mjs",
+    "launch:evidence": "node scripts/verify-production-launch-evidence.mjs",
     "low-data:verify": "node scripts/verify-low-data-production.mjs",
     "db:generate": "drizzle-kit generate"
   },

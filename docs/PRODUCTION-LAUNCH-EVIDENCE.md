@@ -1,6 +1,6 @@
 # Production Launch Evidence Register
 
-This register is the working to-do list for converting the remaining public-launch blockers into auditable evidence. Do not mark a gate complete in `docs/PRODUCTION-READINESS-TODO.md` or `docs/DELIVERY-CHECKLIST.md` until its evidence is attached or linked here.
+This register is the working to-do list for converting the remaining public-launch blockers into auditable evidence. Do not mark a gate complete in `docs/PRODUCTION-READINESS-TODO.md` or `docs/DELIVERY-CHECKLIST.md` until its evidence is attached or linked here and `npm run launch:evidence -- docs/evidence/production-launch.json` passes.
 
 ## Current Deployment Blocker
 
@@ -22,12 +22,17 @@ This register is the working to-do list for converting the remaining public-laun
 | Mobile device audit | Completed Android and iOS audit using `docs/MOBILE-JOURNEY-AUDIT.md`, with device models, browser versions, issues found and retest evidence. |
 | First sellable MVP approval | Product-owner sign-off that the landing-to-workspace, onboarding, property capture, public site, enquiry, viewing, seller, billing, admin and recovery journeys are acceptable for the first sellable release. |
 
+## Evidence Bundle
+
+Save the production launch evidence bundle as `docs/evidence/production-launch.json`. It must include the deployed HTTPS URL, deployed commit SHA, capture timestamp, deployment proof, provider activation proof, domain/TLS proof, D1 restore rehearsal proof, penetration-test closure, public-access approval, billing settlement proof, low-data evidence, mobile audit proof and final MVP approval.
+
 ## Verification Commands
 
 ```bash
 npm test
 npm run launch:readiness
 npm run launch:readiness -- --all
+npm run launch:evidence -- docs/evidence/production-launch.json
 npm run low-data:verify -- docs/evidence/low-data-production.json
 ```
 

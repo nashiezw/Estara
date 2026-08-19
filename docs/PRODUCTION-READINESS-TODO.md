@@ -18,6 +18,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] App-facing product labels across landing, workspace, admin, billing, seller, invite, health, integrations and secondary tool screens read centralized platform identity instead of source-fixed copy.
 - [x] `npm run launch:readiness` reports public-launch blockers, while `npm run launch:readiness -- --all` reports every unfinished roadmap row.
 - [x] Production launch evidence register lists every remaining public-launch gate, required proof and current deployment blocker.
+- [x] A machine-verifiable launch evidence bundle gate is implemented as `npm run launch:evidence -- docs/evidence/production-launch.json`.
 
 ## Must Complete Before Public Launch
 
