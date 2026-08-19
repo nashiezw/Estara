@@ -15,7 +15,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] Master specification traceability gate exists so the 123-section source document remains visible to release work.
 - [x] Platform identity defaults, metadata, tenant-domain suffix and public powered-by wording are centralized.
 - [x] Agency colour and typography settings persist and are applied across implemented workspace, public website, Marketing Studio SVG and PDF outputs.
-- [x] App-facing product labels across landing, workspace, admin, billing, seller, invite, health and secondary tool screens read centralized platform identity instead of source-fixed copy.
+- [x] App-facing product labels across landing, workspace, admin, billing, seller, invite, health, integrations and secondary tool screens read centralized platform identity instead of source-fixed copy.
 
 ## Must Complete Before Public Launch
 

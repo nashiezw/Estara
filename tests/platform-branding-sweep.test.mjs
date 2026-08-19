@@ -5,7 +5,7 @@ const read=p=>readFile(new URL(p,import.meta.url),"utf8");
 
 test("workspace surfaces use platform identity instead of source-fixed labels",async()=>{
   const clientPath=name=>name==="marketing-studio"?"../app/marketing-studio/studio-client.tsx":`../app/${name}/${name==="ask-estara"?"ask":name}-client.tsx`;
-  const covered=["branches","pipeline","contacts","deals","matching","marketing-studio","operations","roles","search","ask-estara","developer"];
+  const covered=["branches","pipeline","contacts","deals","matching","marketing-studio","operations","roles","search","ask-estara","developer","integrations"];
   const pairs=[
     ["landing","../app/page.tsx"],
     ["workspace","../app/estara-app.tsx"],
@@ -65,6 +65,6 @@ test("workspace surfaces use platform identity instead of source-fixed labels",a
 
   for(const name of covered)assert.match(sources[`${name}Page`],/getPlatformIdentity/,`${name} page should resolve platform identity`);
   for(const name of [...covered,"reports","record","portal","shortlist"])assert.match(sources[name],/platform\.(shortName|poweredByWording)/,`${name} client should consume platform identity`);
-  for(const source of["subscription","seller","admin","invite","health","enterprise","reports","record","portal","shortlist",...covered])assert.doesNotMatch(sources[source],/ESTARA <small>|<strong>ESTARA|<span>ESTARA|Ask ESTARA|ESTARA universal|ESTARA stores|Return to ESTARA|ESTARA SHORTLIST|ESTARA PRODUCTION/);
-  assert.match(sources.checklist,/landing, workspace shell, billing, seller portal, platform admin, invite, health, contacts, branches, pipeline, deals, matching, marketing studio, operations, roles, search, Ask, developer, reports, property record, property portal and shortlist branding now read platform settings/);
+  for(const source of["subscription","seller","admin","invite","health","enterprise","reports","record","portal","shortlist",...covered])assert.doesNotMatch(sources[source],/ESTARA <small>|<strong>ESTARA|<span>ESTARA|Ask ESTARA|ESTARA universal|ESTARA stores|Return to ESTARA|data can leave ESTARA|ESTARA SHORTLIST|ESTARA PRODUCTION/);
+  assert.match(sources.checklist,/landing, workspace shell, billing, seller portal, platform admin, invite, health, contacts, branches, pipeline, deals, matching, marketing studio, operations, roles, search, Ask, developer, integrations, reports, property record, property portal and shortlist branding now read platform settings/);
 });
