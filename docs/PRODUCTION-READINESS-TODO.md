@@ -15,11 +15,11 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] Master specification traceability gate exists so the 123-section source document remains visible to release work.
 - [x] Platform identity defaults, metadata, tenant-domain suffix and public powered-by wording are centralized.
 - [x] Agency colour and typography settings persist and are applied across implemented workspace, public website, Marketing Studio SVG and PDF outputs.
+- [x] App-facing product labels across landing, workspace, admin, billing, seller, invite, health and secondary tool screens read centralized platform identity instead of source-fixed copy.
 
 ## Must Complete Before Public Launch
 
 - [-] Production provider decisions are documented for email, push, malware scanning, external error retention, alerting and online payments; account provisioning, live secrets, webhooks and smoke tests remain pending.
-- [ ] Complete the remaining UI copy branding sweep so default product labels can be changed without source edits.
 - [-] Custom-domain ownership token, DNS verification and unknown-host fail-closed routing are implemented; complete real provider domain attachment and TLS activation.
 - [ ] Run an isolated D1 restore rehearsal and repeat the tenant attack suite against the restored environment.
 - [ ] Commission independent external penetration testing and resolve all launch-blocking findings.

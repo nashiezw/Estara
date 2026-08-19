@@ -21,7 +21,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 1. Foundation
 
-- [-] Platform settings: central identity, metadata, domain suffix and powered-by wording exist; landing, workspace shell, billing, seller portal, platform admin, invite, health, contacts, branches and pipeline branding now read platform settings; remaining secondary tool labels need branding sweep
+- [-] Platform settings: central identity, metadata, domain suffix and powered-by wording exist; landing, workspace shell, billing, seller portal, platform admin, invite, health, contacts, branches, pipeline, deals, matching, marketing studio, operations, roles, search, Ask, developer, reports, property record, property portal and shortlist branding now read platform settings; provider-backed production settings still need launch verification
 - [x] Authenticated private workspace using platform-provided identity
 - [x] Server-resolved tenant workspace
 - [x] Agency membership table

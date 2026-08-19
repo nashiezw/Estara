@@ -1,1 +1,1 @@
-export default function Loading(){return <main className="global-state" aria-live="polite" aria-busy="true"><i/><span>ESTARA</span><h1>Preparing your workspace…</h1><p>Your current page is loading securely.</p></main>}
+import{DEFAULT_PLATFORM_IDENTITY}from"../db/platform-defaults";export default function Loading(){return <main className="global-state" aria-live="polite" aria-busy="true"><i/><span>{DEFAULT_PLATFORM_IDENTITY.shortName}</span><h1>Preparing your workspace…</h1><p>Your current page is loading securely.</p></main>}
