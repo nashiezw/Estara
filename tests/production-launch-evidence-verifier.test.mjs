@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { PRODUCTION_PROVIDER_DECISIONS } from "../db/production-providers.ts";
@@ -80,6 +80,22 @@ function completeEvidence() {
   };
 }
 
+async function writeEvidenceRefs(rootDir, evidence) {
+  await mkdir(join(rootDir, "evidence"), { recursive: true });
+  const refs = [
+    ...evidence.providers.flatMap((provider) => provider.activationEvidenceRefs),
+    evidence.d1Restore.evidenceRef,
+    evidence.penetrationTest.reportRef,
+    evidence.lowData.evidenceFile,
+    evidence.mobileAudit.auditRef,
+  ];
+  for (const ref of refs) {
+    const path = join(rootDir, ref);
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, "verified evidence");
+  }
+}
+
 test("production launch evidence verifier is documented and wired to npm", async () => {
   const [pkg, register, todo] = await Promise.all([
     read("../package.json"),
@@ -111,4 +127,53 @@ test("production launch evidence command rejects incomplete launch proof", async
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /providers must include/);
   assert.match(result.stderr, /mvpApproval\.journeysApproved/);
+});
+
+test("production launch evidence command rejects missing local evidence references", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estara-launch-evidence-"));
+  const evidencePath = join(dir, "production-launch.json");
+  const evidence = completeEvidence();
+  await writeEvidenceRefs(dir, evidence);
+  evidence.lowData.evidenceFile = "evidence/missing-low-data.json";
+  await writeFile(evidencePath, JSON.stringify(evidence));
+
+  const result = spawnSync(process.execPath, ["scripts/verify-production-launch-evidence.mjs", evidencePath], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /lowData\.evidenceFile must point to an existing evidence file or external URL/);
+});
+
+test("production launch evidence command rejects refs outside the evidence bundle", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estara-launch-evidence-"));
+  const evidencePath = join(dir, "production-launch.json");
+  const outsidePath = join(dir, "..", "outside-proof.txt");
+  const evidence = completeEvidence();
+  await writeEvidenceRefs(dir, evidence);
+  await writeFile(outsidePath, "outside proof");
+  evidence.d1Restore.evidenceRef = "../outside-proof.txt";
+  await writeFile(evidencePath, JSON.stringify(evidence));
+
+  const result = spawnSync(process.execPath, ["scripts/verify-production-launch-evidence.mjs", evidencePath], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /d1Restore\.evidenceRef must point to an existing evidence file or external URL/);
+});
+
+test("production launch evidence command accepts complete evidence with real refs", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "estara-launch-evidence-"));
+  const evidencePath = join(dir, "production-launch.json");
+  const evidence = completeEvidence();
+  await writeEvidenceRefs(dir, evidence);
+  await writeFile(evidencePath, JSON.stringify(evidence));
+
+  const result = spawnSync(process.execPath, ["scripts/verify-production-launch-evidence.mjs", evidencePath], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Production launch evidence passed/);
 });

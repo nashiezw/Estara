@@ -26,6 +26,8 @@ This register is the working to-do list for converting the remaining public-laun
 
 Save the production launch evidence bundle as `docs/evidence/production-launch.json`. It must include the deployed HTTPS URL, deployed commit SHA, capture timestamp, deployment proof, provider activation proof, domain/TLS proof, D1 restore rehearsal proof, penetration-test closure, public-access approval, billing settlement proof, low-data evidence, mobile audit proof and final MVP approval.
 
+Local evidence references are resolved relative to the bundle directory and must point to files inside that directory. External reports may be linked by HTTP(S) URL.
+
 ## Verification Commands
 
 ```bash

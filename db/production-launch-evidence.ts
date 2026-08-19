@@ -27,6 +27,10 @@ export const REQUIRED_LAUNCH_EVIDENCE_GATES = [
 ] as const;
 
 type Evidence = Record<string, any>;
+type ValidationOptions = {
+  evidenceRoot?: string;
+  fileExists?: (path: string) => boolean;
+};
 
 function hasText(value: unknown) {
   return typeof value === "string" && value.trim().length > 0;
@@ -56,7 +60,23 @@ function requireText(errors: string[], path: string, value: unknown) {
   if (!hasText(value)) errors.push(`${path} is required.`);
 }
 
-export function validateProductionLaunchEvidence(evidence: Evidence) {
+function isExternalRef(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function requireEvidenceRef(errors: string[], path: string, value: unknown, options: ValidationOptions) {
+  requireText(errors, path, value);
+  if (!hasText(value) || !options.fileExists) return;
+  const text = String(value).trim();
+  if (!isExternalRef(text) && !options.fileExists(text)) errors.push(`${path} must point to an existing evidence file or external URL.`);
+}
+
+export function validateProductionLaunchEvidence(evidence: Evidence, options: ValidationOptions = {}) {
   const errors: string[] = [];
   if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)) {
     return ["Evidence must be a JSON object."];
@@ -84,6 +104,10 @@ export function validateProductionLaunchEvidence(evidence: Evidence) {
     requireTrue(errors, `providers.${decision.area}.smokeTestPassed`, provider.smokeTestPassed);
     if (!Array.isArray(provider.activationEvidenceRefs) || provider.activationEvidenceRefs.length < decision.activationEvidence.length) {
       errors.push(`providers.${decision.area}.activationEvidenceRefs must cover every required activation proof.`);
+    } else {
+      provider.activationEvidenceRefs.forEach((ref: unknown, index: number) =>
+        requireEvidenceRef(errors, `providers.${decision.area}.activationEvidenceRefs.${index}`, ref, options)
+      );
     }
   }
 
@@ -96,12 +120,12 @@ export function validateProductionLaunchEvidence(evidence: Evidence) {
   requireTrue(errors, "d1Restore.isolatedEnvironment", d1Restore.isolatedEnvironment);
   requireTrue(errors, "d1Restore.timeTravelRestoreVerified", d1Restore.timeTravelRestoreVerified);
   requireTrue(errors, "d1Restore.tenantAttackSuitePassed", d1Restore.tenantAttackSuitePassed);
-  requireText(errors, "d1Restore.evidenceRef", d1Restore.evidenceRef);
+  requireEvidenceRef(errors, "d1Restore.evidenceRef", d1Restore.evidenceRef, options);
 
   const penetrationTest = evidence.penetrationTest || {};
   requireTrue(errors, "penetrationTest.independentTester", penetrationTest.independentTester);
   if (penetrationTest.launchBlockingFindingsOpen !== 0) errors.push("penetrationTest.launchBlockingFindingsOpen must be 0.");
-  requireText(errors, "penetrationTest.reportRef", penetrationTest.reportRef);
+  requireEvidenceRef(errors, "penetrationTest.reportRef", penetrationTest.reportRef, options);
 
   const publicAccessApproval = evidence.publicAccessApproval || {};
   requireText(errors, "publicAccessApproval.productOwner", publicAccessApproval.productOwner);
@@ -116,12 +140,12 @@ export function validateProductionLaunchEvidence(evidence: Evidence) {
 
   const lowData = evidence.lowData || {};
   requireTrue(errors, "lowData.verifierPassed", lowData.verifierPassed);
-  requireText(errors, "lowData.evidenceFile", lowData.evidenceFile);
+  requireEvidenceRef(errors, "lowData.evidenceFile", lowData.evidenceFile, options);
 
   const mobileAudit = evidence.mobileAudit || {};
   requireTrue(errors, "mobileAudit.androidPassed", mobileAudit.androidPassed);
   requireTrue(errors, "mobileAudit.iosPassed", mobileAudit.iosPassed);
-  requireText(errors, "mobileAudit.auditRef", mobileAudit.auditRef);
+  requireEvidenceRef(errors, "mobileAudit.auditRef", mobileAudit.auditRef, options);
 
   const mvpApproval = evidence.mvpApproval || {};
   requireText(errors, "mvpApproval.productOwner", mvpApproval.productOwner);

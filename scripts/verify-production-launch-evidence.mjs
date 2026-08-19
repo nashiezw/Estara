@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
+import { dirname, relative, resolve } from "node:path";
 import {
   REQUIRED_LAUNCH_EVIDENCE_GATES,
   validateProductionLaunchEvidence,
@@ -20,7 +22,15 @@ try {
   process.exit(1);
 }
 
-const errors = validateProductionLaunchEvidence(evidence);
+const evidenceRoot = resolve(dirname(evidencePath));
+const errors = validateProductionLaunchEvidence(evidence, {
+  evidenceRoot,
+  fileExists(ref) {
+    const target = resolve(evidenceRoot, ref);
+    const pathFromRoot = relative(evidenceRoot, target);
+    return Boolean(pathFromRoot) && !pathFromRoot.startsWith("..") && !pathFromRoot.includes(":") && existsSync(target);
+  },
+});
 if (errors.length) {
   console.error("Production launch evidence is incomplete:");
   for (const error of errors) console.error(`- ${error}`);
