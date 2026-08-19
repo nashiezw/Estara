@@ -33,7 +33,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Support and finance platform roles
 - [x] Plans, immutable versioned entitlements and server-enforced limits
 - [x] Trials, subscriptions, grace periods and suspension
-- [-] Billing invoices, manual receipts and coupons; Stripe payment provider selected, live activation and settlement verification pending
+- [-] Billing invoices, manual receipts and coupons; Stripe payment provider selected and settlement workflow documented, live activation and settlement verification pending
 - [x] Audit log covers implemented protected changes
 - [x] Public intake rate limiting, abuse controls and global security headers
 
