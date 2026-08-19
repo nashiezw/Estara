@@ -26,7 +26,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [ ] Commission independent external penetration testing and resolve all launch-blocking findings.
 - [-] Production access policy documented; public-site access level still needs product-owner approval and live deployment evidence.
 - [-] Production billing/payment settlement workflow documented; live Stripe settlement, refund, failed-payment and finance sign-off evidence still pending. Do not claim provider payments complete until verified.
-- [ ] Verify production byte-reduction measurements for low-data mode on real hosted assets.
+- [-] Low-data production measurement verifier and evidence format are implemented; verify byte-reduction measurements on real hosted assets before public launch.
 - [ ] Complete a manual mobile journey audit on representative low-end Android and iOS devices.
 - [ ] Complete first sellable MVP launch approval by the product owner.
 
