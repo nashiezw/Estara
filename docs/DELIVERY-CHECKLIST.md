@@ -17,7 +17,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Specification traceability tests for all 123 sections
 - [x] Architecture decision records
 - [x] Canonical domain glossary
-- [-] Production service-provider decisions documented; account provisioning, live secrets, webhooks and smoke tests pending
+- [-] Production service-provider decisions documented and protected health reports missing provider configuration without exposing secret values; account provisioning, live secrets, webhooks and smoke tests pending
 
 ## 1. Foundation
 
@@ -187,7 +187,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Private document storage and expiring single-use access URLs
 - [-] File type, size and magic-byte validation; external malware scanning provider pending
 - [x] Tenant-scoped audit trail and searchable audit UI
-- [-] Structured correlation logs and protected error events; external retention and alerting provider pending
+- [-] Structured correlation logs, protected error events and provider-readiness visibility; external retention and alerting provider pending
 - [x] Protected live queue, API, storage and database health monitoring
 - [x] Automated encrypted backups
 - [-] Point-in-time recovery policy documented for D1 Time Travel; production-backend verification and isolated restore rehearsal pending

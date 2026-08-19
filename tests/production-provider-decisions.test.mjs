@@ -5,6 +5,7 @@ import {
   PRODUCTION_PROVIDER_DECISIONS,
   REQUIRED_PRODUCTION_PROVIDER_ENV,
   productionProviderDecision,
+  productionProviderReadiness,
   productionProvidersReady,
 } from "../db/production-providers.ts";
 
@@ -50,4 +51,18 @@ test("provider env contract is documented and remains all-or-nothing for launch"
   assert.equal(productionProviderDecision("online_payments")?.provider, "Stripe Checkout, Billing and Customer Portal");
   assert.match(todo, /Production provider decisions are documented/);
   assert.match(checklist, /Production service-provider decisions documented/);
+});
+
+test("provider readiness reports missing configuration without exposing secret values", () => {
+  const partial = productionProviderReadiness({ RESEND_API_KEY: "secret", RESEND_FROM_EMAIL: "hello@example.com" });
+  assert.equal(partial.ready, false);
+  assert.equal(partial.configuredEnv, 2);
+  assert.equal(partial.requiredEnv, REQUIRED_PRODUCTION_PROVIDER_ENV.length);
+  assert.ok(partial.areas.some((area) => area.area === "transactional_email" && area.missingEnv.includes("RESEND_WEBHOOK_SECRET")));
+  assert.doesNotMatch(JSON.stringify(partial), /secret|hello@example\.com/);
+
+  const configured = productionProviderReadiness(Object.fromEntries(REQUIRED_PRODUCTION_PROVIDER_ENV.map((name) => [name, "configured"])));
+  assert.equal(configured.ready, false);
+  assert.ok(configured.areas.every((area) => area.missingEnv.length === 0));
+  assert.ok(configured.areas.every((area) => area.status === "selected_pending_activation"));
 });

@@ -19,7 +19,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 
 ## Must Complete Before Public Launch
 
-- [-] Production provider decisions are documented for email, push, malware scanning, external error retention, alerting and online payments; account provisioning, live secrets, webhooks and smoke tests remain pending.
+- [-] Production provider decisions are documented for email, push, malware scanning, external error retention, alerting and online payments, and protected health reports missing provider configuration without exposing secret values; account provisioning, live secrets, webhooks and smoke tests remain pending.
 - [-] Custom-domain ownership token, DNS verification and unknown-host fail-closed routing are implemented; complete real provider domain attachment and TLS activation.
 - [ ] Run an isolated D1 restore rehearsal and repeat the tenant attack suite against the restored environment.
 - [ ] Commission independent external penetration testing and resolve all launch-blocking findings.

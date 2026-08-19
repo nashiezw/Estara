@@ -81,3 +81,25 @@ export function productionProviderDecision(area: string) {
 export function productionProvidersReady(env: Record<string, string | undefined>) {
   return REQUIRED_PRODUCTION_PROVIDER_ENV.every((name) => Boolean(env[name]?.trim()));
 }
+
+export function productionProviderReadiness(env: Record<string, string | undefined>) {
+  const areas = PRODUCTION_PROVIDER_DECISIONS.map((decision) => {
+    const missingEnv = decision.requiredEnv.filter((name) => !env[name]?.trim());
+    return {
+      area: decision.area,
+      provider: decision.provider,
+      status: decision.status,
+      configuredEnv: decision.requiredEnv.length - missingEnv.length,
+      requiredEnv: decision.requiredEnv.length,
+      missingEnv,
+      activationEvidence: decision.activationEvidence,
+      ready: missingEnv.length === 0 && decision.status === "implemented",
+    };
+  });
+  return {
+    ready: areas.every((area) => area.ready),
+    configuredEnv: areas.reduce((sum, area) => sum + area.configuredEnv, 0),
+    requiredEnv: areas.reduce((sum, area) => sum + area.requiredEnv, 0),
+    areas,
+  };
+}
