@@ -33,7 +33,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Support and finance platform roles
 - [x] Plans, immutable versioned entitlements and server-enforced limits
 - [x] Trials, subscriptions, grace periods and suspension
-- [-] Billing invoices, manual receipts and coupons; payment provider pending selection
+- [-] Billing invoices, manual receipts and coupons; Stripe payment provider selected, live activation and settlement verification pending
 - [x] Audit log covers implemented protected changes
 - [x] Public intake rate limiting, abuse controls and global security headers
 
@@ -179,15 +179,15 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 - [x] Global tenant-safe search
 - [x] In-app notification centre
-- [-] Email and push delivery ledger implemented; provider delivery pending selection
+- [-] Email and push delivery ledger implemented; Resend and Firebase Cloud Messaging selected, live provider delivery pending activation
 - [-] Persistent low-data mode suppresses listing image requests; local low-data byte-reduction budget and measurement viewports defined; production hosted measurement pending
 - [-] Focus-visible, reduced-motion, labelled capture, mobile input improvements and mobile journey audit criteria complete; real Android/iOS device audit pending
 - [x] Global loading, failure, retry, non-disclosing not-found boundaries and client-mutation state audit complete
 - [x] Property-capture unsaved-work protection and device draft recovery
 - [x] Private document storage and expiring single-use access URLs
-- [-] File type, size and magic-byte validation; external malware scanning provider pending
+- [-] File type, size and magic-byte validation; Cloudflare WAF malicious upload scanning selected, production rule activation pending
 - [x] Tenant-scoped audit trail and searchable audit UI
-- [-] Structured correlation logs, protected error events and provider-readiness visibility; external retention and alerting provider pending
+- [-] Structured correlation logs, protected error events and provider-readiness visibility; Sentry and Cloudflare log retention selected, live alert routing pending activation
 - [x] Protected live queue, API, storage and database health monitoring
 - [x] Automated encrypted backups
 - [-] Point-in-time recovery policy documented for D1 Time Travel; production-backend verification and isolated restore rehearsal pending
