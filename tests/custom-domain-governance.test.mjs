@@ -38,6 +38,7 @@ test("domain lifecycle proves ownership before activation", async () => {
 test("domain route is permission checked, entitlement gated and avoids fake TLS success", async () => {
   const route = await readFile(new URL("../app/api/domains/route.ts", import.meta.url), "utf8");
   const publicSite = await readFile(new URL("../db/public-site.ts", import.meta.url), "utf8");
+  const root = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(route, /requirePermission\(workspace, "agency\.settings\.manage"\)/);
   assert.match(route, /requireEntitlement\(workspace\.agencyId, user\.userId, "customDomains"\)/);
   assert.match(route, /ownershipToken/);
@@ -46,5 +47,22 @@ test("domain route is permission checked, entitlement gated and avoids fake TLS 
   assert.match(route, /Awaiting hosting provider certificate activation/);
   assert.doesNotMatch(route, /status='active'.*request_ssl/s);
   assert.match(publicSite, /getPublicAgencyByHost/);
+  assert.match(publicSite, /tenantSlugFromHost/);
   assert.match(publicSite, /d\.status='active'/);
+  assert.match(root, /getPublicAgencyByHost\(host,platform\.tenantDomainSuffix\)/);
+  assert.match(root, /PublicHome agency=\{agency\}/);
+  assert.match(root, /notFound\(\)/);
+});
+
+test("tenant subdomain routing is single-label and slug-safe", async () => {
+  const [{ tenantSlugFromHost }, publicSite] = await Promise.all([
+    import("../db/public-site.ts"),
+    readFile(new URL("../db/public-site.ts", import.meta.url), "utf8"),
+  ]);
+  assert.equal(tenantSlugFromHost("prime.estara.co.zw", "estara.co.zw"), "prime");
+  assert.equal(tenantSlugFromHost("prime.estara.co.zw:443", ".estara.co.zw"), "prime");
+  assert.equal(tenantSlugFromHost("estara.co.zw", "estara.co.zw"), null);
+  assert.equal(tenantSlugFromHost("a.b.estara.co.zw", "estara.co.zw"), null);
+  assert.equal(tenantSlugFromHost("bad--slug.estara.co.zw", "estara.co.zw"), null);
+  assert.match(publicSite, /tenantDomainSuffix\|\|env\.PUBLIC_SITE_DOMAIN/);
 });

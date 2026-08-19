@@ -84,7 +84,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Public property detail page
 - [x] Call, WhatsApp, enquire, viewing and share actions
 - [x] Similar properties
-- [-] Tenant slug routing and preview URLs; real subdomain routing pending
+- [-] Tenant slug routing, preview URLs and host-based tenant-subdomain resolution implemented; hosting-provider tenant hostname attachment pending
 - [x] Custom-domain ownership token
 - [x] DNS verification lifecycle
 - [-] Automated TLS activation request tracked; provider certificate activation pending

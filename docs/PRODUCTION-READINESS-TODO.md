@@ -19,6 +19,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] `npm run launch:readiness` reports public-launch blockers, while `npm run launch:readiness -- --all` reports every unfinished roadmap row.
 - [x] Production launch evidence register lists every remaining public-launch gate, required proof and current deployment blocker.
 - [x] A machine-verifiable launch evidence bundle gate is implemented as `npm run launch:evidence -- docs/evidence/production-launch.json`.
+- [x] Host-based tenant-subdomain and active custom-domain routing are implemented with unknown production hosts failing closed.
 
 ## Must Complete Before Public Launch
 

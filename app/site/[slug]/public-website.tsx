@@ -1,6 +1,9 @@
 import Link from "next/link";
-import type { PublicAgency, PublicAgent, PublicProperty } from "../../../db/public-site";
 import { PublicEnquiryForm, TrackedLink } from "./public-client";
+
+type PublicAgency={id:string;name:string;slug:string;tagline:string;primaryColor:string;accentColor:string;phone:string;whatsapp:string;email:string;website:string;businessActivities:string[];websiteTemplate:string;typography:string;responseSlaMinutes:number;logoId:string|null;portalName:string;hideParentBrand:boolean;poweredByWording:string};
+type PublicAgent={userId:string;name:string;role:string;listings:number};
+type PublicProperty={id:string;ref:string;title:string;location:string;price:string;beds:number;baths:number;photos:number;size:string;transactionType:string;heroMediaId:string|null};
 
 export function PublicHeader({ agency }: { agency: PublicAgency }) {
   return <header className="public-header"><Link href={`/site/${agency.slug}`} className="public-brand">{agency.logoId ? <img src={`/api/public/${agency.slug}/media?id=${encodeURIComponent(agency.logoId)}`} alt={`${agency.name} logo`} /> : <b>{agency.name.split(/\s+/).map(x => x[0]).join("").slice(0, 2)}</b>}<span>{agency.name}<small>{agency.tagline}</small></span></Link><nav><Link href={`/site/${agency.slug}`}>Home</Link><Link href={`/site/${agency.slug}/properties`}>Properties</Link><Link href={`/site/${agency.slug}/sale`}>For sale</Link><Link href={`/site/${agency.slug}/rent`}>To rent</Link><Link href={`/site/${agency.slug}/agents`}>Agents</Link><Link href={`/site/${agency.slug}/services`}>Services</Link><Link href={`/site/${agency.slug}/about`}>About</Link><Link href={`/site/${agency.slug}/contact`}>Contact</Link></nav></header>;
