@@ -254,63 +254,75 @@ What the warnings mean:
 - "A, AAAA or CNAME record for www is required" means `www.estara.co.zw` will not open a website until we connect it.
 - "A, AAAA or CNAME record pointing to the root domain is required" means `estara.co.zw` itself will not open a website until we connect it.
 
-For ESTARA launch:
+For ESTARA launch, think of the domain like a building with different rooms:
 
-- Use `app.estara.co.zw` for the ESTARA product app.
-- Decide later whether `estara.co.zw` should show the public marketing/landing page or redirect to `app.estara.co.zw`.
-- Use `sites.estara.co.zw` or another suffix for agency public websites if we want tenant subdomains like `prime-property.sites.estara.co.zw`.
-- Add email records only after choosing the email provider, such as Resend, Google Workspace or Zoho Mail.
+- `estara.co.zw` is the main front door. Later it can show the ESTARA marketing/landing website.
+- `app.estara.co.zw` is the private ESTARA software app where owners and staff log in.
+- `sites.estara.co.zw` can be the public website area for agency websites. Example: `prime-property.sites.estara.co.zw`.
+- `hello@estara.co.zw` is email. Do not set this up until the email provider is chosen.
 
-If the registrar allows DNS records but not nameserver changes:
+Recommended launch choice:
 
-This is usable for email and some website hosts, but it may not be enough for the ESTARA Cloudflare Worker app. Cloudflare Workers Custom Domains require an active Cloudflare zone. In normal Cloudflare setup, that means the domain's nameservers must point to Cloudflare.
+1. Use `app.estara.co.zw` for the ESTARA product app.
+2. Decide later whether `estara.co.zw` should show a marketing website or send people to `app.estara.co.zw`.
+3. Use `sites.estara.co.zw` later if we want agency website subdomains.
+4. Add email DNS records only after choosing Resend, Google Workspace or Zoho Mail.
 
-Where to find the DNS records to add:
+Very simple explanation of the words Cloudflare uses:
 
-1. For the ESTARA app domain, for example `app.estara.co.zw`:
-   - First try Cloudflare dashboard > Workers & Pages > ESTARA project > Settings > Domains & Routes > Add > Custom Domain.
-   - If Cloudflare lets you add it, Cloudflare will create or show the needed DNS/certificate setup.
-   - If Cloudflare says the zone is not active or the domain is not eligible, then manual DNS at the registrar is not enough for the Worker custom domain. In that case, either ask the registrar again to change nameservers, use a registrar that allows nameserver changes, or use a different hosting path for the app domain.
+- Domain: the name people type, like `estara.co.zw`.
+- Subdomain: a smaller name under the main domain, like `app.estara.co.zw`.
+- DNS: the address book of the internet. It tells browsers where a domain should go.
+- Nameservers: the company in charge of that address book. If nameservers point to Cloudflare, Cloudflare controls the DNS.
+- DNS record: one line in the address book. It may say "send this name to this app" or "send email here".
+- SSL/TLS certificate: the lock icon in the browser. It makes `https://` secure.
 
-2. For the root website, for example `estara.co.zw`:
-   - The records come from the hosting provider for the marketing/landing website.
-   - If the marketing site is hosted on Cloudflare Pages, get the records from Cloudflare Pages custom domain setup.
-   - If the marketing site is hosted on Vercel, get the records from Vercel project > Settings > Domains.
-   - Do not invent the A or CNAME record. Copy the exact value the host gives you.
+If your registrar lets you change nameservers:
 
-3. For `www.estara.co.zw`:
-   - The records come from the hosting provider or redirect provider.
-   - Usually this is a CNAME record for `www`, but use the exact value shown by the host.
+1. Go to Cloudflare: https://dash.cloudflare.com/
+2. Click Websites.
+3. Click Add a domain or Add site.
+4. Type `estara.co.zw`.
+5. Cloudflare will give you two nameservers. They look like two short names ending in `cloudflare.com`.
+6. Open your registrar account, or message the registrar support team.
+7. Ask them to replace the current nameservers with the two Cloudflare nameservers.
+8. Go back to Cloudflare and wait until the domain says Active.
+9. After it is Active, connect `app.estara.co.zw` to the ESTARA Worker app.
 
-4. For email like `hello@estara.co.zw`:
-   - The records come from the email provider.
-   - If using Resend for sending email, open Resend > Domains > add/verify domain and copy the SPF, DKIM and optional DMARC records it shows.
-   - If using Google Workspace or Zoho Mail for inboxes, copy their MX, SPF, DKIM and DMARC records.
+If your registrar does not let you change nameservers:
 
-5. For proving domain ownership:
-   - Some providers ask for a TXT record.
-   - The TXT record name and value come from that provider's verification screen.
-   - Copy the name and value exactly.
+This means Cloudflare may not be fully in charge of the domain. You may still be able to add DNS records manually, but the ESTARA Cloudflare Worker app may not accept `app.estara.co.zw` as a custom domain unless Cloudflare controls the zone.
 
-Manual DNS record cheat sheet:
+Do this first:
 
-| Purpose | Record source | Common record type |
-| --- | --- | --- |
-| App at `app.estara.co.zw` | Cloudflare Worker custom domain setup | Cloudflare-managed custom domain, sometimes not possible without active Cloudflare zone |
-| Main website at `estara.co.zw` | Marketing website host | A, AAAA, CNAME or ALIAS/ANAME depending on host |
-| `www.estara.co.zw` | Marketing website host | Usually CNAME |
-| Sending emails | Resend or chosen email provider | TXT/SPF, TXT/DKIM, optional TXT/DMARC |
-| Receiving emails | Google Workspace, Zoho or chosen mailbox provider | MX plus TXT records |
-| Domain ownership check | Provider asking for verification | TXT |
+1. Ask the registrar again: "Can you change the nameservers for `estara.co.zw` to Cloudflare nameservers?"
+2. If they say yes, use the nameserver steps above.
+3. If they say no, ask: "Can I add CNAME, TXT, MX and root domain records manually?"
+4. If they say yes, manual DNS can still help with email and some website setups.
+5. If they say no, use a different registrar or move the domain to a registrar that gives you full DNS control.
+
+Where to go for each thing:
+
+| What you want | Where you go | What you copy from there | Where you paste it |
+| --- | --- | --- | --- |
+| ESTARA app at `app.estara.co.zw` | Cloudflare > Workers & Pages > ESTARA project > Settings > Domains & Routes | Cloudflare normally creates this itself if the zone is active | Cloudflare, or registrar DNS only if Cloudflare gives you a manual record |
+| Main website at `estara.co.zw` | The website host, for example Cloudflare Pages or Vercel | The A/CNAME/ALIAS record shown by that host | Registrar DNS or Cloudflare DNS |
+| `www.estara.co.zw` | The website host or redirect provider | Usually a CNAME, but use exactly what the host shows | Registrar DNS or Cloudflare DNS |
+| Sending emails | Resend > Domains | SPF, DKIM and DMARC TXT records | Registrar DNS or Cloudflare DNS |
+| Receiving emails | Google Workspace or Zoho Mail | MX records plus SPF/DKIM/DMARC records | Registrar DNS or Cloudflare DNS |
+| Proving ownership | Whatever provider asks you to verify the domain | A TXT record name and value | Registrar DNS or Cloudflare DNS |
+
+Do not guess DNS records. If a provider shows a value, copy it exactly. One wrong letter can break the setup.
 
 What to tell the registrar if they only allow manual DNS:
 
-"I need to add DNS records manually for `estara.co.zw`. Please confirm I can add CNAME, TXT, MX, SPF/DKIM/DMARC and any root/apex record type you support such as A, ALIAS or ANAME. I also need to know whether you can create a CNAME for `app.estara.co.zw` if my hosting provider gives me one."
+"I own or want to use `estara.co.zw`. I need to connect it to my app and email. Please confirm if I can add these DNS record types: CNAME, TXT, MX, SPF, DKIM, DMARC and a root/apex record such as A, ALIAS or ANAME. I also need to know if you can create a CNAME for `app.estara.co.zw` if my hosting provider gives me one."
 
-Important decision:
+Important decision in plain language:
 
-- If you want the simplest ESTARA Cloudflare Worker launch, keep pushing for nameserver access or choose a registrar that allows it.
-- If nameservers truly cannot be changed, we can still set up email and a marketing website using manual DNS, but the app domain may need a different deployment/domain strategy.
+- Best option: get Cloudflare nameserver access. This is the cleanest path for the ESTARA app.
+- Okay option: manual DNS only. This may work for email and a simple marketing website, but may not be enough for the Cloudflare Worker app domain.
+- Bad option: no nameserver changes and no manual DNS records. Do not use that setup for launch.
 
 Step-by-step: create the production app/project.
 
@@ -402,33 +414,61 @@ Hosting decision summary:
 
 ## 3. Connect Your Main Domain
 
-What this does: makes ESTARA available on the official platform domain.
+What this does: it makes ESTARA open from a real web address instead of only a temporary Cloudflare address.
 
-Important for `.co.zw`: Cloudflare may not be able to register `estara.co.zw` for you. That is okay. Register the domain through a `.co.zw` registrar first, then point the domain's nameservers to Cloudflare.
+The easiest version:
 
-What you need:
+1. Own `estara.co.zw`.
+2. Let Cloudflare control its DNS by using Cloudflare nameservers.
+3. Connect `app.estara.co.zw` to the ESTARA Worker app.
+4. Wait for the browser lock icon to appear.
+5. Open `https://app.estara.co.zw`.
 
-- Access to your domain registrar or DNS provider.
-- The DNS records requested by the hosting provider.
-- If using `.co.zw`, confirmation from the registrar that the domain is registered under your name/company name.
+What you need before starting:
 
-Steps:
+- The login for the company or registrar where `estara.co.zw` was registered.
+- Proof that the domain belongs to you or your company.
+- Your Cloudflare account login.
+- The ESTARA Worker/project already created in Cloudflare.
 
-1. Confirm the domain is registered and active.
-2. Add the domain to Cloudflare as a site.
-3. Copy the Cloudflare nameservers.
-4. Open your registrar/DNS provider, or contact the registrar support team.
-5. Replace the domain's existing nameservers with the Cloudflare nameservers.
-6. Wait until Cloudflare marks the domain as active.
-7. In Cloudflare, open the ESTARA Worker/project.
-8. Add the app domain, for example `app.estara.co.zw`.
-9. Add the public website domain or suffix, for example `sites.estara.co.zw` or `estara.co.zw`, depending on the final routing choice.
-10. Wait for SSL/TLS certificate activation.
-11. Open the domain using `https://`.
+Step-by-step, slowly:
 
-What success looks like: the domain loads securely with a browser lock icon.
+1. Open Cloudflare: https://dash.cloudflare.com/
+2. Click Websites.
+3. Click Add a domain or Add site.
+4. Type `estara.co.zw`.
+5. Follow Cloudflare until it shows two nameservers.
+6. Keep that Cloudflare tab open.
+7. Open your domain registrar account in another tab.
+8. Find Nameservers, DNS, Domain settings or Manage domain.
+9. Replace the old nameservers with the two Cloudflare nameservers.
+10. Save.
+11. Go back to Cloudflare.
+12. Wait until Cloudflare says the domain is Active.
+13. Open Cloudflare > Workers & Pages.
+14. Open the ESTARA Worker/project.
+15. Go to Settings.
+16. Open Domains & Routes.
+17. Click Add.
+18. Choose Custom Domain.
+19. Type `app.estara.co.zw`.
+20. Save.
+21. Wait for Cloudflare to show the certificate is active.
+22. Open `https://app.estara.co.zw`.
 
-If it fails: check spelling, nameserver values, old conflicting DNS records and whether DNS needs more time to propagate.
+What success looks like:
+
+- `https://app.estara.co.zw` opens ESTARA.
+- The browser shows a lock icon.
+- There is no red warning page.
+
+If it fails:
+
+- Check that `app.estara.co.zw` is spelled correctly.
+- Check that Cloudflare says `estara.co.zw` is Active.
+- Check that old DNS records are not pointing `app.estara.co.zw` somewhere else.
+- Wait 15 to 60 minutes and try again.
+- If it still fails, copy the exact Cloudflare error message.
 
 ## 4. Prepare Agency Website Domains
 

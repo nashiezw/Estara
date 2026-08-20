@@ -14,8 +14,12 @@ test("Cloudflare deploy command uses the generated Vinext Worker config", async 
     "node scripts/deploy-cloudflare.mjs",
   );
   const deployScript = await readFile("scripts/deploy-cloudflare.mjs", "utf8");
-  assert.match(deployScript, /run\("npm", \["run", "build"\]\);[\s\S]*"d1", "migrations", "apply", "site-creator-d1", "--remote", "--config", "dist\/server\/wrangler\.json"/);
-  assert.match(deployScript, /"deploy", "--config", "dist\/server\/wrangler\.json"/);
+  assert.match(deployScript, /const GENERATED_WRANGLER_CONFIG = "dist\/server\/wrangler\.json"/);
+  assert.match(deployScript, /run\("npm", \["run", "build"\]\);[\s\S]*"d1", "migrations", "apply", "site-creator-d1", "--remote", "--config", GENERATED_WRANGLER_CONFIG/);
+  assert.match(deployScript, /"deploy", "--config", GENERATED_WRANGLER_CONFIG/);
+  assert.match(deployScript, /migrations_dir: "\.\.\/\.\.\/drizzle"/);
+  assert.match(deployScript, /config\.d1_databases = \(config\.d1_databases \?\? \[\]\)\.map/);
+  assert.match(deployScript, /prepareGeneratedWranglerConfig\(\)/);
   assert.equal(
     packageJson.scripts["deploy:dry-run"],
     "npm run build && wrangler deploy --dry-run --outdir .wrangler-dry-run --config dist/server/wrangler.json",
