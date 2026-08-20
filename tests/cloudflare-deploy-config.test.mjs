@@ -24,6 +24,8 @@ test("root Wrangler config prevents non-interactive setup prompts", async () => 
   const config = parseJsonc(await readFile("wrangler.jsonc", "utf8"));
 
   assert.equal(config.name, "estara");
+  assert.equal(config.main, "dist/server/index.js");
+  assert.equal(config.assets.directory, "dist/client");
   assert.equal(config.build, undefined);
   assert.deepEqual(config.compatibility_flags, ["nodejs_compat"]);
   assert.equal(config.observability.enabled, true);
