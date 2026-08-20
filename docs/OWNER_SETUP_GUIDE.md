@@ -71,9 +71,9 @@ Helpful links:
 - Cloudflare environment variables and secrets: https://developers.cloudflare.com/workers/configuration/environment-variables/
 - Cloudflare Workers custom domains: https://developers.cloudflare.com/workers/configuration/routing/custom-domains/
 
-Step-by-step: add the real Cloudflare D1 database id.
+Step-by-step: confirm the real Cloudflare D1 database id.
 
-The app cannot deploy with the placeholder id `00000000-0000-4000-8000-000000000000`. Cloudflare will reject it.
+The app cannot deploy with the placeholder id `00000000-0000-4000-8000-000000000000`. Cloudflare will reject it. ESTARA currently commits the production D1 database id `e4fec45c-a64d-45f7-a056-58c19e6f34db` so the build does not depend on Cloudflare build variables.
 
 1. Open https://dash.cloudflare.com/
 2. Choose the Cloudflare account where ESTARA is being deployed.
@@ -81,14 +81,10 @@ The app cannot deploy with the placeholder id `00000000-0000-4000-8000-000000000
 4. Click the ESTARA database. If there is no database yet, create one first.
 5. Open Settings for that database.
 6. Copy the Database ID.
-7. Open the ESTARA Worker/project.
-8. Go to Settings.
-9. Open Variables and Secrets.
-10. Add an environment variable named `CLOUDFLARE_D1_DATABASE_ID`.
-11. Paste the Database ID as the value.
-12. Save it.
+7. Confirm it matches the value in this guide.
+8. If the database id ever changes, update `ESTARA_PRODUCTION_D1_DATABASE_ID` in `vite.config.ts`, commit, push and redeploy.
 
-If you already added the value as `CLOUDFLARE_DATABASE_ID`, the deploy script will accept it. For clarity, the preferred name is `CLOUDFLARE_D1_DATABASE_ID`.
+You may still add `CLOUDFLARE_D1_DATABASE_ID` or `CLOUDFLARE_DATABASE_ID` as an override, but the current deploy no longer depends on Cloudflare build variables being available.
 
 Step-by-step: confirm the media bucket.
 

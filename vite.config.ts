@@ -5,19 +5,18 @@ import { sites } from "./build/sites-vite-plugin";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
+const ESTARA_PRODUCTION_D1_DATABASE_ID =
+  "e4fec45c-a64d-45f7-a056-58c19e6f34db";
+const ESTARA_PRODUCTION_R2_BUCKET_NAME = "site-creator-r2";
 
 const { d1, r2 } = hostingConfig;
-const isProductionDeploy = process.env.ESTARA_PRODUCTION_DEPLOY === "1";
 const productionD1DatabaseId =
   process.env.CLOUDFLARE_D1_DATABASE_ID?.trim() ||
-  process.env.CLOUDFLARE_DATABASE_ID?.trim();
-const productionR2BucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME?.trim();
-
-if (isProductionDeploy && d1 && !productionD1DatabaseId) {
-  throw new Error(
-    "Production deploy is missing CLOUDFLARE_D1_DATABASE_ID. Add the real D1 database id in Cloudflare environment variables before deploying. CLOUDFLARE_DATABASE_ID is also accepted for backwards compatibility.",
-  );
-}
+  process.env.CLOUDFLARE_DATABASE_ID?.trim() ||
+  ESTARA_PRODUCTION_D1_DATABASE_ID;
+const productionR2BucketName =
+  process.env.CLOUDFLARE_R2_BUCKET_NAME?.trim() ||
+  ESTARA_PRODUCTION_R2_BUCKET_NAME;
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
@@ -30,8 +29,7 @@ const localBindingConfig = {
         {
           binding: d1,
           database_name: "site-creator-d1",
-          database_id:
-            productionD1DatabaseId || SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
+          database_id: productionD1DatabaseId,
         },
       ]
     : [],
@@ -39,7 +37,7 @@ const localBindingConfig = {
     ? [
         {
           binding: r2,
-          bucket_name: productionR2BucketName || "site-creator-r2",
+          bucket_name: productionR2BucketName,
         },
       ]
     : [],

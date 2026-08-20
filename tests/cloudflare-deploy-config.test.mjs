@@ -20,17 +20,17 @@ test("Cloudflare deploy command uses the generated Vinext Worker config", async 
   assert.doesNotMatch(packageJson.scripts.deploy, /npx\s+wrangler\s+deploy/);
 });
 
-test("Cloudflare deploy script rejects placeholder D1 ids before upload", async () => {
+test("Cloudflare deploy config does not depend on build-time dashboard variables", async () => {
   const deployScript = await readFile("scripts/deploy-cloudflare.mjs", "utf8");
   const viteConfig = await readFile("vite.config.ts", "utf8");
 
-  assert.match(deployScript, /CLOUDFLARE_D1_DATABASE_ID/);
-  assert.match(deployScript, /CLOUDFLARE_DATABASE_ID/);
-  assert.match(deployScript, /00000000-0000-4000-8000-000000000000/);
+  assert.doesNotMatch(deployScript, /Missing CLOUDFLARE_D1_DATABASE_ID/);
   assert.match(deployScript, /ESTARA_PRODUCTION_DEPLOY/);
+  assert.match(viteConfig, /ESTARA_PRODUCTION_D1_DATABASE_ID/);
+  assert.match(viteConfig, /e4fec45c-a64d-45f7-a056-58c19e6f34db/);
   assert.match(viteConfig, /process\.env\.CLOUDFLARE_D1_DATABASE_ID/);
   assert.match(viteConfig, /process\.env\.CLOUDFLARE_DATABASE_ID/);
-  assert.match(viteConfig, /Production deploy is missing CLOUDFLARE_D1_DATABASE_ID/);
+  assert.doesNotMatch(viteConfig, /database_id:\s*SITE_CREATOR_PLACEHOLDER_DATABASE_ID/);
 });
 
 test("root Wrangler config prevents non-interactive setup prompts", async () => {

@@ -25,7 +25,7 @@ These are bindings rather than normal `.env` variables in most Cloudflare deploy
 | `OPENAI_MODEL` | Model used for governed draft assistance. | Optional; development default is acceptable. | Product/engineering decision. |
 | `CLOUDFLARE_ACCOUNT_ID` | Account used for Cloudflare provider checks/integration. | Production required for provider readiness. | Cloudflare dashboard. |
 | `CLOUDFLARE_API_TOKEN` | Token for Cloudflare provider operations/checks. | Production required if automated provider checks run. | Cloudflare API tokens. |
-| `CLOUDFLARE_D1_DATABASE_ID` | Real production D1 database id used by Wrangler when generating the `DB` binding. | Production deploy required. | Cloudflare dashboard > D1 SQL Database > your database > Settings > Database ID. |
+| `CLOUDFLARE_D1_DATABASE_ID` | Optional override for the committed production D1 database id used by Wrangler when generating the `DB` binding. | Optional override. | Cloudflare dashboard > D1 SQL Database > your database > Settings > Database ID. |
 | `CLOUDFLARE_DATABASE_ID` | Backwards-compatible alias for `CLOUDFLARE_D1_DATABASE_ID`. Prefer the D1-specific name for new setups. | Optional alias. | Same value as `CLOUDFLARE_D1_DATABASE_ID`. |
 | `CLOUDFLARE_R2_BUCKET_NAME` | Real production R2 bucket name used by Wrangler when generating the `MEDIA` binding. | Production required if the bucket is not named `site-creator-r2`. | Cloudflare dashboard > R2 Object Storage > your bucket. |
 | `MEDIA_BUCKET` | Name of production media bucket. | Production required. | Cloudflare R2. |
