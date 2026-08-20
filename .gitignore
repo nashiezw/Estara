@@ -36,5 +36,6 @@ yarn-error.log*
 
 /dist/
 /.wrangler/
+/.wrangler-dry-run/
 /outputs/
 /work/

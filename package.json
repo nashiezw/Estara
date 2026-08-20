@@ -9,6 +9,9 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
+    "deploy": "npm run build && wrangler deploy --config dist/server/wrangler.json",
+    "deploy:dry-run": "npm run build && wrangler deploy --dry-run --outdir .wrangler-dry-run --config dist/server/wrangler.json",
+    "preview": "npm run build && wrangler dev --config dist/server/wrangler.json",
     "test": "npm run build && node --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "launch:readiness": "node scripts/launch-readiness.mjs",
@@ -51,6 +54,7 @@
     "esbuild@0.25.12": true,
     "esbuild@0.27.3": true,
     "esbuild@0.28.0": true,
+    "esbuild@0.28.1": true,
     "sharp@0.34.5": true,
     "workerd@1.20260515.1": true
   },

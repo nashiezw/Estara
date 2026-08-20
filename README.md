@@ -16,7 +16,21 @@ npm run dev
 npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+## Cloudflare Worker Deployment
+
+This app commits a small `wrangler.jsonc` so Cloudflare does not run Wrangler's
+interactive Vite setup during production deployment.
+
+Use this deploy command in Cloudflare:
+
+```bash
+npm run deploy
+```
+
+That command builds the Vinext app first, then deploys the generated Worker
+configuration at `dist/server/wrangler.json`. Do not use `npx wrangler deploy`
+as the production deploy command for this app; it can trigger Wrangler setup
+again in Cloudflare's non-interactive build environment.
 
 ## Included Shape
 
@@ -91,6 +105,8 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 
 - `npm run dev`: start local development
 - `npm run build`: verify the vinext build output
+- `npm run deploy`: build and deploy the generated Cloudflare Worker
+- `npm run deploy:dry-run`: build and verify the Worker package without uploading
 - `npm test`: build the starter and verify its rendered loading skeleton
 - `npm run db:generate`: generate Drizzle migrations after schema changes
 
