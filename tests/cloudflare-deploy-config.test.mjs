@@ -14,7 +14,8 @@ test("Cloudflare deploy command uses the generated Vinext Worker config", async 
     "node scripts/deploy-cloudflare.mjs",
   );
   const deployScript = await readFile("scripts/deploy-cloudflare.mjs", "utf8");
-  assert.match(deployScript, /"d1", "migrations", "apply", "site-creator-d1", "--remote"/);
+  assert.match(deployScript, /run\("npm", \["run", "build"\]\);[\s\S]*"d1", "migrations", "apply", "site-creator-d1", "--remote", "--config", "dist\/server\/wrangler\.json"/);
+  assert.match(deployScript, /"deploy", "--config", "dist\/server\/wrangler\.json"/);
   assert.equal(
     packageJson.scripts["deploy:dry-run"],
     "npm run build && wrangler deploy --dry-run --outdir .wrangler-dry-run --config dist/server/wrangler.json",

@@ -1,6 +1,6 @@
-import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../../chatgpt-auth";
 import { authenticatePassword, createEmailVerificationToken, createSession, publicAuthPreviewEnabled } from "../../../../db/auth";
+import { writeAuthAudit } from "../../../../db/auth-audit";
 import { authUrl, emailProviderConfigured, sendAuthEmail } from "../../../../db/email";
 import { authRouteErrorResponse, ensureStandaloneAuthSchema } from "../../../../db/standalone-auth-schema";
 import { setAuthCookie } from "../cookie";
@@ -36,14 +36,4 @@ export async function POST(request: Request) {
   } catch (error) {
     return authRouteErrorResponse(error, "Login failed.");
   }
-}
-
-async function writeAuthAudit(action: string, resource: string, actorUserId?: string | null) {
-  await env.DB.prepare("INSERT INTO audit_logs (id,agency_id,actor_user_id,action,resource_type,resource_id,detail) VALUES (?,NULL,?,?,?,?,?)")
-    .bind(crypto.randomUUID(), actorUserId || "public-auth", action, "auth", await hashAuditResource(resource), "{}").run();
-}
-
-async function hashAuditResource(value: string) {
-  const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value.trim().toLowerCase().slice(0, 254))));
-  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }

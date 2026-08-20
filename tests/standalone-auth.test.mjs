@@ -16,7 +16,7 @@ test("standalone auth stores hashed passwords and token hashes only", async () =
 });
 
 test("standalone auth verifies email before workspace login and protects sessions", async () => {
-  const [login, register, forgot, verify, reset, cookie, authHelper, email, authSchema] = await Promise.all([
+  const [login, register, forgot, verify, reset, cookie, authHelper, email, authSchema, audit] = await Promise.all([
     read("app/api/auth/login/route.ts"),
     read("app/api/auth/register/route.ts"),
     read("app/api/auth/forgot-password/route.ts"),
@@ -26,6 +26,7 @@ test("standalone auth verifies email before workspace login and protects session
     read("app/chatgpt-auth.ts"),
     read("db/email.ts"),
     read("db/standalone-auth-schema.ts"),
+    read("db/auth-audit.ts"),
   ]);
   assert.match(register, /createAppUser/);
   assert.doesNotMatch(register, /setAuthCookie/);
@@ -53,6 +54,12 @@ test("standalone auth verifies email before workspace login and protects session
   assert.match(authSchema, /CREATE TABLE IF NOT EXISTS auth_email_verification_tokens/);
   assert.match(authSchema, /CREATE TABLE IF NOT EXISTS auth_password_reset_tokens/);
   assert.match(authSchema, /D1_ERROR\|SQLITE_ERROR/);
+  assert.match(audit, /try\s*\{/);
+  assert.match(audit, /console\.warn/);
+  for (const route of [login, register, forgot, verify, reset]) {
+    assert.match(route, /from "\.\.\/\.\.\/\.\.\/\.\.\/db\/auth-audit"/);
+    assert.doesNotMatch(route, /INSERT INTO audit_logs/);
+  }
 });
 
 test("public navigation exposes real ESTARA auth pages", async () => {

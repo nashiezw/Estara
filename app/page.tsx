@@ -77,6 +77,7 @@ export default async function Home() {
           <p>Add your properties once. Market them professionally. Capture every enquiry. Know who needs follow-up. Keep sellers informed. Let today&apos;s work become obvious.</p>
           <div className="home-actions">
             <Link href="/register">Start your agency setup</Link>
+            <Link href="/demo">View demo</Link>
             <Link href="/login">Log in</Link>
             <Link href="#workflow">See how it works</Link>
           </div>
@@ -141,7 +142,8 @@ export default async function Home() {
           <p>Agency websites, property pages, agent profiles, custom colours, images, templates and seller-facing experiences all come from the same operating system.</p>
         </div>
         <aside>
-          <Link href="/workspace">Open workspace</Link>
+          <Link href="/demo">View guided demo</Link>
+          <Link href="/login">Open workspace</Link>
           <Link href="/marketing-studio">Marketing studio</Link>
           <Link href="/seller">Seller portal</Link>
           <Link href="/domains">Domains</Link>
