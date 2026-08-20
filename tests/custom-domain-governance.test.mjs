@@ -49,7 +49,7 @@ test("domain route is permission checked, entitlement gated and avoids fake TLS 
   assert.match(publicSite, /getPublicAgencyByHost/);
   assert.match(publicSite, /tenantSlugFromHost/);
   assert.match(publicSite, /d\.status='active'/);
-  assert.match(root, /getPublicAgencyByHost\(host,platform\.tenantDomainSuffix\)/);
+  assert.match(root, /getPublicAgencyByHost\(host,\s*platform\.tenantDomainSuffix\)/);
   assert.match(root, /PublicHome agency=\{agency\}/);
   assert.match(root, /notFound\(\)/);
 });

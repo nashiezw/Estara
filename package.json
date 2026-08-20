@@ -13,6 +13,7 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "launch:readiness": "node scripts/launch-readiness.mjs",
     "launch:evidence": "node scripts/verify-production-launch-evidence.mjs",
+    "d1:restore:verify": "node scripts/verify-d1-restore-rehearsal.mjs",
     "low-data:verify": "node scripts/verify-low-data-production.mjs",
     "db:generate": "drizzle-kit generate"
   },

@@ -1,5 +1,6 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { SESSION_COOKIE, userFromSessionToken } from "../db/auth";
 
 export type ChatGPTUser = {
   userId: string;
@@ -20,9 +21,20 @@ const CALLBACK_PATH = "/callback";
 
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
+  const cookieStore = await cookies();
+  const sessionUser = await userFromSessionToken(cookieStore.get(SESSION_COOKIE)?.value || "");
+  if (sessionUser) {
+    return {
+      userId: sessionUser.userId,
+      displayName: sessionUser.displayName,
+      email: sessionUser.email,
+      fullName: sessionUser.fullName,
+    };
+  }
+
   const userId = requestHeaders.get(USER_ID_HEADER);
   const email = requestHeaders.get(USER_EMAIL_HEADER);
-  if (!userId || !email) return null;
+  if (!userId || !email) return getLocalPreviewUser(requestHeaders);
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
   const fullName =
@@ -58,7 +70,7 @@ export function chatGPTSignOutPath(returnTo = "/"): string {
   return `${SIGN_OUT_PATH}?return_to=${encodeURIComponent(safeReturnTo)}`;
 }
 
-function safeRelativeReturnPath(value: string): string {
+export function safeRelativeReturnPath(value: string): string {
   if (!value.startsWith("/") || value.startsWith("//")) return "/";
 
   let url: URL;
@@ -77,8 +89,37 @@ function isReservedAuthPath(pathname: string): boolean {
   return (
     pathname === SIGN_IN_PATH ||
     pathname === SIGN_OUT_PATH ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
+    pathname === "/verify-email" ||
     pathname === CALLBACK_PATH
   );
+}
+
+function getLocalPreviewUser(requestHeaders: Headers): ChatGPTUser | null {
+  const host = normalizeHost(
+    requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "",
+  );
+  const isLocalHost =
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "::1" ||
+    host.endsWith(".localhost");
+
+  if (!isLocalHost) return null;
+
+  return {
+    userId: "local-preview-principal",
+    displayName: "Local Preview Principal",
+    email: "principal@estara.local",
+    fullName: "Local Preview Principal",
+  };
+}
+
+function normalizeHost(host: string): string {
+  return host.toLowerCase().replace(/:\d+$/, "").replace(/\.$/, "");
 }
 
 function safeDecodeURIComponent(value: string): string | null {

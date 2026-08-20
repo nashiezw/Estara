@@ -43,3 +43,9 @@ Treat every Time Travel restore as a destructive in-place operation. Record the 
 Use the protected Backups workspace to create a fresh snapshot and run the non-destructive recovery drill. The drill retrieves the tenant-prefixed object, verifies its SHA-256 checksum, decrypts it in memory, validates the agency manifest and counts every table and record. ESTARA writes `backup.restore_drill.completed` to the tenant audit trail.
 
 Record date, operators, snapshot ID, source revision, restore target, start/end times, achieved RPO/RTO, validation results, exceptions and follow-up owner. The full recovery checklist item becomes complete only after the same verified manifest is restored into an isolated D1 environment and the full cross-tenant suite passes there.
+
+Before moving the D1 rehearsal launch gate, save the isolated restore proof as `docs/evidence/d1-restore-rehearsal.json` and run:
+
+```bash
+npm run d1:restore:verify -- docs/evidence/d1-restore-rehearsal.json
+```

@@ -1,8 +1,24 @@
 "use client";
 import { useState, useEffect } from "react";
 
-export default function UserMenu() {
+type UserMenuProps = {
+  user?: {
+    displayName?: string;
+    email?: string;
+    role?: string;
+  } | null;
+};
+
+const initials = (name: string) =>
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase()).join("") || "U";
+
+const roleLabel = (role?: string) =>
+  role ? role.replace(/[_-]/g, " ").replace(/\b\w/g, char => char.toUpperCase()) : "Team member";
+
+export default function UserMenu({ user }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const displayName = user?.displayName || user?.email || "Signed-in user";
+  const subtitle = user?.role ? roleLabel(user.role) : user?.email || "Workspace access";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -16,10 +32,10 @@ export default function UserMenu() {
 
   return (
     <div className="user">
-      <b>SN</b>
+      <b>{initials(displayName)}</b>
       <span>
-        <strong>Sarah Ncube</strong>
-        <small>Principal</small>
+        <strong>{displayName}</strong>
+        <small>{subtitle}</small>
       </span>
       <button 
         className="user-menu-trigger" 
@@ -31,7 +47,8 @@ export default function UserMenu() {
       </button>
       {isOpen && (
         <div className="user-menu">
-          <button onClick={() => { window.location.href = "/signout-with-chatgpt" }}>
+          {user?.email && <small>{user.email}</small>}
+          <button onClick={signOut}>
             Sign out
           </button>
         </div>
@@ -39,3 +56,7 @@ export default function UserMenu() {
     </div>
   );
 }
+  const signOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  };

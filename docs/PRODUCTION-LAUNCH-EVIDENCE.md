@@ -14,7 +14,7 @@ This register is the working to-do list for converting the remaining public-laun
 | --- | --- |
 | Provider activation | Live provider accounts, production secrets, webhook endpoints, smoke-test logs and protected `/health` provider-readiness output for Resend, Firebase Cloud Messaging, Stripe, Cloudflare WAF malware scanning, Sentry and Cloudflare log retention. |
 | Domain and TLS | Hosting-provider domain attachment, DNS verification, certificate activation screenshot or API response, unknown-host fail-closed check and public route smoke test. |
-| D1 restore rehearsal | Isolated D1 Time Travel restore evidence, restored-environment URL or binding, tenant attack suite output and signed recovery decision. |
+| D1 restore rehearsal | `docs/evidence/d1-restore-rehearsal.json` validated by `npm run d1:restore:verify -- docs/evidence/d1-restore-rehearsal.json`, with isolated D1 Time Travel restore evidence, restored-environment URL or binding, tenant attack suite output and signed recovery decision. |
 | External penetration test | Independent tester scope, report, remediation notes and explicit closure of all launch-blocking findings. |
 | Public access approval | Product-owner approval naming the production URL, commit SHA, intended access level and launch date. |
 | Billing settlement | Stripe live-mode invoice, payment, settlement, refund and failed-payment evidence plus finance sign-off. |
@@ -35,6 +35,7 @@ npm test
 npm run launch:readiness
 npm run launch:readiness -- --all
 npm run launch:evidence -- docs/evidence/production-launch.json
+npm run d1:restore:verify -- docs/evidence/d1-restore-rehearsal.json
 npm run low-data:verify -- docs/evidence/low-data-production.json
 ```
 

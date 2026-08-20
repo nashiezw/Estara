@@ -4,47 +4,30 @@ import { notFound } from "next/navigation";
 import { getPlatformIdentity } from "../db/platform-settings";
 
 const navLinks = [
-  { label: "Platform", href: "#platform" },
-  { label: "Workflows", href: "#workflows" },
-  { label: "Portals", href: "#portals" },
-  { label: "Integrations", href: "/integrations" },
-  { label: "Enterprise", href: "/enterprise" },
+  { label: "Product", href: "#product" },
+  { label: "Today", href: "#today" },
+  { label: "How it works", href: "#workflow" },
+  { label: "Websites", href: "#websites" },
 ];
 
-const spotlightRoutes = [
-  { label: "Workspace", href: "/workspace", text: "Command centre for the agency", icon: "01" },
-  { label: "Pipeline", href: "/pipeline", text: "Viewings, enquiries and next actions", icon: "02" },
-  { label: "Properties", href: "/property-operations", text: "Capture, compliance and operations", icon: "03" },
-  { label: "Marketing", href: "/marketing-studio", text: "Campaign assets and branded output", icon: "04" },
-  { label: "Reports", href: "/reports", text: "Evidence, seller updates and exports", icon: "05" },
-  { label: "AI Studio", href: "/ai-studio", text: "Assisted work across the platform", icon: "06" },
+const todayItems = [
+  ["New enquiries", "Respond before the lead goes cold.", "11 need attention"],
+  ["Follow-ups due", "Clients waiting for the next useful step.", "24 open"],
+  ["Viewings today", "Confirm access, reminders and feedback.", "8 scheduled"],
+  ["Seller updates", "Reports ready from live property activity.", "6 ready"],
+  ["Listings losing momentum", "Properties needing photos, copy or price review.", "4 at risk"],
 ];
 
-const operatingLayer = [
-  { title: "Agency cockpit", href: "/workspace", text: "One live surface for listings, leads, viewings, team ownership and overdue work." },
-  { title: "Property intelligence", href: "/property-compliance", text: "Media, compliance, documents, maintenance, seller records and portal access stay connected." },
-  { title: "Marketing engine", href: "/marketing-studio", text: "Turn verified property facts into websites, output, campaigns and share-ready materials." },
-  { title: "Trust layer", href: "/audit", text: "Roles, audit trails, recovery, backups and permission controls for serious operators." },
+const reuseOutputs = ["Agency website", "Property page", "WhatsApp advert", "Social creative", "Brochure", "Buyer matching", "Viewing", "Seller report"];
+
+const promises = [
+  ["Look professional", "Branded websites, polished listings, seller portals and professional documents."],
+  ["Market faster", "Enter property facts once and reuse them across every public and marketing output."],
+  ["Lose fewer clients", "Every enquiry, viewing and follow-up creates visible work instead of disappearing."],
+  ["Run from one place", "Properties, clients, team, marketing, reports and daily actions stay connected."],
 ];
 
-const workflow = [
-  { step: "Onboard", href: "/invite", text: "Invite the right people and open a secure operating space." },
-  { step: "Capture", href: "/property-operations", text: "Build a complete property record once, from field work to media." },
-  { step: "Match", href: "/matching", text: "Connect clients to the right properties and move qualified demand forward." },
-  { step: "Market", href: "/marketing-studio", text: "Publish beautiful agency output without losing factual control." },
-  { step: "Report", href: "/reports", text: "Show sellers and leadership what happened, what changed and what comes next." },
-];
-
-const portalLinks = [
-  { label: "Log in", href: "/workspace", text: "Return to your secure workspace", tone: "primary" },
-  { label: "Agency workspace", href: "/workspace", text: "Run the day-to-day operating room", tone: "dark" },
-  { label: "Seller portal", href: "/seller", text: "Owners see reviewed progress and reports", tone: "light" },
-  { label: "Admin console", href: "/admin", text: "Govern platform settings and access", tone: "light" },
-  { label: "Developer", href: "/developer", text: "API credentials and technical controls", tone: "light" },
-  { label: "Billing", href: "/subscription", text: "Plan, invoices and account limits", tone: "light" },
-];
-
-const proof = ["Zimbabwe-first", "Mobile-led", "Seller-ready", "Enterprise governed", "Diaspora aware"];
+const firstRun = ["Create agency", "Add first property", "Upload photos", "Activate listing", "Publish website", "Create marketing", "Receive enquiry", "Book viewing", "Update seller"];
 
 function normalizeHost(host: string) {
   return host.toLowerCase().replace(/:\d+$/, "").replace(/\.$/, "");
@@ -52,14 +35,7 @@ function normalizeHost(host: string) {
 
 function isPlatformHost(host: string, platform: { domain: string; tenantDomainSuffix: string }) {
   const domain = normalizeHost(host);
-  return (
-    !domain ||
-    domain === "localhost" ||
-    domain === "127.0.0.1" ||
-    domain === "::1" ||
-    domain === normalizeHost(platform.domain) ||
-    domain === normalizeHost(platform.tenantDomainSuffix)
-  );
+  return !domain || domain === "localhost" || domain === "127.0.0.1" || domain === "::1" || domain === normalizeHost(platform.domain) || domain === normalizeHost(platform.tenantDomainSuffix);
 }
 
 export default async function Home() {
@@ -71,222 +47,116 @@ export default async function Home() {
     const [{ getPublicAgencyByHost, listPublicProperties }, { PublicHome }] =
       await Promise.all([import("../db/public-site"), import("./site/[slug]/public-website")]);
     const agency = await getPublicAgencyByHost(host, platform.tenantDomainSuffix);
-    if (agency) {
-      const properties = await listPublicProperties(agency.id);
-      return <PublicHome agency={agency} properties={properties} />;
-    }
+    if (agency) return <PublicHome agency={agency} properties={await listPublicProperties(agency.id)} />;
     notFound();
   }
 
   const initial = platform.shortName.slice(0, 1);
   const parent = platform.parentBrand ? `A ${platform.parentBrand} product` : platform.descriptor;
+
   return (
-    <main className="estara-landing">
-      <nav className="landing-nav" aria-label="Primary navigation">
-        <Link href="/" className="landing-logo" aria-label={`${platform.shortName} home`}>
+    <main className="estara-landing estara-home">
+      <nav className="home-nav" aria-label="Primary navigation">
+        <Link href="/" className="home-logo" aria-label={`${platform.shortName} home`}>
           <i>{initial}</i>
-          <span>
-            {platform.shortName}
-            <small>{parent}</small>
-          </span>
+          <span>{platform.shortName}<small>{parent}</small></span>
         </Link>
-        <div className="landing-nav-links">
-          {navLinks.map((link) => (
-            <Link href={link.href} key={link.label}>
-              {link.label}
-            </Link>
-          ))}
-        </div>
-        <div className="landing-nav-actions">
-          <Link href="/workspace">Log in</Link>
-          <Link href="/workspace">Open workspace</Link>
-        </div>
+        <div>{navLinks.map((link) => <Link href={link.href} key={link.label}>{link.label}</Link>)}</div>
+        <span><Link href="/login">Log in</Link><Link href="/register">Create account</Link></span>
       </nav>
 
-      <section className="landing-hero landing-hero-premium" id="top">
-        <div className="landing-hero-copy">
-          <span className="landing-eyebrow">Real estate operating system</span>
-          <h1>The platform ambitious agencies choose when ordinary software is too small.</h1>
-          <h2>Run a beautiful, connected property business from one command centre.</h2>
-          <p>
-            A premium operating layer for agencies that need listings, enquiries, viewings,
-            seller reporting, marketing, deals, roles, domains and AI-assisted execution to
-            move as one product.
-          </p>
-          <div className="landing-hero-actions">
-            <Link href="/workspace">Log in securely</Link>
-            <Link href="/workspace">Launch workspace</Link>
-            <Link href="#platform">Explore platform</Link>
+      <section className="home-hero" id="product">
+        <div className="home-hero-copy">
+          <p className="home-kicker">Real estate operating system</p>
+          <h1>Run your real estate agency from one place.</h1>
+          <p>Add your properties once. Market them professionally. Capture every enquiry. Know who needs follow-up. Keep sellers informed. Let today&apos;s work become obvious.</p>
+          <div className="home-actions">
+            <Link href="/register">Start your agency setup</Link>
+            <Link href="/login">Log in</Link>
+            <Link href="#workflow">See how it works</Link>
           </div>
-          <div className="landing-hero-proof">
-            {proof.map((item) => (
-              <span key={item}>{item}</span>
+        </div>
+
+        <aside className="home-command" aria-label="ESTARA product preview">
+          <header><span>Today&apos;s Business</span><strong>Demo workspace preview</strong></header>
+          <div className="home-command-grid">
+            <article><small>New enquiries</small><b>11</b><span>Response timer active</span></article>
+            <article><small>Follow-ups</small><b>24</b><span>Due today</span></article>
+            <article><small>Viewings</small><b>8</b><span>Feedback needed</span></article>
+          </div>
+          <div className="home-command-list">
+            {todayItems.slice(0, 3).map(([title, text, meta]) => (
+              <div key={title}><i /><span><strong>{title}</strong><small>{text}</small></span><b>{meta}</b></div>
             ))}
           </div>
-        </div>
-
-        <div className="landing-visual" aria-label="Platform preview">
-          <div className="landing-photo-panel">
-            <span>Flagship listing live</span>
-            <strong>Borrowdale Residence</strong>
-            <small>Media verified - seller report ready - 14 matched buyers</small>
-          </div>
-          <div className="landing-command-panel">
-            <header>
-              <span>Today</span>
-              <strong>Agency command</strong>
-            </header>
-            <div className="landing-command-grid">
-              <article>
-                <small>New enquiries</small>
-                <strong>32</strong>
-                <span>11 high intent</span>
-              </article>
-              <article>
-                <small>Viewings</small>
-                <strong>18</strong>
-                <span>5 confirmed</span>
-              </article>
-              <article>
-                <small>Seller updates</small>
-                <strong>9</strong>
-                <span>Ready to send</span>
-              </article>
-            </div>
-            <div className="landing-command-list">
-              {[
-                ["Match buyer", "Avondale townhouse", "/matching"],
-                ["Approve campaign", "Luxury family home", "/marketing-studio"],
-                ["Review portal", "Diaspora owner pack", "/property-portal"],
-              ].map(([title, text, href]) => (
-                <Link href={href} key={title}>
-                  <span>
-                    <strong>{title}</strong>
-                    <small>{text}</small>
-                  </span>
-                  <b>Open</b>
-                </Link>
-              ))}
-            </div>
-          </div>
-          <div className="landing-hero-card">
-            <strong>One platform</strong>
-            <span>Capture once. Match intelligently. Market beautifully. Report with proof.</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-route-strip" aria-label="Key platform destinations">
-        {spotlightRoutes.map((route) => (
-          <Link href={route.href} key={route.label}>
-            <b>{route.icon}</b>
-            <span>
-              <strong>{route.label}</strong>
-              <small>{route.text}</small>
-            </span>
-          </Link>
-        ))}
-      </section>
-
-      <section className="landing-platform" id="platform">
-        <header>
-          <span className="landing-eyebrow">Complete platform</span>
-          <h2>Beautiful on the surface. Serious underneath.</h2>
-          <p>
-            The landing page now reflects the actual product: a connected operating layer
-            for elite real estate teams, with every major module reachable from here.
-          </p>
-        </header>
-        <div className="landing-platform-grid">
-          {operatingLayer.map((item) => (
-            <Link href={item.href} key={item.title}>
-              <span>Open module</span>
-              <h3>{item.title}</h3>
-              <p>{item.text}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="landing-workflows" id="workflows">
-        <div>
-          <span className="landing-eyebrow">End-to-end workflow</span>
-          <h2>From first instruction to boardroom-ready evidence.</h2>
-          <p>
-            Each stage routes into a real page in the app, so the homepage works as a
-            launchpad for daily work as well as a premium brand moment.
-          </p>
-          <Link href="/search">Search across the platform</Link>
-        </div>
-        <ol>
-          {workflow.map((item, index) => (
-            <li key={item.step}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{item.step}</strong>
-              <p>{item.text}</p>
-              <Link href={item.href}>Go</Link>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="landing-portals" id="portals">
-        <header>
-          <span className="landing-eyebrow">Access points</span>
-          <h2>Everyone lands in the right place.</h2>
-        </header>
-        <div>
-          {portalLinks.map((portal) => (
-            <Link className={`landing-portal-card ${portal.tone}`} href={portal.href} key={portal.label}>
-              <strong>{portal.label}</strong>
-              <small>{portal.text}</small>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="landing-world">
-        <div>
-          <span className="landing-eyebrow">Built for expansion</span>
-          <h2>Zimbabwe first. Africa ready. Global standard.</h2>
-          <p>
-            Mobile-first field work, low-data discipline, USD-aware operations, diaspora
-            seller visibility and enterprise governance belong in the same product.
-          </p>
-        </div>
-        <aside>
-          <Link href="/domains">Custom domains</Link>
-          <Link href="/roles">Roles and permissions</Link>
-          <Link href="/backups">Backups and recovery</Link>
-          <Link href="/health">Platform health</Link>
         </aside>
       </section>
 
-      <section className="landing-final">
-        <span className="landing-eyebrow">Ready when you are</span>
-        <h2>Run the real estate platform your ambition already imagines.</h2>
+      <section className="home-today" id="today">
         <div>
-          <Link href="/workspace">Log in</Link>
-          <Link href="/workspace">Open {platform.shortName}</Link>
-          <Link href="/invite">Invite your team</Link>
+          <p className="home-kicker">Today&apos;s Business</p>
+          <h2>ESTARA should tell the team where attention is needed.</h2>
+          <p>The dashboard is not meant to be a pile of charts. It is the agency&apos;s daily operating room: what protects revenue, what needs follow-up and what moves next.</p>
+        </div>
+        <div className="home-today-list">
+          {todayItems.map(([title, text, meta]) => <article key={title}><span>{meta}</span><h3>{title}</h3><p>{text}</p></article>)}
         </div>
       </section>
 
-      <footer className="landing-footer">
-        <Link href="/" className="landing-logo">
-          <i>{initial}</i>
-          <span>
-            {platform.shortName}
-            <small>{parent}</small>
-          </span>
-        </Link>
+      <section className="home-reuse">
         <div>
-          <Link href="/contacts">Contacts</Link>
-          <Link href="/documents">Documents</Link>
-          <Link href="/deals">Deals</Link>
-          <Link href="/reports">Reports</Link>
-          <Link href="/integrations">Integrations</Link>
+          <p className="home-kicker">Enter once. Use everywhere.</p>
+          <h2>One property record becomes the whole sales machine.</h2>
+          <p>A listing should not be retyped for every channel. ESTARA turns verified property data into the public website, marketing assets, enquiries, viewings and seller evidence.</p>
         </div>
+        <div className="home-reuse-map">
+          <strong>Property record</strong>
+          {reuseOutputs.map((item) => <span key={item}>{item}</span>)}
+        </div>
+      </section>
+
+      <section className="home-promises">
+        {promises.map(([title, text], index) => <article key={title}><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{text}</p></article>)}
+      </section>
+
+      <section className="home-workflow" id="workflow">
+        <div>
+          <p className="home-kicker">First success moment</p>
+          <h2>From empty account to live agency presence.</h2>
+          <p>The first sellable ESTARA experience should take a new agency from setup to a live property, share-ready marketing, incoming enquiry, viewing and seller update.</p>
+          <Link href="/register">Create account</Link>
+        </div>
+        <ol>{firstRun.map((item, index) => <li key={item}><span>{String(index + 1).padStart(2, "0")}</span><strong>{item}</strong></li>)}</ol>
+      </section>
+
+      <section className="home-websites" id="websites">
+        <div>
+          <p className="home-kicker">Professional public presence</p>
+          <h2>Every agency should look like a serious brand.</h2>
+          <p>Agency websites, property pages, agent profiles, custom colours, images, templates and seller-facing experiences all come from the same operating system.</p>
+        </div>
+        <aside>
+          <Link href="/workspace">Open workspace</Link>
+          <Link href="/marketing-studio">Marketing studio</Link>
+          <Link href="/seller">Seller portal</Link>
+          <Link href="/domains">Domains</Link>
+        </aside>
+      </section>
+
+      <section className="home-final">
+        <p className="home-kicker">Zimbabwe-first. World-class standard.</p>
+        <h2>When a property enters your agency, it should enter ESTARA.</h2>
+        <div><Link href="/register">Start setup</Link><Link href="/login">Log in</Link></div>
+      </section>
+
+      <footer className="home-footer">
+        <Link href="/" className="home-logo"><i>{initial}</i><span>{platform.shortName}<small>{parent}</small></span></Link>
+        <nav>
+          <Link href="/contacts">Contacts</Link>
+          <Link href="/property-operations">Properties</Link>
+          <Link href="/marketing-studio">Marketing</Link>
+          <Link href="/reports">Reports</Link>
+        </nav>
         <small>© 2026 {platform.shortName}. Real estate, professionally operated.</small>
       </footer>
     </main>

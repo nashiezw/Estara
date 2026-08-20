@@ -5,6 +5,7 @@ export type PlatformIdentity = {
   tagline: string;
   descriptor: string;
   primaryColor: string;
+  accentColor: string;
   defaultCountry: string;
   defaultCurrency: string;
   timezone: string;
@@ -20,6 +21,7 @@ export const DEFAULT_PLATFORM_IDENTITY: PlatformIdentity = {
   tagline: "Your Real Estate Business. Running Smarter.",
   descriptor: "The operating system for a modern real estate business.",
   primaryColor: "#153b34",
+  accentColor: "#e6bd5f",
   defaultCountry: "ZW",
   defaultCurrency: "USD",
   timezone: "Africa/Harare",

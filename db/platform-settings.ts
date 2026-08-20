@@ -3,10 +3,18 @@ import { DEFAULT_PLATFORM_IDENTITY, type PlatformIdentity } from "./platform-def
 const pick = (value: unknown, fallback: string) => typeof value === "string" && value.trim() ? value.trim() : fallback;
 const runtimeEnv = async () => (await import("cloudflare:workers")).env;
 
+async function ensureAccentColorColumn(env: any) {
+  const rows = await env.DB.prepare("PRAGMA table_info(platform_settings)").all<{ name: string }>();
+  if (!rows.results.some(row => row.name === "accent_color")) {
+    await env.DB.prepare("ALTER TABLE platform_settings ADD COLUMN accent_color TEXT NOT NULL DEFAULT '#e6bd5f'").run();
+  }
+}
+
 export async function getPlatformIdentity(): Promise<PlatformIdentity> {
   try {
     const env = await runtimeEnv();
-    const row = await env.DB.prepare("SELECT platform_name AS platformName,short_name AS shortName,parent_brand AS parentBrand,tagline,primary_color AS primaryColor,default_country AS defaultCountry,default_currency AS defaultCurrency,timezone,domain,tenant_domain_suffix AS tenantDomainSuffix,powered_by_wording AS poweredByWording FROM platform_settings WHERE id='default'").first<any>();
+    await ensureAccentColorColumn(env);
+    const row = await env.DB.prepare("SELECT platform_name AS platformName,short_name AS shortName,parent_brand AS parentBrand,tagline,primary_color AS primaryColor,accent_color AS accentColor,default_country AS defaultCountry,default_currency AS defaultCurrency,timezone,domain,tenant_domain_suffix AS tenantDomainSuffix,powered_by_wording AS poweredByWording FROM platform_settings WHERE id='default'").first<any>();
     if (!row) return DEFAULT_PLATFORM_IDENTITY;
     return {
       platformName: pick(row.platformName, DEFAULT_PLATFORM_IDENTITY.platformName),
@@ -15,6 +23,7 @@ export async function getPlatformIdentity(): Promise<PlatformIdentity> {
       tagline: pick(row.tagline, DEFAULT_PLATFORM_IDENTITY.tagline),
       descriptor: DEFAULT_PLATFORM_IDENTITY.descriptor,
       primaryColor: pick(row.primaryColor, DEFAULT_PLATFORM_IDENTITY.primaryColor),
+      accentColor: pick(row.accentColor, DEFAULT_PLATFORM_IDENTITY.accentColor),
       defaultCountry: pick(row.defaultCountry, DEFAULT_PLATFORM_IDENTITY.defaultCountry),
       defaultCurrency: pick(row.defaultCurrency, DEFAULT_PLATFORM_IDENTITY.defaultCurrency),
       timezone: pick(row.timezone, DEFAULT_PLATFORM_IDENTITY.timezone),
@@ -29,8 +38,9 @@ export async function getPlatformIdentity(): Promise<PlatformIdentity> {
 
 export async function ensurePlatformIdentity() {
   const env = await runtimeEnv();
+  await ensureAccentColorColumn(env);
   const p = DEFAULT_PLATFORM_IDENTITY;
-  await env.DB.prepare("INSERT OR IGNORE INTO platform_settings (id,platform_name,short_name,parent_brand,tagline,primary_color,default_country,default_currency,timezone,domain,tenant_domain_suffix,powered_by_wording) VALUES ('default',?,?,?,?,?,?,?,?,?,?,?)")
-    .bind(p.platformName, p.shortName, p.parentBrand, p.tagline, p.primaryColor, p.defaultCountry, p.defaultCurrency, p.timezone, p.domain, p.tenantDomainSuffix, p.poweredByWording)
+  await env.DB.prepare("INSERT OR IGNORE INTO platform_settings (id,platform_name,short_name,parent_brand,tagline,primary_color,accent_color,default_country,default_currency,timezone,domain,tenant_domain_suffix,powered_by_wording) VALUES ('default',?,?,?,?,?,?,?,?,?,?,?,?)")
+    .bind(p.platformName, p.shortName, p.parentBrand, p.tagline, p.primaryColor, p.accentColor, p.defaultCountry, p.defaultCurrency, p.timezone, p.domain, p.tenantDomainSuffix, p.poweredByWording)
     .run();
 }

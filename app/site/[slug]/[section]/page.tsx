@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPublicAgency, listPublicAgents, listPublicProperties } from "../../../../db/public-site";
+import { publicMediaUrl, publicOrigin, publicUrl, sectionDescription, sectionTitle } from "../../../../db/public-seo";
 import { PublicSection } from "../public-website";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +15,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!ALLOWED.has(section)) return { robots: { index: false, follow: false } };
   const agency = await getPublicAgency(slug);
   if (!agency) return { robots: { index: false, follow: false } };
-  return { title: `${section[0].toUpperCase() + section.slice(1)} | ${agency.name}`, description: `${section} from ${agency.name}.`, alternates: { canonical: `/site/${slug}/${section}` } };
+  const h = await headers();
+  const origin = publicOrigin(h);
+  const heroKey = `${section}HeroImageId` as keyof typeof agency.publicContent;
+  const imageId = String(agency.publicContent[heroKey] || agency.publicContent.featuredImageId || agency.logoId || "");
+  const description = sectionDescription(section, agency);
+  const url = publicUrl(origin, agency, `/${section}`);
+  return {
+    title: sectionTitle(section, agency),
+    description,
+    alternates: { canonical: url },
+    robots: { index: true, follow: true },
+    openGraph: { title: sectionTitle(section, agency), description, type: "website", url, siteName: agency.name, images: publicMediaUrl(origin, agency, imageId) ? [publicMediaUrl(origin, agency, imageId)!] : [] },
+    twitter: { card: "summary_large_image", title: sectionTitle(section, agency), description, images: publicMediaUrl(origin, agency, imageId) ? [publicMediaUrl(origin, agency, imageId)!] : [] },
+  };
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string; section: string }> }) {
