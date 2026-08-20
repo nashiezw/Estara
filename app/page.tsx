@@ -90,11 +90,20 @@ export default async function Home() {
     <main className="estara-landing estara-home">
       <nav className="home-nav" aria-label="Primary navigation">
         <a href="/" className="home-logo" aria-label={`${platform.shortName} home`}>
-          <i>{initial}</i>
+          {platform.logoUrl ? <img src={platform.logoUrl} alt={`${platform.shortName} logo`} /> : <i>{initial}</i>}
           <span>{platform.shortName}<small>{parent}</small></span>
         </a>
-        <div>{navLinks.map((link) => <a href={link.href} key={link.label}>{link.label}</a>)}</div>
-        <span><a href={loginHref}>Log in</a><a href={registerHref}>Create account</a></span>
+        <div className="home-nav-links">{navLinks.map((link) => <a href={link.href} key={link.label}>{link.label}</a>)}</div>
+        <span className="home-nav-actions"><a href={loginHref}>Log in</a><a href={registerHref}>Create account</a></span>
+        <details className="home-mobile-menu">
+          <summary>Menu</summary>
+          <div>
+            {navLinks.map((link) => <a href={link.href} key={link.label}>{link.label}</a>)}
+            <a href="/demo">View demo</a>
+            <a href={loginHref}>Log in</a>
+            <a href={registerHref}>Create account</a>
+          </div>
+        </details>
       </nav>
 
       <section className="home-hero" id="product">
@@ -184,7 +193,7 @@ export default async function Home() {
       </section>
 
       <footer className="home-footer">
-        <a href="/" className="home-logo"><i>{initial}</i><span>{platform.shortName}<small>{parent}</small></span></a>
+        <a href="/" className="home-logo">{platform.logoUrl ? <img src={platform.logoUrl} alt={`${platform.shortName} logo`} /> : <i>{initial}</i>}<span>{platform.shortName}<small>{parent}</small></span></a>
         <nav>
           <a href={contactsHref}>Contacts</a>
           <a href={propertiesHref}>Properties</a>

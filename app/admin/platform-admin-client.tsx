@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState, type CSSProperties } from "rea
 type Settings = {
   platformName: string; shortName: string; parentBrand: string; tagline: string; primaryColor: string; accentColor: string;
   supportEmail: string; supportPhone: string; supportWhatsapp: string; defaultCountry: string; defaultCurrency: string;
-  timezone: string; domain: string; tenantDomainSuffix: string; poweredByWording: string; updatedAt?: string;
+  timezone: string; domain: string; tenantDomainSuffix: string; poweredByWording: string; logoUrl: string; iconUrl: string; updatedAt?: string;
 };
 type Data = { actor?: { role: string }; platform?: { platformName: string; shortName: string }; settings?: Settings; operations?: any; platformUsers: any[]; plans: any[]; agencies: any[]; invoices: any[]; coupons: any[]; events: any[] };
 type AdminThemeVars = CSSProperties & { "--admin-brand": string; "--admin-accent": string };
@@ -66,7 +66,7 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
   if (loading) return <main className="platform-admin-loading">
     <div><i>{platform.shortName.slice(0, 1)}</i><span>CONTROL PLANE</span><h1>Opening control plane</h1><p>Preparing tenant, revenue and evidence intelligence.</p></div>
   </main>;
-  if (error) return <main className="platform-denied"><span>CONTROL PLANE</span><h1>Platform access is restricted.</h1><p>{error}</p><a href="/workspace">Return to workspace</a></main>;
+  if (error) return <main className="platform-denied"><span>CONTROL PLANE</span><h1>Platform access is restricted.</h1><p>{error}</p><p>Use the normal ESTARA login first. The first signed-in user becomes Super Admin only when no platform operator exists yet. After that, an existing Super Admin must add your user ID under Operator access.</p><a href="/login">Log in</a><a href="/workspace">Return to workspace</a></main>;
   const activePage = pageCopy[tab] || pageCopy.overview;
   const showPageStrip = tab === "settings";
   const adminTheme: AdminThemeVars = { "--admin-brand": data.settings?.primaryColor || "#153b34", "--admin-accent": data.settings?.accentColor || "#e6bd5f" };
@@ -225,14 +225,18 @@ function AgencyRow({ agency, plans, busy, send }: any) {
 }
 
 function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy: boolean; send: (method: string, body: any) => void }) {
-  const [form, setForm] = useState<Settings>(settings || { platformName: "", shortName: "", parentBrand: "", tagline: "", primaryColor: "#153b34", accentColor: "#e6bd5f", supportEmail: "", supportPhone: "", supportWhatsapp: "", defaultCountry: "ZW", defaultCurrency: "USD", timezone: "Africa/Harare", domain: "", tenantDomainSuffix: "", poweredByWording: "Powered by ESTARA" });
+  const [form, setForm] = useState<Settings>(settings || { platformName: "", shortName: "", parentBrand: "", tagline: "", primaryColor: "#153b34", accentColor: "#e6bd5f", supportEmail: "", supportPhone: "", supportWhatsapp: "", defaultCountry: "ZW", defaultCurrency: "USD", timezone: "Africa/Harare", domain: "", tenantDomainSuffix: "", poweredByWording: "Powered by ESTARA", logoUrl: "", iconUrl: "" });
   useEffect(() => { if (settings) setForm(settings); }, [settings]);
   const change = (key: keyof Settings, value: string) => setForm(current => ({ ...current, [key]: value }));
   const changeColour = (key: "primaryColor" | "accentColor", value: string) => setForm(current => ({ ...current, [key]: normaliseHex(value) }));
   return <form className="platform-settings-workbench" onSubmit={(event: FormEvent) => { event.preventDefault(); send("PATCH", { action: "update_platform_settings", ...form, primaryColor: normaliseHex(form.primaryColor), accentColor: normaliseHex(form.accentColor) }); }}>
     <section className="platform-card platform-brand-console">
       <span>PLATFORM BRAND</span><h2>{form.platformName || "Platform identity"}</h2><p>{form.tagline || "Set the commercial promise every login, workspace and public footer can inherit."}</p>
-      <div style={{ background: form.primaryColor, borderTop: `8px solid ${form.accentColor}` }}><b style={{ color: form.accentColor }}>{form.shortName?.slice(0, 1) || "E"}</b><span>{form.poweredByWording || "Powered by platform"}</span></div>
+      <div style={{ background: form.primaryColor, borderTop: `8px solid ${form.accentColor}` }}>{form.logoUrl ? <img src={form.logoUrl} alt={`${form.platformName || "Platform"} logo preview`} /> : <b style={{ color: form.accentColor }}>{form.shortName?.slice(0, 1) || "E"}</b>}<span>{form.poweredByWording || "Powered by platform"}</span></div>
+      <div className="platform-brand-assets">
+        <span><strong>Logo</strong><small>{form.logoUrl ? "Custom logo URL saved" : "Uses short-name initial until a logo URL is added"}</small></span>
+        <span><strong>Browser icon</strong><small>{form.iconUrl ? "Custom browser icon URL saved" : "Uses default favicon until an icon URL is added"}</small></span>
+      </div>
     </section>
     <section className="platform-card platform-settings-form">
       <span>GLOBAL PLATFORM CONFIGURATION</span><h2>Identity, support and public routing</h2>
@@ -246,6 +250,11 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
           <label>Accent colour<input type="color" value={colourValue(form.accentColor, "#e6bd5f")} onChange={event => changeColour("accentColor", event.target.value)} /><input value={form.accentColor} onChange={event => changeColour("accentColor", event.target.value)} /></label>
           <label className="wide">Tagline<input value={form.tagline} onChange={event => change("tagline", event.target.value)} /></label>
           <label className="wide">Powered-by wording<input value={form.poweredByWording} onChange={event => change("poweredByWording", event.target.value)} /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Logo & Icon</legend>
+          <label className="wide">Platform logo URL<input value={form.logoUrl} onChange={event => change("logoUrl", event.target.value)} placeholder="https://.../estara-logo.png" /></label>
+          <label className="wide">Browser icon URL<input value={form.iconUrl} onChange={event => change("iconUrl", event.target.value)} placeholder="https://.../favicon.svg" /></label>
         </fieldset>
         <fieldset>
           <legend>Support Desk</legend>
@@ -263,6 +272,11 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
           <legend>Public Routing</legend>
           <label>Platform domain<input value={form.domain} onChange={event => change("domain", event.target.value)} /></label>
           <label>Tenant domain suffix<input value={form.tenantDomainSuffix} onChange={event => change("tenantDomainSuffix", event.target.value)} /></label>
+          <div className="platform-domain-guide">
+            <span><strong>{form.domain || "estara.co.zw"}</strong><small>Public homepage and marketing website</small></span>
+            <span><strong>{form.domain ? `app.${form.domain}` : "app.estara.co.zw"}</strong><small>Login, workspace and Super Admin</small></span>
+            <span><strong>{form.tenantDomainSuffix || "sites.estara.co.zw"}</strong><small>Default agency website subdomains</small></span>
+          </div>
         </fieldset>
       </div>
       <button disabled={busy}>Save platform settings</button>
@@ -283,7 +297,7 @@ function Billing({ agencies, invoices, coupons, busy, send }: any) {
 }
 function PlatformTeam({ rows, busy, send }: any) {
   const [form, setForm] = useState({ userId: "", email: "", role: "support" });
-  return <div className="platform-split"><section className="platform-card"><span>PRIVILEGED IDENTITIES</span><h2>Platform operators</h2>{rows.map((user: any) => <article className="platform-user" key={user.userId}><i>{user.email.slice(0, 2).toUpperCase()}</i><span><strong>{user.email}</strong><small>{user.userId}</small></span><em>{user.role.replace("_", " ")}</em></article>)}</section><form className="platform-card platform-form" onSubmit={event => { event.preventDefault(); send("POST", { action: "create_platform_user", ...form }); }}><span>ASSIGN ACCESS</span><h2>Add platform operator</h2><label>Authenticated user ID<input required value={form.userId} onChange={event => setForm({ ...form, userId: event.target.value })} /></label><label>Email<input required type="email" value={form.email} onChange={event => setForm({ ...form, email: event.target.value })} /></label><label>Role<select value={form.role} onChange={event => setForm({ ...form, role: event.target.value })}><option value="support">Support</option><option value="finance">Finance</option><option value="super_admin">Super admin</option></select></label><button disabled={busy}>Assign platform access</button></form></div>;
+  return <div className="platform-split"><section className="platform-card"><span>PRIVILEGED IDENTITIES</span><h2>Platform operators</h2><div className="platform-access-guide"><strong>How Super Admin login works</strong><p>Super Admins use the normal login page. The role is not a separate password. After someone creates and verifies an account, add their authenticated user ID here and choose Super admin.</p></div>{rows.map((user: any) => <article className="platform-user" key={user.userId}><i>{user.email.slice(0, 2).toUpperCase()}</i><span><strong>{user.email}</strong><small>{user.userId}</small></span><em>{user.role.replace("_", " ")}</em></article>)}</section><form className="platform-card platform-form" onSubmit={event => { event.preventDefault(); send("POST", { action: "create_platform_user", ...form }); }}><span>ASSIGN ACCESS</span><h2>Add platform operator</h2><label>Authenticated user ID<input required value={form.userId} onChange={event => setForm({ ...form, userId: event.target.value })} /></label><label>Email<input required type="email" value={form.email} onChange={event => setForm({ ...form, email: event.target.value })} /></label><label>Role<select value={form.role} onChange={event => setForm({ ...form, role: event.target.value })}><option value="support">Support</option><option value="finance">Finance</option><option value="super_admin">Super admin</option></select></label><button disabled={busy}>Assign platform access</button></form></div>;
 }
 function Events({ rows, audits }: any) {
   return <div className="platform-split"><section className="platform-card"><span>IMMUTABLE OPERATIONS HISTORY</span><h2>Recent platform activity</h2>{rows.map((item: any) => <article className="platform-event" key={item.id}><i>•</i><span><strong>{item.eventType.replaceAll(".", " ")}</strong><small>{item.agency}</small></span><time>{new Date(item.createdAt).toLocaleString()}</time></article>)}</section><section className="platform-card"><span>CONTROL PLANE AUDITS</span><h2>Last 7 days</h2>{audits.map((item: any) => <article className="platform-event" key={item.action}><i>•</i><span><strong>{item.action.replaceAll(".", " ")}</strong><small>{item.count} event{item.count === 1 ? "" : "s"}</small></span></article>)}</section></div>;

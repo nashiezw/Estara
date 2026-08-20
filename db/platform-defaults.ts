@@ -12,6 +12,8 @@ export type PlatformIdentity = {
   domain: string;
   tenantDomainSuffix: string;
   poweredByWording: string;
+  logoUrl: string;
+  iconUrl: string;
 };
 
 export const DEFAULT_PLATFORM_IDENTITY: PlatformIdentity = {
@@ -28,4 +30,6 @@ export const DEFAULT_PLATFORM_IDENTITY: PlatformIdentity = {
   domain: "",
   tenantDomainSuffix: "",
   poweredByWording: "Powered by ESTARA",
+  logoUrl: "",
+  iconUrl: "",
 };

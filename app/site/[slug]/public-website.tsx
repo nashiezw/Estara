@@ -133,6 +133,15 @@ export function PublicHeader({ agency }: { agency: PublicAgency }) {
           </Link>
         ))}
       </nav>
+      <details className="public-mobile-menu">
+        <summary>Menu</summary>
+        <div>
+          {nav.map(([label, href]) => (
+            <Link href={href} key={href}>{label}</Link>
+          ))}
+          <Link href={`/site/${agency.slug}/contact`}>Contact</Link>
+        </div>
+      </details>
       <div className="public-header-actions">
         {whatsapp ? (
           <TrackedLink slug={agency.slug} eventType="whatsapp" href={`https://wa.me/${whatsapp}`}>

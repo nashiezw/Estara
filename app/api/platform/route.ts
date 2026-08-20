@@ -37,6 +37,7 @@ async function platformSettingsRow() {
   return env.DB.prepare(`SELECT platform_name AS platformName,short_name AS shortName,parent_brand AS parentBrand,tagline,primary_color AS primaryColor,accent_color AS accentColor,
     support_email AS supportEmail,support_phone AS supportPhone,support_whatsapp AS supportWhatsapp,default_country AS defaultCountry,
     default_currency AS defaultCurrency,timezone,domain,tenant_domain_suffix AS tenantDomainSuffix,powered_by_wording AS poweredByWording,
+    logo_url AS logoUrl,icon_url AS iconUrl,
     updated_at AS updatedAt FROM platform_settings WHERE id='default'`).first<any>();
 }
 
@@ -205,14 +206,16 @@ export async function PATCH(request: Request) {
         domain: clean(body.domain, 120).toLowerCase(),
         tenantDomainSuffix: clean(body.tenantDomainSuffix, 120).toLowerCase(),
         poweredByWording: clean(body.poweredByWording, 120),
+        logoUrl: clean(body.logoUrl, 500),
+        iconUrl: clean(body.iconUrl, 500),
       };
       if (!settings.platformName || !settings.shortName || !/^#[0-9a-f]{6}$/i.test(settings.primaryColor) || !/^#[0-9a-f]{6}$/i.test(settings.accentColor) || !/^[A-Z]{2}$/.test(settings.defaultCountry) || !/^[A-Z]{3}$/.test(settings.defaultCurrency)) {
         return Response.json({ error: "Complete platform name, short name, colours, country and currency with valid values." }, { status: 400 });
       }
       if (settings.supportEmail && !emailOk(settings.supportEmail)) return Response.json({ error: "Enter a valid support email." }, { status: 400 });
       await ensurePlatformIdentity();
-      await env.DB.prepare(`UPDATE platform_settings SET platform_name=?,short_name=?,parent_brand=?,tagline=?,primary_color=?,accent_color=?,support_email=?,support_phone=?,support_whatsapp=?,default_country=?,default_currency=?,timezone=?,domain=?,tenant_domain_suffix=?,powered_by_wording=?,updated_at=CURRENT_TIMESTAMP WHERE id='default'`)
-        .bind(settings.platformName, settings.shortName, settings.parentBrand, settings.tagline, settings.primaryColor, settings.accentColor, settings.supportEmail, settings.supportPhone, settings.supportWhatsapp, settings.defaultCountry, settings.defaultCurrency, settings.timezone, settings.domain, settings.tenantDomainSuffix, settings.poweredByWording).run();
+      await env.DB.prepare(`UPDATE platform_settings SET platform_name=?,short_name=?,parent_brand=?,tagline=?,primary_color=?,accent_color=?,support_email=?,support_phone=?,support_whatsapp=?,default_country=?,default_currency=?,timezone=?,domain=?,tenant_domain_suffix=?,powered_by_wording=?,logo_url=?,icon_url=?,updated_at=CURRENT_TIMESTAMP WHERE id='default'`)
+        .bind(settings.platformName, settings.shortName, settings.parentBrand, settings.tagline, settings.primaryColor, settings.accentColor, settings.supportEmail, settings.supportPhone, settings.supportWhatsapp, settings.defaultCountry, settings.defaultCurrency, settings.timezone, settings.domain, settings.tenantDomainSuffix, settings.poweredByWording, settings.logoUrl, settings.iconUrl).run();
       await writePlatformAudit(access.context, "platform.settings.updated", "platform_settings", "default", settings);
       return Response.json({ settings: await platformSettingsRow() });
     }

@@ -17,7 +17,23 @@ test("platform home treats first deploy hosts as the ESTARA landing page", async
   assert.match(source, /const publicDomain = platformDomainFromHost\(host, platform\.domain\)/);
   assert.match(source, /const loginHref = appHref\("\/login", publicDomain\)/);
   assert.match(source, /<a href=\{workspaceHref\}>Open workspace<\/a>/);
+  assert.match(source, /home-mobile-menu/);
+  assert.match(source, /platform\.logoUrl/);
   assert.doesNotMatch(source, /from "next\/link"/);
+});
+
+test("public pages expose mobile menus and demo app links use the app host", async () => {
+  const [publicWebsite, demo, styles] = await Promise.all([
+    readFile("app/site/[slug]/public-website.tsx", "utf8"),
+    readFile("app/demo/page.tsx", "utf8"),
+    readFile("app/public-templates.css", "utf8"),
+  ]);
+
+  assert.match(publicWebsite, /public-mobile-menu/);
+  assert.match(styles, /public-mobile-menu/);
+  assert.match(demo, /const loginHref = appHref\("\/login", publicDomain\)/);
+  assert.match(demo, /const registerHref = appHref\("\/register", publicDomain\)/);
+  assert.match(demo, /platform\.logoUrl/);
 });
 
 test("public host lookup is safe before D1 migrations have run", async () => {
