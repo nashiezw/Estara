@@ -25,7 +25,7 @@ test("protected business mutations leave audit, ledger, or event evidence", asyn
     if (!/export (async )?function (POST|PATCH|DELETE)|async function (POST|PATCH|DELETE)/.test(source)) continue;
     const normalized = file.replaceAll("\\", "/");
     if (allowed.some((suffix) => normalized.endsWith(suffix))) continue;
-    assert.match(source, /writeAudit|writePlatformAudit|INSERT INTO audit_logs|billing_events|integration_sync_runs|api_idempotency_keys|public_intake_attempts|publishDomainEvent|createAgencyBackup|verifyAgencyBackup/, `mutation lacks durable audit evidence: ${normalized}`);
+    assert.match(source, /writeAudit|writeAuthAudit|writePlatformAudit|INSERT INTO audit_logs|billing_events|integration_sync_runs|api_idempotency_keys|public_intake_attempts|publishDomainEvent|createAgencyBackup|verifyAgencyBackup/, `mutation lacks durable audit evidence: ${normalized}`);
   }
 });
 

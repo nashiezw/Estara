@@ -9,6 +9,8 @@ test("platform home treats first deploy hosts as the ESTARA landing page", async
   assert.match(source, /domain\.endsWith\("\.workers\.dev"\)/);
   assert.match(source, /domain\.endsWith\("\.pages\.dev"\)/);
   assert.match(source, /!platformDomain && !tenantSuffix/);
+  assert.match(source, /domain === `www\.\$\{platformDomain\}`/);
+  assert.match(source, /domain === `app\.\$\{platformDomain\}`/);
 });
 
 test("public host lookup is safe before D1 migrations have run", async () => {

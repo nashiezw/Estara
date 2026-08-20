@@ -59,3 +59,16 @@ test("Cloudflare build allows every esbuild version seen in install and deploy l
     assert.equal(packageJson.allowScripts[`esbuild@${version}`], true);
   }
 });
+
+test("late production migrations are safe on partially prepared databases", async () => {
+  const [authMigration, accentMigration] = await Promise.all([
+    readFile("drizzle/0028_standalone_auth.sql", "utf8"),
+    readFile("drizzle/0029_platform_accent_color.sql", "utf8"),
+  ]);
+
+  assert.doesNotMatch(authMigration, /CREATE TABLE app_users/);
+  assert.match(authMigration, /CREATE TABLE IF NOT EXISTS app_users/);
+  assert.match(authMigration, /CREATE UNIQUE INDEX IF NOT EXISTS idx_app_users_email/);
+  assert.doesNotMatch(accentMigration, /ALTER TABLE platform_settings ADD COLUMN accent_color/);
+  assert.match(accentMigration, /SELECT 1/);
+});

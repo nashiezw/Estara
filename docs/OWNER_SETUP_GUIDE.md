@@ -254,19 +254,21 @@ What the warnings mean:
 - "A, AAAA or CNAME record for www is required" means `www.estara.co.zw` will not open a website until we connect it.
 - "A, AAAA or CNAME record pointing to the root domain is required" means `estara.co.zw` itself will not open a website until we connect it.
 
-For ESTARA launch, think of the domain like a building with different rooms:
+For ESTARA launch, use one main domain with clear rooms:
 
-- `estara.co.zw` is the main front door. Later it can show the ESTARA marketing/landing website.
-- `app.estara.co.zw` is the private ESTARA software app where owners and staff log in.
-- `sites.estara.co.zw` can be the public website area for agency websites. Example: `prime-property.sites.estara.co.zw`.
-- `hello@estara.co.zw` is email. Do not set this up until the email provider is chosen.
+- `estara.co.zw` is the public homepage. This is what normal visitors should open first.
+- `www.estara.co.zw` should also open the same public homepage, because many people type `www`.
+- `app.estara.co.zw` is the product app. This is where owners, admins and agency staff log in and use the workspace.
+- `sites.estara.co.zw` is the agency website area. Example: `prime-property.sites.estara.co.zw` can show Prime Property's public website.
+- `hello@estara.co.zw` is email. Set this up only after choosing the email provider.
 
 Recommended launch choice:
 
-1. Use `app.estara.co.zw` for the ESTARA product app.
-2. Decide later whether `estara.co.zw` should show a marketing website or send people to `app.estara.co.zw`.
-3. Use `sites.estara.co.zw` later if we want agency website subdomains.
-4. Add email DNS records only after choosing Resend, Google Workspace or Zoho Mail.
+1. Put the public homepage on `estara.co.zw`.
+2. Put the same public homepage on `www.estara.co.zw`.
+3. Put the login/workspace app on `app.estara.co.zw`.
+4. Use `sites.estara.co.zw` as the base for agency websites.
+5. Add email DNS records only after choosing Resend, Google Workspace or Zoho Mail.
 
 Very simple explanation of the words Cloudflare uses:
 
@@ -287,7 +289,7 @@ If your registrar lets you change nameservers:
 6. Open your registrar account, or message the registrar support team.
 7. Ask them to replace the current nameservers with the two Cloudflare nameservers.
 8. Go back to Cloudflare and wait until the domain says Active.
-9. After it is Active, connect `app.estara.co.zw` to the ESTARA Worker app.
+9. After it is Active, connect `estara.co.zw`, `www.estara.co.zw` and `app.estara.co.zw` to the ESTARA Worker app.
 
 If your registrar does not let you change nameservers:
 
@@ -305,9 +307,10 @@ Where to go for each thing:
 
 | What you want | Where you go | What you copy from there | Where you paste it |
 | --- | --- | --- | --- |
-| ESTARA app at `app.estara.co.zw` | Cloudflare > Workers & Pages > ESTARA project > Settings > Domains & Routes | Cloudflare normally creates this itself if the zone is active | Cloudflare, or registrar DNS only if Cloudflare gives you a manual record |
-| Main website at `estara.co.zw` | The website host, for example Cloudflare Pages or Vercel | The A/CNAME/ALIAS record shown by that host | Registrar DNS or Cloudflare DNS |
-| `www.estara.co.zw` | The website host or redirect provider | Usually a CNAME, but use exactly what the host shows | Registrar DNS or Cloudflare DNS |
+| Public homepage at `estara.co.zw` | Cloudflare > Workers & Pages > ESTARA project > Settings > Domains & Routes | Add a Custom Domain for `estara.co.zw` | Cloudflare creates/manages the DNS record because the zone is active |
+| Public homepage at `www.estara.co.zw` | Cloudflare > Workers & Pages > ESTARA project > Settings > Domains & Routes | Add a Custom Domain for `www.estara.co.zw` | Cloudflare creates/manages the DNS record because the zone is active |
+| ESTARA app at `app.estara.co.zw` | Cloudflare > Workers & Pages > ESTARA project > Settings > Domains & Routes | Add a Custom Domain for `app.estara.co.zw` | Cloudflare creates/manages the DNS record because the zone is active |
+| Agency websites under `sites.estara.co.zw` | Cloudflare DNS and ESTARA platform settings | Use `sites.estara.co.zw` as the tenant website suffix | Add a wildcard DNS record only when wildcard routing is ready |
 | Sending emails | Resend > Domains | SPF, DKIM and DMARC TXT records | Registrar DNS or Cloudflare DNS |
 | Receiving emails | Google Workspace or Zoho Mail | MX records plus SPF/DKIM/DMARC records | Registrar DNS or Cloudflare DNS |
 | Proving ownership | Whatever provider asks you to verify the domain | A TXT record name and value | Registrar DNS or Cloudflare DNS |
@@ -369,23 +372,41 @@ If it fails:
 - Check for missing underscores.
 - Check whether the value was added to Production, not only Preview.
 
-Step-by-step: connect your production domain to the app.
+Step-by-step: connect your production domains after Cloudflare says the domain is Active.
 
-1. In Cloudflare, open the ESTARA Worker/project.
-2. Go to Settings.
-3. Open Domains & Routes.
-4. Click Add.
-5. Choose Custom Domain.
-6. Enter the domain or subdomain, for example `app.estara.co.zw`.
-7. Save.
-8. Wait for Cloudflare to create DNS and SSL/TLS.
-9. Open `https://app.estara.co.zw` in your browser.
+Do these one at a time:
+
+1. In Cloudflare, open Workers & Pages.
+2. Open the ESTARA Worker/project.
+3. Go to Settings.
+4. Open Domains & Routes.
+5. Click Add.
+6. Choose Custom Domain.
+7. Type `estara.co.zw`.
+8. Save.
+9. Wait until Cloudflare shows the domain/certificate is active.
+10. Click Add again.
+11. Choose Custom Domain.
+12. Type `www.estara.co.zw`.
+13. Save.
+14. Wait until Cloudflare shows the domain/certificate is active.
+15. Click Add again.
+16. Choose Custom Domain.
+17. Type `app.estara.co.zw`.
+18. Save.
+19. Wait until Cloudflare shows the domain/certificate is active.
+20. Open `https://estara.co.zw`.
+21. Open `https://www.estara.co.zw`.
+22. Open `https://app.estara.co.zw/login`.
+23. Open `https://app.estara.co.zw/workspace` after signing in.
 
 What success looks like:
 
-- The ESTARA app opens from your real domain.
-- The browser shows a secure connection.
-- There is no certificate warning.
+- `https://estara.co.zw` opens the public ESTARA homepage.
+- `https://www.estara.co.zw` opens the same public ESTARA homepage.
+- `https://app.estara.co.zw/login` opens the login page.
+- `https://app.estara.co.zw/workspace` opens the workspace after login.
+- The browser shows a secure lock icon on all three domains.
 
 If it fails:
 
@@ -420,9 +441,10 @@ The easiest version:
 
 1. Own `estara.co.zw`.
 2. Let Cloudflare control its DNS by using Cloudflare nameservers.
-3. Connect `app.estara.co.zw` to the ESTARA Worker app.
-4. Wait for the browser lock icon to appear.
-5. Open `https://app.estara.co.zw`.
+3. Connect `estara.co.zw` to the ESTARA Worker app for the homepage.
+4. Connect `www.estara.co.zw` to the ESTARA Worker app for people who type `www`.
+5. Connect `app.estara.co.zw` to the ESTARA Worker app for login and workspace.
+6. Later, connect agency websites under `sites.estara.co.zw`.
 
 What you need before starting:
 
@@ -451,22 +473,36 @@ Step-by-step, slowly:
 16. Open Domains & Routes.
 17. Click Add.
 18. Choose Custom Domain.
-19. Type `app.estara.co.zw`.
+19. Type `estara.co.zw`.
 20. Save.
 21. Wait for Cloudflare to show the certificate is active.
-22. Open `https://app.estara.co.zw`.
+22. Click Add again.
+23. Choose Custom Domain.
+24. Type `www.estara.co.zw`.
+25. Save.
+26. Wait for Cloudflare to show the certificate is active.
+27. Click Add again.
+28. Choose Custom Domain.
+29. Type `app.estara.co.zw`.
+30. Save.
+31. Wait for Cloudflare to show the certificate is active.
+32. Open `https://estara.co.zw`.
+33. Open `https://www.estara.co.zw`.
+34. Open `https://app.estara.co.zw/login`.
 
 What success looks like:
 
-- `https://app.estara.co.zw` opens ESTARA.
-- The browser shows a lock icon.
+- `https://estara.co.zw` opens the public ESTARA homepage.
+- `https://www.estara.co.zw` opens the same homepage.
+- `https://app.estara.co.zw/login` opens the app login page.
+- `https://app.estara.co.zw/workspace` works after login.
 - There is no red warning page.
 
 If it fails:
 
-- Check that `app.estara.co.zw` is spelled correctly.
+- Check that `estara.co.zw`, `www.estara.co.zw` and `app.estara.co.zw` are spelled correctly.
 - Check that Cloudflare says `estara.co.zw` is Active.
-- Check that old DNS records are not pointing `app.estara.co.zw` somewhere else.
+- Check that old DNS records are not pointing those names somewhere else.
 - Wait 15 to 60 minutes and try again.
 - If it still fails, copy the exact Cloudflare error message.
 
@@ -474,12 +510,32 @@ If it fails:
 
 What this does: allows agencies to use subdomains or custom domains for their public websites.
 
+Recommended first launch setup:
+
+- Use `sites.estara.co.zw` as the public website suffix.
+- Agency websites can then use addresses like `prime-property.sites.estara.co.zw`.
+- Do not use `app.estara.co.zw` for agency websites. Keep `app` only for the ESTARA product app.
+- Do not point `estara.co.zw` directly to one agency. Keep it as the ESTARA homepage.
+
 What you need:
 
 - The platform tenant-domain suffix or public-site domain.
 - DNS access for any custom agency domain.
 
-Steps:
+Steps for the platform suffix:
+
+1. In Cloudflare, open Websites.
+2. Open `estara.co.zw`.
+3. Open DNS > Records.
+4. Add a CNAME record.
+5. For Name, type `*.sites`.
+6. For Target, use the target Cloudflare gives for the ESTARA Worker route, or attach `*.sites.estara.co.zw` from Workers & Pages > ESTARA project > Settings > Domains & Routes if Cloudflare allows the wildcard custom domain.
+7. In the ESTARA super admin dashboard, open Platform settings.
+8. Set Platform domain to `estara.co.zw`.
+9. Set Tenant domain suffix to `sites.estara.co.zw`.
+10. Save platform settings.
+
+Steps for an agency custom domain:
 
 1. In ESTARA, add the agency custom domain.
 2. Copy the ownership token and expected DNS target shown by ESTARA.

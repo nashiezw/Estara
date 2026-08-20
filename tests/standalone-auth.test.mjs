@@ -11,6 +11,11 @@ test("standalone auth stores hashed passwords and token hashes only", async () =
   assert.match(auth, /sha256Hex\(token\)/);
   assert.match(migration, /password_hash TEXT NOT NULL/);
   assert.match(migration, /token_hash TEXT NOT NULL/g);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS app_users/);
+  assert.match(migration, /CREATE UNIQUE INDEX IF NOT EXISTS idx_app_users_email/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS auth_sessions/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS auth_email_verification_tokens/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS auth_password_reset_tokens/);
   assert.doesNotMatch(migration, /\bpassword TEXT\b/);
   assert.doesNotMatch(migration, /\btoken TEXT\b/);
 });

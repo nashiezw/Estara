@@ -40,7 +40,7 @@ export function isPlatformHost(host: string, platform: { domain: string; tenantD
   if (!domain || domain === "localhost" || domain === "127.0.0.1" || domain === "::1") return true;
   if (domain.endsWith(".workers.dev") || domain.endsWith(".pages.dev")) return true;
   if (!platformDomain && !tenantSuffix) return true;
-  return domain === platformDomain || domain === tenantSuffix;
+  return domain === platformDomain || domain === `www.${platformDomain}` || domain === `app.${platformDomain}` || domain === tenantSuffix;
 }
 
 export default async function Home() {
