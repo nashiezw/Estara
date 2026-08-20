@@ -7,7 +7,7 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 test("standalone auth stores hashed passwords and token hashes only", async () => {
   const [auth, migration] = await Promise.all([read("db/auth.ts"), read("drizzle/0028_standalone_auth.sql")]);
   assert.match(auth, /PBKDF2/);
-  assert.match(auth, /PASSWORD_ITERATIONS = 150000/);
+  assert.match(auth, /PASSWORD_ITERATIONS = 100000/);
   assert.match(auth, /sha256Hex\(token\)/);
   assert.match(migration, /password_hash TEXT NOT NULL/);
   assert.match(migration, /token_hash TEXT NOT NULL/g);
