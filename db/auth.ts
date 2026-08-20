@@ -11,7 +11,7 @@ export type EstaraUser = {
 
 export const SESSION_COOKIE = "estara_session";
 const encoder = new TextEncoder();
-const PASSWORD_ITERATIONS = 150000;
+const PASSWORD_ITERATIONS = 100000;
 const TOKEN_BYTES = 32;
 
 export function normalizeAuthEmail(value: unknown) {
