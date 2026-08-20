@@ -9,7 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "deploy": "npm run build && wrangler deploy --config dist/server/wrangler.json",
+    "deploy": "node scripts/deploy-cloudflare.mjs",
     "deploy:dry-run": "npm run build && wrangler deploy --dry-run --outdir .wrangler-dry-run --config dist/server/wrangler.json",
     "preview": "npm run build && wrangler dev --config dist/server/wrangler.json",
     "test": "npm run build && node --test tests/*.test.mjs",

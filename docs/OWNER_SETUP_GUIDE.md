@@ -71,6 +71,47 @@ Helpful links:
 - Cloudflare environment variables and secrets: https://developers.cloudflare.com/workers/configuration/environment-variables/
 - Cloudflare Workers custom domains: https://developers.cloudflare.com/workers/configuration/routing/custom-domains/
 
+Step-by-step: add the real Cloudflare D1 database id.
+
+The app cannot deploy with the placeholder id `00000000-0000-4000-8000-000000000000`. Cloudflare will reject it.
+
+1. Open https://dash.cloudflare.com/
+2. Choose the Cloudflare account where ESTARA is being deployed.
+3. In the left menu, open D1 SQL Database.
+4. Click the ESTARA database. If there is no database yet, create one first.
+5. Open Settings for that database.
+6. Copy the Database ID.
+7. Open the ESTARA Worker/project.
+8. Go to Settings.
+9. Open Variables and Secrets.
+10. Add an environment variable named `CLOUDFLARE_D1_DATABASE_ID`.
+11. Paste the Database ID as the value.
+12. Save it.
+
+Step-by-step: confirm the media bucket.
+
+1. In Cloudflare, open R2 Object Storage.
+2. Open the bucket used for ESTARA media.
+3. If the bucket is not named `site-creator-r2`, add an environment variable named `CLOUDFLARE_R2_BUCKET_NAME`.
+4. Put the exact bucket name as the value.
+5. Save it.
+
+Step-by-step: deploy command.
+
+In the Cloudflare project build/deploy settings, use:
+
+```bash
+npm run deploy
+```
+
+Do not use:
+
+```bash
+npx wrangler deploy
+```
+
+`npm run deploy` checks that the real D1 id exists, builds the app, then deploys the generated Worker config.
+
 Can Vercel work?
 
 Short answer: not as the easiest first choice for this exact repository.
