@@ -33,9 +33,14 @@ function normalizeHost(host: string) {
   return host.toLowerCase().replace(/:\d+$/, "").replace(/\.$/, "");
 }
 
-function isPlatformHost(host: string, platform: { domain: string; tenantDomainSuffix: string }) {
+export function isPlatformHost(host: string, platform: { domain: string; tenantDomainSuffix: string }) {
   const domain = normalizeHost(host);
-  return !domain || domain === "localhost" || domain === "127.0.0.1" || domain === "::1" || domain === normalizeHost(platform.domain) || domain === normalizeHost(platform.tenantDomainSuffix);
+  const platformDomain = normalizeHost(platform.domain);
+  const tenantSuffix = normalizeHost(platform.tenantDomainSuffix);
+  if (!domain || domain === "localhost" || domain === "127.0.0.1" || domain === "::1") return true;
+  if (domain.endsWith(".workers.dev") || domain.endsWith(".pages.dev")) return true;
+  if (!platformDomain && !tenantSuffix) return true;
+  return domain === platformDomain || domain === tenantSuffix;
 }
 
 export default async function Home() {
