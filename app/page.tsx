@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPlatformIdentity } from "../db/platform-settings";
@@ -33,6 +32,24 @@ function normalizeHost(host: string) {
   return host.toLowerCase().replace(/:\d+$/, "").replace(/\.$/, "");
 }
 
+function appHref(path: string, platformDomain: string) {
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const domain = normalizeHost(platformDomain);
+  return domain ? `https://app.${domain}${cleanPath}` : cleanPath;
+}
+
+function platformDomainFromHost(host: string, configuredDomain: string) {
+  const configured = normalizeHost(configuredDomain);
+  if (configured) return configured;
+
+  const domain = normalizeHost(host);
+  if (!domain || domain === "localhost" || domain === "127.0.0.1" || domain === "::1") return "";
+  if (domain.endsWith(".workers.dev") || domain.endsWith(".pages.dev")) return "";
+  if (domain.startsWith("www.")) return domain.slice(4);
+  if (domain.startsWith("app.")) return domain.slice(4);
+  return domain;
+}
+
 export function isPlatformHost(host: string, platform: { domain: string; tenantDomainSuffix: string }) {
   const domain = normalizeHost(host);
   const platformDomain = normalizeHost(platform.domain);
@@ -58,16 +75,26 @@ export default async function Home() {
 
   const initial = platform.shortName.slice(0, 1);
   const parent = platform.parentBrand ? `A ${platform.parentBrand} product` : platform.descriptor;
+  const publicDomain = platformDomainFromHost(host, platform.domain);
+  const loginHref = appHref("/login", publicDomain);
+  const registerHref = appHref("/register", publicDomain);
+  const workspaceHref = appHref("/workspace", publicDomain);
+  const marketingHref = appHref("/marketing-studio", publicDomain);
+  const sellerHref = appHref("/seller", publicDomain);
+  const domainsHref = appHref("/domains", publicDomain);
+  const contactsHref = appHref("/contacts", publicDomain);
+  const propertiesHref = appHref("/property-operations", publicDomain);
+  const reportsHref = appHref("/reports", publicDomain);
 
   return (
     <main className="estara-landing estara-home">
       <nav className="home-nav" aria-label="Primary navigation">
-        <Link href="/" className="home-logo" aria-label={`${platform.shortName} home`}>
+        <a href="/" className="home-logo" aria-label={`${platform.shortName} home`}>
           <i>{initial}</i>
           <span>{platform.shortName}<small>{parent}</small></span>
-        </Link>
-        <div>{navLinks.map((link) => <Link href={link.href} key={link.label}>{link.label}</Link>)}</div>
-        <span><Link href="/login">Log in</Link><Link href="/register">Create account</Link></span>
+        </a>
+        <div>{navLinks.map((link) => <a href={link.href} key={link.label}>{link.label}</a>)}</div>
+        <span><a href={loginHref}>Log in</a><a href={registerHref}>Create account</a></span>
       </nav>
 
       <section className="home-hero" id="product">
@@ -76,10 +103,10 @@ export default async function Home() {
           <h1>Run your real estate agency from one place.</h1>
           <p>Add your properties once. Market them professionally. Capture every enquiry. Know who needs follow-up. Keep sellers informed. Let today&apos;s work become obvious.</p>
           <div className="home-actions">
-            <Link href="/register">Start your agency setup</Link>
-            <Link href="/demo">View demo</Link>
-            <Link href="/login">Log in</Link>
-            <Link href="#workflow">See how it works</Link>
+            <a href={registerHref}>Start your agency setup</a>
+            <a href="/demo">View demo</a>
+            <a href={loginHref}>Log in</a>
+            <a href="#workflow">See how it works</a>
           </div>
         </div>
 
@@ -130,7 +157,7 @@ export default async function Home() {
           <p className="home-kicker">First success moment</p>
           <h2>From empty account to live agency presence.</h2>
           <p>The first sellable ESTARA experience should take a new agency from setup to a live property, share-ready marketing, incoming enquiry, viewing and seller update.</p>
-          <Link href="/register">Create account</Link>
+          <a href={registerHref}>Create account</a>
         </div>
         <ol>{firstRun.map((item, index) => <li key={item}><span>{String(index + 1).padStart(2, "0")}</span><strong>{item}</strong></li>)}</ol>
       </section>
@@ -142,27 +169,27 @@ export default async function Home() {
           <p>Agency websites, property pages, agent profiles, custom colours, images, templates and seller-facing experiences all come from the same operating system.</p>
         </div>
         <aside>
-          <Link href="/demo">View guided demo</Link>
-          <Link href="/login">Open workspace</Link>
-          <Link href="/marketing-studio">Marketing studio</Link>
-          <Link href="/seller">Seller portal</Link>
-          <Link href="/domains">Domains</Link>
+          <a href="/demo">View guided demo</a>
+          <a href={workspaceHref}>Open workspace</a>
+          <a href={marketingHref}>Marketing studio</a>
+          <a href={sellerHref}>Seller portal</a>
+          <a href={domainsHref}>Domains</a>
         </aside>
       </section>
 
       <section className="home-final">
         <p className="home-kicker">Zimbabwe-first. World-class standard.</p>
         <h2>When a property enters your agency, it should enter ESTARA.</h2>
-        <div><Link href="/register">Start setup</Link><Link href="/login">Log in</Link></div>
+        <div><a href={registerHref}>Start setup</a><a href={loginHref}>Log in</a></div>
       </section>
 
       <footer className="home-footer">
-        <Link href="/" className="home-logo"><i>{initial}</i><span>{platform.shortName}<small>{parent}</small></span></Link>
+        <a href="/" className="home-logo"><i>{initial}</i><span>{platform.shortName}<small>{parent}</small></span></a>
         <nav>
-          <Link href="/contacts">Contacts</Link>
-          <Link href="/property-operations">Properties</Link>
-          <Link href="/marketing-studio">Marketing</Link>
-          <Link href="/reports">Reports</Link>
+          <a href={contactsHref}>Contacts</a>
+          <a href={propertiesHref}>Properties</a>
+          <a href={marketingHref}>Marketing</a>
+          <a href={reportsHref}>Reports</a>
         </nav>
         <small>© 2026 {platform.shortName}. Real estate, professionally operated.</small>
       </footer>

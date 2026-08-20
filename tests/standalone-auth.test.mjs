@@ -73,8 +73,8 @@ test("public navigation exposes real ESTARA auth pages", async () => {
     read("app/components/UserMenu.tsx"),
     read("docs/PROJECT_STATUS.md"),
   ]);
-  assert.match(home, /href="\/login"/);
-  assert.match(home, /href="\/register"/);
+  assert.match(home, /const loginHref = appHref\("\/login", publicDomain\)/);
+  assert.match(home, /const registerHref = appHref\("\/register", publicDomain\)/);
   assert.match(userMenu, /\/api\/auth\/logout/);
   assert.match(status, /standalone ESTARA email\/password authentication/);
 });
