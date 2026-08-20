@@ -31,6 +31,7 @@ test("Cloudflare deploy config does not depend on build-time dashboard variables
   assert.match(viteConfig, /process\.env\.CLOUDFLARE_D1_DATABASE_ID/);
   assert.match(viteConfig, /process\.env\.CLOUDFLARE_DATABASE_ID/);
   assert.doesNotMatch(viteConfig, /database_id:\s*SITE_CREATOR_PLACEHOLDER_DATABASE_ID/);
+  assert.doesNotMatch(viteConfig, /compatibility_flags:\s*\["nodejs_compat"\]/);
 });
 
 test("root Wrangler config prevents non-interactive setup prompts", async () => {
