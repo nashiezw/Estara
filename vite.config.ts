@@ -8,12 +8,14 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 const isProductionDeploy = process.env.ESTARA_PRODUCTION_DEPLOY === "1";
-const productionD1DatabaseId = process.env.CLOUDFLARE_D1_DATABASE_ID?.trim();
+const productionD1DatabaseId =
+  process.env.CLOUDFLARE_D1_DATABASE_ID?.trim() ||
+  process.env.CLOUDFLARE_DATABASE_ID?.trim();
 const productionR2BucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME?.trim();
 
 if (isProductionDeploy && d1 && !productionD1DatabaseId) {
   throw new Error(
-    "Production deploy is missing CLOUDFLARE_D1_DATABASE_ID. Add the real D1 database id in Cloudflare environment variables before deploying.",
+    "Production deploy is missing CLOUDFLARE_D1_DATABASE_ID. Add the real D1 database id in Cloudflare environment variables before deploying. CLOUDFLARE_DATABASE_ID is also accepted for backwards compatibility.",
   );
 }
 

@@ -25,9 +25,11 @@ test("Cloudflare deploy script rejects placeholder D1 ids before upload", async 
   const viteConfig = await readFile("vite.config.ts", "utf8");
 
   assert.match(deployScript, /CLOUDFLARE_D1_DATABASE_ID/);
+  assert.match(deployScript, /CLOUDFLARE_DATABASE_ID/);
   assert.match(deployScript, /00000000-0000-4000-8000-000000000000/);
   assert.match(deployScript, /ESTARA_PRODUCTION_DEPLOY/);
   assert.match(viteConfig, /process\.env\.CLOUDFLARE_D1_DATABASE_ID/);
+  assert.match(viteConfig, /process\.env\.CLOUDFLARE_DATABASE_ID/);
   assert.match(viteConfig, /Production deploy is missing CLOUDFLARE_D1_DATABASE_ID/);
 });
 

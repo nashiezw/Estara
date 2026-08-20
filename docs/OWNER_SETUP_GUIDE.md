@@ -88,6 +88,8 @@ The app cannot deploy with the placeholder id `00000000-0000-4000-8000-000000000
 11. Paste the Database ID as the value.
 12. Save it.
 
+If you already added the value as `CLOUDFLARE_DATABASE_ID`, the deploy script will accept it. For clarity, the preferred name is `CLOUDFLARE_D1_DATABASE_ID`.
+
 Step-by-step: confirm the media bucket.
 
 1. In Cloudflare, open R2 Object Storage.
