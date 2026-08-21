@@ -34,6 +34,8 @@ test("implemented mobile journeys expose the controls required by the audit", as
     ["mobile navigation", /className="mobile-nav"/],
     ["mobile overflow navigation", /className="mobile-more-menu"/],
     ["mobile settings access", /nav\.slice\(4\)\.map/],
+    ["mobile sign out access", /className="mobile-sign-out"/],
+    ["mobile auth logout", /\/api\/auth\/logout/],
     ["mobile add-property action", /className="fab"/],
     ["low-data toggle", /aria-label="Toggle low-data mode"/],
     ["pressed state for low-data", /aria-pressed=\{lowData\}/],
