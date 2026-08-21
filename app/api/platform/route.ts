@@ -93,7 +93,7 @@ export async function GET() {
     ]);
     return Response.json({
       actor: access.context,
-      platform: { platformName: platform.platformName, shortName: platform.shortName },
+      platform: { platformName: platform.platformName, shortName: platform.shortName, logoUrl: platform.logoUrl, iconUrl: platform.iconUrl },
       settings,
       operations: ops,
       platformUsers: platformUsers.results,

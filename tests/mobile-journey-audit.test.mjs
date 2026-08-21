@@ -32,6 +32,8 @@ test("implemented mobile journeys expose the controls required by the audit", as
   for (const [label, pattern] of [
     ["mobile workspace logo", /className="mobile-logo"/],
     ["mobile navigation", /className="mobile-nav"/],
+    ["mobile overflow navigation", /className="mobile-more-menu"/],
+    ["mobile settings access", /nav\.slice\(4\)\.map/],
     ["mobile add-property action", /className="fab"/],
     ["low-data toggle", /aria-label="Toggle low-data mode"/],
     ["pressed state for low-data", /aria-pressed=\{lowData\}/],
