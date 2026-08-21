@@ -3,12 +3,24 @@ import { FormEvent, useEffect, useState } from "react";
 
 type DomainRecord = { id: string; domain: string; ownershipToken: string; expectedCname: string; txtName: string; txtValue: string; status: string; failureReason?: string | null };
 
+const statusConfig: Record<string, { icon: string; color: string; label: string; description: string }> = {
+  setup_required: { icon: "📝", color: "#fbbf24", label: "Setup Required", description: "Add DNS records to verify ownership" },
+  checking: { icon: "⏳", color: "#6b7280", label: "Checking", description: "Verifying DNS records" },
+  verified: { icon: "✓", color: "#10b981", label: "Verified", description: "Ownership confirmed" },
+  ssl_pending: { icon: "🔒", color: "#3b82f6", label: "SSL Pending", description: "TLS certificate is being provisioned" },
+  active: { icon: "✓✓", color: "#059669", label: "Active", description: "Ready to use" },
+  failed: { icon: "✗", color: "#ef4444", label: "Failed", description: "Verification failed" },
+  disabled: { icon: "○", color: "#9ca3af", label: "Disabled", description: "Domain is disabled" },
+};
+
 export default function DomainClient() {
   const [domains, setDomains] = useState<DomainRecord[]>([]);
   const [domain, setDomain] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
+
   async function load() {
     const response = await fetch("/api/domains", { cache: "no-store" });
     const body = await response.json();
@@ -16,6 +28,7 @@ export default function DomainClient() {
     setDomains(body.domains || []);
   }
   useEffect(() => { load().catch((err) => setError(err.message)); }, []);
+  
   async function call(method: string, body: Record<string, unknown>) {
     setBusy(true); setError(""); setMessage("");
     try {
@@ -24,6 +37,7 @@ export default function DomainClient() {
       if (!response.ok) throw new Error(result.error || "Domain update failed.");
       setMessage("Domain settings updated.");
       setDomain("");
+      setExpandedDomain(null);
       await load();
     } catch (err: any) {
       setError(err.message || "Domain update failed.");
@@ -31,38 +45,501 @@ export default function DomainClient() {
       setBusy(false);
     }
   }
+  
   function add(event: FormEvent) {
     event.preventDefault();
     call("POST", { domain });
   }
+
   return <main className="tool-page">
     <a className="back" href="/workspace">Return to workspace</a>
     <section className="tool-hero"><span>Agency website</span><h1>Custom domains</h1><p>Connect an agency-owned domain with explicit ownership proof, DNS verification and provider-gated activation.</p></section>
+    
     {error && <div className="notice" role="alert">{error}</div>}
     {message && <div className="notice success">{message}</div>}
+    
     <form className="tool-card domain-form" onSubmit={add}>
       <label>Domain name<input required value={domain} onChange={event => setDomain(event.target.value)} placeholder="www.agency.co.zw" /></label>
       <button disabled={busy}>{busy ? "Saving..." : "Add domain"}</button>
     </form>
+
     <section className="tool-grid domain-grid">
-      {domains.map(item => <article className="tool-card domain-card" key={item.id}>
-        <header><div><small>{item.status.replaceAll("_", " ")}</small><h2>{item.domain}</h2></div><button disabled={busy} onClick={() => call("PATCH", { id: item.id, action: "disable" })}>Disable</button></header>
-        <dl><div><dt>TXT name</dt><dd>{item.txtName}</dd></div><div><dt>TXT value</dt><dd>{item.txtValue}</dd></div><div><dt>CNAME target</dt><dd>{item.expectedCname}</dd></div></dl>
-        {item.failureReason && <p className="notice">{item.failureReason}</p>}
-        <DomainCheck id={item.id} busy={busy} call={call} />
-        <footer><button disabled={busy || item.status !== "verified"} onClick={() => call("PATCH", { id: item.id, action: "request_ssl" })}>Request TLS</button><button disabled={busy || !["verified", "ssl_pending"].includes(item.status)} onClick={() => call("PATCH", { id: item.id, action: "activate" })}>Activate</button></footer>
-      </article>)}
-      {!domains.length && <article className="tool-card"><h2>No custom domains yet</h2><p>Add a domain when the agency is ready to route public visitors from its own website address.</p></article>}
+      {domains.length > 0 ? (
+        domains.map(item => {
+          const config = statusConfig[item.status] || statusConfig.setup_required;
+          const isExpanded = expandedDomain === item.id;
+          return (
+            <article className="tool-card domain-card" key={item.id}>
+              <header className="domain-header">
+                <div className="domain-title-section">
+                  <div className="status-badge" style={{ backgroundColor: config.color }}>
+                    <span className="status-icon">{config.icon}</span>
+                    <div className="status-info">
+                      <div className="status-label">{config.label}</div>
+                      <div className="status-description">{config.description}</div>
+                    </div>
+                  </div>
+                  <h2 className="domain-name">{item.domain}</h2>
+                </div>
+                <button 
+                  className="icon-button" 
+                  disabled={busy} 
+                  onClick={() => call("PATCH", { id: item.id, action: "disable" })}
+                  title="Disable domain"
+                >
+                  ✕
+                </button>
+              </header>
+
+              <div className="domain-content" data-expanded={isExpanded}>
+                <div className="dns-instructions">
+                  <div className="instruction-group">
+                    <div className="instruction-header">
+                      <span className="instruction-icon">1</span>
+                      <span>Add TXT Record</span>
+                    </div>
+                    <div className="instruction-detail">
+                      <div className="field-group">
+                        <label>Name:</label>
+                        <code className="copyable" onClick={() => navigator.clipboard.writeText(item.txtName)}>{item.txtName}</code>
+                      </div>
+                      <div className="field-group">
+                        <label>Value:</label>
+                        <code className="copyable" onClick={() => navigator.clipboard.writeText(item.txtValue)}>{item.txtValue}</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="instruction-group">
+                    <div className="instruction-header">
+                      <span className="instruction-icon">2</span>
+                      <span>Add CNAME Record</span>
+                    </div>
+                    <div className="instruction-detail">
+                      <div className="field-group">
+                        <label>Target:</label>
+                        <code className="copyable" onClick={() => navigator.clipboard.writeText(item.expectedCname)}>{item.expectedCname}</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {item.failureReason && (
+                  <div className="error-alert">
+                    <span className="error-icon">⚠</span>
+                    <div>
+                      <div className="error-title">Verification failed</div>
+                      <div className="error-message">{item.failureReason}</div>
+                    </div>
+                  </div>
+                )}
+
+                <DomainCheck id={item.id} busy={busy} call={call} />
+              </div>
+
+              <footer className="domain-actions">
+                <button 
+                  className="expand-button"
+                  onClick={() => setExpandedDomain(isExpanded ? null : item.id)}
+                  disabled={busy}
+                >
+                  {isExpanded ? "Hide details" : "Show details"}
+                </button>
+                <button 
+                  disabled={busy || item.status !== "verified"} 
+                  onClick={() => call("PATCH", { id: item.id, action: "request_ssl" })}
+                  className="action-button"
+                >
+                  Request TLS
+                </button>
+                <button 
+                  disabled={busy || !["verified", "ssl_pending"].includes(item.status)} 
+                  onClick={() => call("PATCH", { id: item.id, action: "activate" })}
+                  className="action-button primary"
+                >
+                  Activate
+                </button>
+              </footer>
+            </article>
+          );
+        })
+      ) : (
+        <article className="tool-card empty-state">
+          <div className="empty-icon">🌐</div>
+          <h2>No custom domains yet</h2>
+          <p>Add a domain when the agency is ready to route public visitors from its own website address.</p>
+        </article>
+      )}
     </section>
+
+    <style jsx>{`
+      .domain-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        overflow: hidden;
+      }
+
+      .domain-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .domain-title-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+      }
+
+      .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        color: white;
+        font-weight: 500;
+        min-width: fit-content;
+        flex-shrink: 0;
+      }
+
+      .status-icon {
+        font-size: 1.25rem;
+      }
+
+      .status-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+      }
+
+      .status-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+
+      .status-description {
+        font-size: 0.75rem;
+        opacity: 0.9;
+      }
+
+      .domain-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+      }
+
+      .icon-button {
+        background: none;
+        border: none;
+        color: #6b7280;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.25rem;
+        transition: color 0.2s;
+      }
+
+      .icon-button:hover:not(:disabled) {
+        color: #ef4444;
+      }
+
+      .icon-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .domain-content {
+        display: none;
+        padding: 1.5rem 0;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .domain-content[data-expanded="true"] {
+        display: block;
+      }
+
+      .dns-instructions {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .instruction-group {
+        background: #f9fafb;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 3px solid #3b82f6;
+      }
+
+      .instruction-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .instruction-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        background: #3b82f6;
+        color: white;
+        border-radius: 50%;
+        font-size: 0.75rem;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .instruction-detail {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-left: 2.25rem;
+      }
+
+      .field-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .field-group label {
+        font-weight: 500;
+        color: #6b7280;
+        font-size: 0.875rem;
+        min-width: 50px;
+      }
+
+      .copyable {
+        flex: 1;
+        padding: 0.5rem 0.75rem;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-family: monospace;
+        color: #1f2937;
+        word-break: break-all;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .copyable:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+      }
+
+      .error-alert {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        color: #991b1b;
+      }
+
+      .error-icon {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+      }
+
+      .error-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+
+      .error-message {
+        font-size: 0.875rem;
+        opacity: 0.9;
+      }
+
+      .domain-actions {
+        display: flex;
+        gap: 0.75rem;
+        padding-top: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .expand-button {
+        padding: 0.5rem 1rem;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #4b5563;
+        transition: all 0.2s;
+      }
+
+      .expand-button:hover:not(:disabled) {
+        background: #f9fafb;
+        border-color: #9ca3af;
+      }
+
+      .expand-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .action-button {
+        padding: 0.5rem 1rem;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #4b5563;
+        transition: all 0.2s;
+      }
+
+      .action-button:hover:not(:disabled) {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+      }
+
+      .action-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .action-button.primary {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+      }
+
+      .action-button.primary:hover:not(:disabled) {
+        background: #2563eb;
+        border-color: #2563eb;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+      }
+
+      .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+
+      .empty-state h2 {
+        margin: 0 0 0.5rem;
+        color: #1f2937;
+      }
+
+      .empty-state p {
+        margin: 0;
+        color: #6b7280;
+      }
+
+      @media (max-width: 640px) {
+        .domain-title-section {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .status-badge {
+          width: 100%;
+        }
+
+        .domain-actions {
+          flex-direction: column;
+        }
+
+        .action-button {
+          width: 100%;
+        }
+      }
+    `}</style>
   </main>;
 }
 
 function DomainCheck({ id, busy, call }: { id: string; busy: boolean; call: (method: string, body: Record<string, unknown>) => void }) {
   const [observedTxt, setTxt] = useState("");
   const [observedCname, setCname] = useState("");
+  
   return <form className="domain-check" onSubmit={event => { event.preventDefault(); call("PATCH", { id, action: "check_dns", observedTxt, observedCname }); }}>
-    <label>Observed TXT<input required value={observedTxt} onChange={event => setTxt(event.target.value)} /></label>
-    <label>Observed CNAME<input required value={observedCname} onChange={event => setCname(event.target.value)} /></label>
-    <button disabled={busy}>Check DNS</button>
+    <div className="check-form-group">
+      <label>Observed TXT value</label>
+      <input required value={observedTxt} onChange={event => setTxt(event.target.value)} placeholder="Paste the TXT value from your DNS provider" />
+    </div>
+    <div className="check-form-group">
+      <label>Observed CNAME target</label>
+      <input required value={observedCname} onChange={event => setCname(event.target.value)} placeholder="Paste the CNAME target from your DNS provider" />
+    </div>
+    <button disabled={busy} className="check-button">{busy ? "Checking..." : "Verify DNS"}</button>
+    <style jsx>{`
+      .domain-check {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f0f9ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 0.5rem;
+      }
+
+      .check-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .check-form-group label {
+        font-weight: 500;
+        color: #1f2937;
+        font-size: 0.875rem;
+      }
+
+      .check-form-group input {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #93c5fd;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-family: monospace;
+      }
+
+      .check-form-group input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      .check-button {
+        padding: 0.5rem 1rem;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.2s;
+      }
+
+      .check-button:hover:not(:disabled) {
+        background: #2563eb;
+      }
+
+      .check-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    `}</style>
   </form>;
 }
