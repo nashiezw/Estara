@@ -13,6 +13,358 @@ const statusConfig: Record<string, { icon: string; color: string; label: string;
   disabled: { icon: "○", color: "#9ca3af", label: "Disabled", description: "Domain is disabled" },
 };
 
+const styles = `
+  .domain-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .domain-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .domain-title-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: 500;
+    min-width: fit-content;
+    flex-shrink: 0;
+  }
+
+  .status-icon {
+    font-size: 1.25rem;
+  }
+
+  .status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .status-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .status-description {
+    font-size: 0.75rem;
+    opacity: 0.9;
+  }
+
+  .domain-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+  }
+
+  .icon-button {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.2s;
+  }
+
+  .icon-button:hover:not(:disabled) {
+    color: #ef4444;
+  }
+
+  .icon-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .domain-content {
+    display: none;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .domain-content[data-expanded="true"] {
+    display: block;
+  }
+
+  .dns-instructions {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .instruction-group {
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 3px solid #3b82f6;
+  }
+
+  .instruction-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .instruction-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .instruction-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-left: 2.25rem;
+  }
+
+  .field-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .field-group label {
+    font-weight: 500;
+    color: #6b7280;
+    font-size: 0.875rem;
+    min-width: 50px;
+  }
+
+  .copyable {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-family: monospace;
+    color: #1f2937;
+    word-break: break-all;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .copyable:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+  }
+
+  .error-alert {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    color: #991b1b;
+  }
+
+  .error-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .error-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .error-message {
+    font-size: 0.875rem;
+    opacity: 0.9;
+  }
+
+  .domain-actions {
+    display: flex;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .expand-button {
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563;
+    transition: all 0.2s;
+  }
+
+  .expand-button:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #9ca3af;
+  }
+
+  .expand-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .action-button {
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563;
+    transition: all 0.2s;
+  }
+
+  .action-button:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+  }
+
+  .action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .action-button.primary {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+
+  .action-button.primary:hover:not(:disabled) {
+    background: #2563eb;
+    border-color: #2563eb;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state h2 {
+    margin: 0 0 0.5rem;
+    color: #1f2937;
+  }
+
+  .empty-state p {
+    margin: 0;
+    color: #6b7280;
+  }
+
+  .domain-check {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f0f9ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 0.5rem;
+  }
+
+  .check-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .check-form-group label {
+    font-weight: 500;
+    color: #1f2937;
+    font-size: 0.875rem;
+  }
+
+  .check-form-group input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #93c5fd;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-family: monospace;
+  }
+
+  .check-form-group input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .check-button {
+    padding: 0.5rem 1rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+
+  .check-button:hover:not(:disabled) {
+    background: #2563eb;
+  }
+
+  .check-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 640px) {
+    .domain-title-section {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .status-badge {
+      width: 100%;
+    }
+
+    .domain-actions {
+      flex-direction: column;
+    }
+
+    .action-button {
+      width: 100%;
+    }
+  }
+`;
+
 export default function DomainClient() {
   const [domains, setDomains] = useState<DomainRecord[]>([]);
   const [domain, setDomain] = useState("");
@@ -50,6 +402,13 @@ export default function DomainClient() {
     event.preventDefault();
     call("POST", { domain });
   }
+
+  useEffect(() => {
+    const styleEl = document.createElement("style");
+    styleEl.textContent = styles;
+    document.head.appendChild(styleEl);
+    return () => styleEl.remove();
+  }, []);
 
   return <main className="tool-page">
     <a className="back" href="/workspace">Return to workspace</a>
@@ -171,302 +530,6 @@ export default function DomainClient() {
         </article>
       )}
     </section>
-
-    <style jsx>{`
-      .domain-card {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-        overflow: hidden;
-      }
-
-      .domain-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #e5e7eb;
-      }
-
-      .domain-title-section {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex: 1;
-      }
-
-      .status-badge {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1rem;
-        border-radius: 0.5rem;
-        color: white;
-        font-weight: 500;
-        min-width: fit-content;
-        flex-shrink: 0;
-      }
-
-      .status-icon {
-        font-size: 1.25rem;
-      }
-
-      .status-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.125rem;
-      }
-
-      .status-label {
-        font-size: 0.875rem;
-        font-weight: 600;
-      }
-
-      .status-description {
-        font-size: 0.75rem;
-        opacity: 0.9;
-      }
-
-      .domain-name {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 0;
-      }
-
-      .icon-button {
-        background: none;
-        border: none;
-        color: #6b7280;
-        font-size: 1.5rem;
-        cursor: pointer;
-        padding: 0.25rem;
-        transition: color 0.2s;
-      }
-
-      .icon-button:hover:not(:disabled) {
-        color: #ef4444;
-      }
-
-      .icon-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .domain-content {
-        display: none;
-        padding: 1.5rem 0;
-        border-bottom: 1px solid #e5e7eb;
-      }
-
-      .domain-content[data-expanded="true"] {
-        display: block;
-      }
-
-      .dns-instructions {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-      }
-
-      .instruction-group {
-        background: #f9fafb;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 3px solid #3b82f6;
-      }
-
-      .instruction-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 0.75rem;
-        font-weight: 600;
-        color: #1f2937;
-      }
-
-      .instruction-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 1.5rem;
-        height: 1.5rem;
-        background: #3b82f6;
-        color: white;
-        border-radius: 50%;
-        font-size: 0.75rem;
-        font-weight: 700;
-        flex-shrink: 0;
-      }
-
-      .instruction-detail {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        margin-left: 2.25rem;
-      }
-
-      .field-group {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .field-group label {
-        font-weight: 500;
-        color: #6b7280;
-        font-size: 0.875rem;
-        min-width: 50px;
-      }
-
-      .copyable {
-        flex: 1;
-        padding: 0.5rem 0.75rem;
-        background: white;
-        border: 1px solid #d1d5db;
-        border-radius: 0.375rem;
-        font-size: 0.875rem;
-        font-family: monospace;
-        color: #1f2937;
-        word-break: break-all;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-
-      .copyable:hover {
-        background: #f3f4f6;
-        border-color: #9ca3af;
-      }
-
-      .error-alert {
-        display: flex;
-        gap: 1rem;
-        padding: 1rem;
-        background: #fee2e2;
-        border: 1px solid #fca5a5;
-        border-radius: 0.5rem;
-        margin-bottom: 1.5rem;
-        color: #991b1b;
-      }
-
-      .error-icon {
-        font-size: 1.25rem;
-        flex-shrink: 0;
-      }
-
-      .error-title {
-        font-weight: 600;
-        margin-bottom: 0.25rem;
-      }
-
-      .error-message {
-        font-size: 0.875rem;
-        opacity: 0.9;
-      }
-
-      .domain-actions {
-        display: flex;
-        gap: 0.75rem;
-        padding-top: 1rem;
-        flex-wrap: wrap;
-      }
-
-      .expand-button {
-        padding: 0.5rem 1rem;
-        background: white;
-        border: 1px solid #d1d5db;
-        border-radius: 0.375rem;
-        cursor: pointer;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #4b5563;
-        transition: all 0.2s;
-      }
-
-      .expand-button:hover:not(:disabled) {
-        background: #f9fafb;
-        border-color: #9ca3af;
-      }
-
-      .expand-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .action-button {
-        padding: 0.5rem 1rem;
-        background: white;
-        border: 1px solid #d1d5db;
-        border-radius: 0.375rem;
-        cursor: pointer;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #4b5563;
-        transition: all 0.2s;
-      }
-
-      .action-button:hover:not(:disabled) {
-        background: #f3f4f6;
-        border-color: #9ca3af;
-      }
-
-      .action-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .action-button.primary {
-        background: #3b82f6;
-        color: white;
-        border-color: #3b82f6;
-      }
-
-      .action-button.primary:hover:not(:disabled) {
-        background: #2563eb;
-        border-color: #2563eb;
-      }
-
-      .empty-state {
-        text-align: center;
-        padding: 3rem 2rem;
-      }
-
-      .empty-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-      }
-
-      .empty-state h2 {
-        margin: 0 0 0.5rem;
-        color: #1f2937;
-      }
-
-      .empty-state p {
-        margin: 0;
-        color: #6b7280;
-      }
-
-      @media (max-width: 640px) {
-        .domain-title-section {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .status-badge {
-          width: 100%;
-        }
-
-        .domain-actions {
-          flex-direction: column;
-        }
-
-        .action-button {
-          width: 100%;
-        }
-      }
-    `}</style>
   </main>;
 }
 
@@ -484,62 +547,5 @@ function DomainCheck({ id, busy, call }: { id: string; busy: boolean; call: (met
       <input required value={observedCname} onChange={event => setCname(event.target.value)} placeholder="Paste the CNAME target from your DNS provider" />
     </div>
     <button disabled={busy} className="check-button">{busy ? "Checking..." : "Verify DNS"}</button>
-    <style jsx>{`
-      .domain-check {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
-        background: #f0f9ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 0.5rem;
-      }
-
-      .check-form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .check-form-group label {
-        font-weight: 500;
-        color: #1f2937;
-        font-size: 0.875rem;
-      }
-
-      .check-form-group input {
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #93c5fd;
-        border-radius: 0.375rem;
-        font-size: 0.875rem;
-        font-family: monospace;
-      }
-
-      .check-form-group input:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-      }
-
-      .check-button {
-        padding: 0.5rem 1rem;
-        background: #3b82f6;
-        color: white;
-        border: none;
-        border-radius: 0.375rem;
-        cursor: pointer;
-        font-weight: 500;
-        transition: background 0.2s;
-      }
-
-      .check-button:hover:not(:disabled) {
-        background: #2563eb;
-      }
-
-      .check-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-    `}</style>
   </form>;
 }
