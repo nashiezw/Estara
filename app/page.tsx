@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPlatformIdentity } from "../db/platform-settings";
+import HomeMobileDrawer from "./home-mobile-drawer";
 
 const navLinks = [
   { label: "Product", href: "#product" },
@@ -95,15 +96,7 @@ export default async function Home() {
         </a>
         <div className="home-nav-links">{navLinks.map((link) => <a href={link.href} key={link.label}>{link.label}</a>)}</div>
         <span className="home-nav-actions"><a href={loginHref}>Log in</a><a href={registerHref}>Create account</a></span>
-        <details className="home-mobile-menu">
-          <summary>Menu</summary>
-          <div>
-            {navLinks.map((link) => <a href={link.href} key={link.label}>{link.label}</a>)}
-            <a href="/demo">View demo</a>
-            <a href={loginHref}>Log in</a>
-            <a href={registerHref}>Create account</a>
-          </div>
-        </details>
+        <HomeMobileDrawer links={navLinks} loginHref={loginHref} registerHref={registerHref} />
       </nav>
 
       <section className="home-hero" id="product">
@@ -114,8 +107,6 @@ export default async function Home() {
           <div className="home-actions">
             <a href={registerHref}>Start your agency setup</a>
             <a href="/demo">View demo</a>
-            <a href={loginHref}>Log in</a>
-            <a href="#workflow">See how it works</a>
           </div>
         </div>
 

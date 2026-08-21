@@ -17,9 +17,32 @@ test("platform home treats first deploy hosts as the ESTARA landing page", async
   assert.match(source, /const publicDomain = platformDomainFromHost\(host, platform\.domain\)/);
   assert.match(source, /const loginHref = appHref\("\/login", publicDomain\)/);
   assert.match(source, /<a href=\{workspaceHref\}>Open workspace<\/a>/);
-  assert.match(source, /home-mobile-menu/);
+  assert.match(source, /HomeMobileDrawer/);
   assert.match(source, /platform\.logoUrl/);
+  const heroActions = source.match(/<div className="home-actions">([\s\S]*?)<\/div>/)?.[1] || "";
+  assert.match(heroActions, /Start your agency setup/);
+  assert.match(heroActions, /View demo/);
+  assert.doesNotMatch(heroActions, /See how it works<\/a>/);
+  assert.doesNotMatch(heroActions, /loginHref/);
   assert.doesNotMatch(source, /from "next\/link"/);
+});
+
+test("homepage mobile navigation uses a side drawer and preserves hero hierarchy", async () => {
+  const [drawer, styles] = await Promise.all([
+    readFile("app/home-mobile-drawer.tsx", "utf8"),
+    readFile("app/globals.css", "utf8"),
+  ]);
+
+  assert.match(drawer, /useState\(false\)/);
+  assert.match(drawer, /document\.body\.style\.overflow = "hidden"/);
+  assert.match(drawer, /home-drawer-overlay/);
+  assert.match(drawer, /aria-label="Close menu"/);
+  assert.match(drawer, /Create account/);
+  assert.match(styles, /width:min\(82vw,360px\)/);
+  assert.match(styles, /transform:translateX\(102%\)/);
+  assert.match(styles, /transition:transform 300ms ease-out/);
+  assert.match(styles, /clamp\(32px,8vw,40px\)/);
+  assert.match(styles, /\.home-actions a:nth-child\(n\+3\)\{display:none!important\}/);
 });
 
 test("public pages expose mobile menus and demo app links use the app host", async () => {
