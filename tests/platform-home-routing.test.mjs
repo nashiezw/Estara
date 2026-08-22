@@ -46,9 +46,10 @@ test("homepage mobile navigation uses a side drawer and preserves hero hierarchy
 });
 
 test("public pages expose mobile menus and demo app links use the app host", async () => {
-  const [publicWebsite, demo, styles] = await Promise.all([
+  const [publicWebsite, demo, demoClient, styles] = await Promise.all([
     readFile("app/site/[slug]/public-website.tsx", "utf8"),
     readFile("app/demo/page.tsx", "utf8"),
+    readFile("app/demo/demo-client.tsx", "utf8"),
     readFile("app/public-templates.css", "utf8"),
   ]);
 
@@ -56,7 +57,10 @@ test("public pages expose mobile menus and demo app links use the app host", asy
   assert.match(styles, /public-mobile-menu/);
   assert.match(demo, /const loginHref = appHref\("\/login", publicDomain\)/);
   assert.match(demo, /const registerHref = appHref\("\/register", publicDomain\)/);
-  assert.match(demo, /platform\.logoUrl/);
+  assert.match(demo, /DemoExperience/);
+  assert.match(demoClient, /Safe sample data only/);
+  assert.match(demoClient, /Start your real workspace/);
+  assert.match(demoClient, /navigator\.clipboard/);
 });
 
 test("public host lookup is safe before D1 migrations have run", async () => {

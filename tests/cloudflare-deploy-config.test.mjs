@@ -19,6 +19,10 @@ test("Cloudflare deploy command uses the generated Vinext Worker config", async 
   assert.match(deployScript, /"deploy", "--config", GENERATED_WRANGLER_CONFIG/);
   assert.match(deployScript, /migrations_dir: "\.\.\/\.\.\/drizzle"/);
   assert.match(deployScript, /config\.d1_databases = \(config\.d1_databases \?\? \[\]\)\.map/);
+  assert.match(deployScript, /PUBLIC_SITE_DOMAIN: publicSiteDomain/);
+  assert.match(deployScript, /\*.\$\{publicSiteDomain\}\/\*/);
+  assert.match(deployScript, /custom_domain: true/);
+  assert.match(deployScript, /uniqueRoutes/);
   assert.match(deployScript, /prepareGeneratedWranglerConfig\(\)/);
   assert.equal(
     packageJson.scripts["deploy:dry-run"],

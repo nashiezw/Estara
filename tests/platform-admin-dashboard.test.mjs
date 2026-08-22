@@ -86,4 +86,6 @@ test("super admin dashboard exposes platform-wide command, settings and evidence
   assert.match(css, /platform-analytics-grid/);
   assert.match(css, /platform-bars-card/);
   assert.match(css, /platform-settings-grid label/);
+  assert.match(css, /Super admin mobile polish/);
+  assert.match(css, /button span\{display:inline!important/);
 });

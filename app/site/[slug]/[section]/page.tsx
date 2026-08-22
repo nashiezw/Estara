@@ -36,10 +36,13 @@ export default async function Page({ params }: { params: Promise<{ slug: string;
   if (!ALLOWED.has(section)) notFound();
   const agency = await getPublicAgency(slug);
   if (!agency) notFound();
+  const requestHeaders = await headers();
+  const host = (requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "").toLowerCase();
+  const pathMode = host.replace(/:\d+$/, "").startsWith(`${slug.toLowerCase()}.`) ? "clean" : "site";
   const type = section === "sale" ? "Sale" : section === "rent" ? "Rent" : undefined;
   const [properties, agents] = await Promise.all([
     listPublicProperties(agency.id, type),
     section === "agents" ? listPublicAgents(agency.id) : Promise.resolve([]),
   ]);
-  return <PublicSection agency={agency} properties={properties} section={section} agents={agents} />;
+  return <PublicSection agency={agency} properties={properties} section={section} agents={agents} pathMode={pathMode} />;
 }

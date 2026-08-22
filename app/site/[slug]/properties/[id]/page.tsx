@@ -38,10 +38,13 @@ export default async function Page({ params }: { params: Promise<{ slug: string;
   const similar = (await listPublicProperties(agency.id, property.transactionType)).filter(item => item.id !== property.id).slice(0, 3);
   const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
   const photoStyle = property.heroMediaId ? { backgroundImage: `url(/api/public/${slug}/media?id=${encodeURIComponent(property.heroMediaId)})` } : undefined;
-  const origin = publicOrigin(await headers());
+  const requestHeaders = await headers();
+  const origin = publicOrigin(requestHeaders);
+  const host = (requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "").toLowerCase();
+  const pathMode = host.replace(/:\d+$/, "").startsWith(`${slug.toLowerCase()}.`) ? "clean" : "site";
   return <div className={`public-site template-${agency.websiteTemplate} typography-${agency.typography || "classic"}`} style={{ "--agency-primary": agency.primaryColor, "--agency-accent": agency.accentColor } as any}>
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(propertyJsonLd(origin,agency,property))}}/>
-    <PageView slug={slug} propertyId={id}/><PublicHeader agency={agency}/>
+    <PageView slug={slug} propertyId={id}/><PublicHeader agency={agency} pathMode={pathMode}/>
     <main id="main-content" className={`public-property public-layout public-layout-${agency.websiteTemplate}`} tabIndex={-1}>
       <aside className="public-template-rail" aria-hidden="true">
         <span>{agency.name}</span>
@@ -59,7 +62,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string;
         <article className="public-property-copy"><span>ABOUT THE PROPERTY</span><h2>A well-positioned opportunity in {property.location}.</h2><p>Contact {agency.name} for verified details, viewing availability and professional guidance. This listing is currently live and available through the agency.</p><ul><li>{property.beds} bedrooms</li><li>{property.baths} bathrooms</li>{property.size && <li>{property.size} land size</li>}<li>Reference {property.ref}</li></ul></article>
         <aside className="public-property-enquiry"><h2>Enquire or request a viewing</h2><PublicEnquiryForm slug={slug} propertyId={id}/></aside>
       </section>
-      {similar.length > 0 && <section className="public-listings"><div className="public-section-head"><div><span>SIMILAR PROPERTIES</span><h2>You may also like</h2></div></div><PropertyGrid agency={agency} properties={similar}/></section>}
-    </main><PublicFooter agency={agency}/>
+      {similar.length > 0 && <section className="public-listings"><div className="public-section-head"><div><span>SIMILAR PROPERTIES</span><h2>You may also like</h2></div></div><PropertyGrid agency={agency} properties={similar} pathMode={pathMode}/></section>}
+    </main><PublicFooter agency={agency} pathMode={pathMode}/>
   </div>;
 }

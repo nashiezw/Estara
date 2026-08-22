@@ -65,6 +65,8 @@ test("tenant subdomain proxy keeps agency website paths clean", async () => {
   const proxy = await readFile(new URL("../proxy.ts", import.meta.url), "utf8");
   const root = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const publicWebsite = await readFile(new URL("../app/site/[slug]/public-website.tsx", import.meta.url), "utf8");
+  const sectionPage = await readFile(new URL("../app/site/[slug]/[section]/page.tsx", import.meta.url), "utf8");
+  const propertyPage = await readFile(new URL("../app/site/[slug]/properties/[id]/page.tsx", import.meta.url), "utf8");
   const workspace = await readFile(new URL("../app/estara-app.tsx", import.meta.url), "utf8");
   const seo = await readFile(new URL("../db/public-seo.ts", import.meta.url), "utf8");
   assert.match(proxy, /PUBLIC_SITE_DOMAIN \|\| "sites\.estara\.co\.zw"/);
@@ -74,6 +76,8 @@ test("tenant subdomain proxy keeps agency website paths clean", async () => {
   assert.match(root, /pathMode="clean"/);
   assert.match(publicWebsite, /mode === "clean"/);
   assert.match(publicWebsite, /publicPath\(agency/);
+  assert.match(sectionPage, /pathMode = host\.replace/);
+  assert.match(propertyPage, /pathMode = host\.replace/);
   assert.match(workspace, /publicWebsiteHref\(brand\)/);
   assert.match(seo, /host\.startsWith\(`\$\{agency\.slug\.toLowerCase\(\)\}\.`\)/);
 });

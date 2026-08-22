@@ -5,15 +5,18 @@ import test from "node:test";
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("workspace is private while demo is intentional and public", async () => {
-  const [workspace, demo, error, home] = await Promise.all([
+  const [workspace, demo, demoClient, error, home] = await Promise.all([
     read("app/workspace/page.tsx"),
     read("app/demo/page.tsx"),
+    read("app/demo/demo-client.tsx"),
     read("app/error.tsx"),
     read("app/page.tsx"),
   ]);
   assert.match(workspace, /requireChatGPTUser\("\/workspace"\)/);
-  assert.match(demo, /sample data only/i);
-  assert.match(demo, /Start your real workspace/);
+  assert.match(demo, /DemoExperience/);
+  assert.match(demoClient, /sample data only/i);
+  assert.match(demoClient, /Start your real workspace/);
+  assert.match(demoClient, /setModule/);
   assert.doesNotMatch(error, /href="\/workspace"/);
   assert.match(error, /href="\/login"/);
   assert.match(home, /href="\/demo"/);
