@@ -94,8 +94,9 @@ async function POST(request: Request) {
 
     const id = crypto.randomUUID();
     const source = await file.arrayBuffer();
-    const main = kind === "agent_photo" ? await processImage(source, file.type, 900, 82) : await processImage(source, file.type, 1920, 82);
-    const thumb = kind === "property_photo" || kind === "agent_photo" || kind === "website_image" ? await processImage(source, file.type, 480, 72) : null;
+    const optimize = (input: ArrayBuffer, width: number, quality: number) => processImage(input, file.type, width, quality);
+    const main = kind === "agent_photo" ? await optimize(source,900,82) : await optimize(source,1920,82);
+    const thumb = kind === "property_photo" || kind === "agent_photo" || kind === "website_image" ? await optimize(source,480,72) : null;
     const key = optimizedMediaObjectKey(c.workspace.agencyId, id, "main");
     const thumbKey = thumb ? optimizedMediaObjectKey(c.workspace.agencyId, id, "thumb") : null;
     const previous = kind === "agency_logo" ? await env.DB.prepare("SELECT object_key AS objectKey,thumbnail_object_key AS thumbnailObjectKey FROM media_assets WHERE agency_id=? AND kind='agency_logo' LIMIT 1").bind(c.workspace.agencyId).first<any>() : null;

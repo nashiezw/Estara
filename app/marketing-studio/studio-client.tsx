@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 type CopyState = { headline: string; listingDescription: string; socialCaption: string };
+type DesignState = { imageChoice: string; customPhotoUrl: string; badge: string; icon: string; showLogo: boolean; textAlign: "left" | "center" };
 type Row = Record<string, any>;
 
 const designOptions = [
@@ -13,6 +14,13 @@ const designOptions = [
 ];
 
 const defaultCopy: CopyState = { headline: "", listingDescription: "", socialCaption: "" };
+const defaultDesignState: DesignState = { imageChoice: "first", customPhotoUrl: "", badge: "Just listed", icon: "home", showLogo: true, textAlign: "left" };
+const iconOptions = [
+  { key: "home", label: "Home" },
+  { key: "key", label: "Key" },
+  { key: "pin", label: "Pin" },
+  { key: "camera", label: "Photo" },
+];
 
 export default function MarketingStudioClient({ platform }: { platform: { shortName: string } }) {
   const [data, setData] = useState<Row | null>(null);
@@ -20,6 +28,7 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
   const [selected, setSelected] = useState<string[]>(["whatsapp_card"]);
   const [previewFormat, setPreviewFormat] = useState("whatsapp_card");
   const [design, setDesign] = useState("signature");
+  const [designState, setDesignState] = useState<DesignState>(defaultDesignState);
   const [copy, setCopy] = useState<CopyState>(defaultCopy);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -50,6 +59,17 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
   const activeCopy = draft || approvedCopy;
   const formats = data?.formats || {};
   const activeFormat: Row = formats[previewFormat] || Object.values(formats)[0] || { name: "Creative", width: 1200, height: 628 };
+  const mediaOptions = property?.media?.length ? property.media : property?.photoUrl ? [{ id: "hero", url: property.photoUrl, label: "Hero photo" }] : [];
+  const selectedPhotoUrl = designState.imageChoice === "none"
+    ? ""
+    : designState.imageChoice === "custom"
+      ? designState.customPhotoUrl
+      : String(mediaOptions.find((item: Row) => `media:${item.id}` === designState.imageChoice)?.url || property?.photoUrl || "");
+  const renderDesignSettings = {
+    ...designState,
+    photoMediaId: designState.imageChoice.startsWith("media:") ? designState.imageChoice.slice(6) : "",
+    photoUrl: designState.imageChoice === "custom" ? designState.customPhotoUrl : "",
+  };
 
   useEffect(() => {
     setCopy(activeCopy ? {
@@ -83,7 +103,7 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
     await call("PATCH", { action: "update_copy", id: draft.id, ...copy }, "Copy saved.");
     await call("PATCH", { action: "approve_copy", id: draft.id }, "Copy approved for rendering.");
   };
-  const renderOutputs = () => call("POST", { action: "render", propertyId, formats: selected, design }, "Selected marketing outputs were generated.");
+  const renderOutputs = () => call("POST", { action: "render", propertyId, formats: selected, design, designSettings: renderDesignSettings }, "Selected marketing outputs were generated.");
 
   function toggleFormat(key: string) {
     setSelected((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
@@ -94,7 +114,7 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
     if (!property) return;
     const blob = previewFormat === "social_caption"
       ? new Blob([copy.socialCaption || suggestedCaption(property)], { type: "text/plain" })
-      : new Blob([creativeSvg({ property, agency: data?.agency || {}, copy, design, photoUrl: property.photoUrl }, activeFormat.width, activeFormat.height)], { type: "image/svg+xml" });
+      : new Blob([creativeSvg({ property, agency: data?.agency || {}, copy, design, photoUrl: selectedPhotoUrl, designSettings: renderDesignSettings }, activeFormat.width, activeFormat.height)], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -163,9 +183,11 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
             </div>
             <div className="studio-preview-stage">
               <article className={`studio-live-card studio-live-${design}`} style={{ aspectRatio: `${activeFormat.width}/${activeFormat.height}` }}>
-                {property?.photoUrl && <img src={property.photoUrl} alt="" />}
-                <div>
-                  <span>{data.agency?.name || platform.shortName}</span>
+                {selectedPhotoUrl && <img src={selectedPhotoUrl} alt="" />}
+                <div className={`studio-card-copy studio-align-${designState.textAlign}`}>
+                  {designState.showLogo && <span>{data.agency?.name || platform.shortName}</span>}
+                  <i className="studio-card-icon" aria-hidden="true">{iconOptions.find((item) => item.key === designState.icon)?.label.slice(0, 1) || "H"}</i>
+                  <em>{designState.badge}</em>
                   <small>{property ? `${property.transactionType || "Sale"} - ${property.location || ""}` : "Choose a property"}</small>
                   <h3>{copy.headline || property?.title || "Marketing headline"}</h3>
                   <p>{propertyDetails(property)}</p>
@@ -176,6 +198,21 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
             <div className="studio-designs" aria-label="Design styles">
               {designOptions.map((item) => <button className={design === item.key ? "active" : ""} onClick={() => setDesign(item.key)} key={item.key}><b>{item.name}</b><small>{item.note}</small></button>)}
             </div>
+            <section className="studio-brand-controls" aria-label="Creative controls">
+              <label>Image
+                <select value={designState.imageChoice} onChange={(event) => setDesignState({ ...designState, imageChoice: event.target.value })}>
+                  <option value="first">Best property photo</option>
+                  {mediaOptions.map((item: Row, index: number) => <option value={`media:${item.id}`} key={item.id}>Photo {index + 1}</option>)}
+                  <option value="custom">External image URL</option>
+                  <option value="none">No image</option>
+                </select>
+              </label>
+              {designState.imageChoice === "custom" && <label>Image URL<input value={designState.customPhotoUrl} onChange={(event) => setDesignState({ ...designState, customPhotoUrl: event.target.value })} placeholder="https://..." /></label>}
+              <label>Badge text<input value={designState.badge} onChange={(event) => setDesignState({ ...designState, badge: event.target.value })} maxLength={48} /></label>
+              <label>Icon<select value={designState.icon} onChange={(event) => setDesignState({ ...designState, icon: event.target.value })}>{iconOptions.map((item) => <option value={item.key} key={item.key}>{item.label}</option>)}</select></label>
+              <label>Text alignment<select value={designState.textAlign} onChange={(event) => setDesignState({ ...designState, textAlign: event.target.value as DesignState["textAlign"] })}><option value="left">Left</option><option value="center">Center</option></select></label>
+              <label className="studio-toggle"><input type="checkbox" checked={designState.showLogo} onChange={(event) => setDesignState({ ...designState, showLogo: event.target.checked })} /> Show agency name</label>
+            </section>
           </section>
 
           <section className="studio-copy studio-editor">
@@ -235,11 +272,15 @@ function creativeSvg(snapshot: Row, width: number, height: number) {
   const property = snapshot.property || {};
   const agency = snapshot.agency || {};
   const copy = snapshot.copy || {};
+  const settings = snapshot.designSettings || {};
   const primary = agency.primaryColor || "#153b34";
   const accent = agency.accentColor || "#4fcfd2";
   const photo = snapshot.photoUrl || property.photoUrl || "";
   const title = copy.headline || property.title || "Property marketing";
   const details = propertyDetails(property);
   const price = property.price || "Price on application";
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="${esc(snapshot.design === "editorial" ? "#fbfaf5" : primary)}"/>${photo ? `<image href="${esc(photo)}" x="${width * .48}" y="${height * .08}" width="${width * .45}" height="${height * .74}" preserveAspectRatio="xMidYMid slice"/>` : ""}<rect width="100%" height="100%" fill="url(#shade)"/><defs><linearGradient id="shade" x1="0" y1="0" x2="1" y2="0"><stop stop-color="${esc(primary)}" stop-opacity=".94"/><stop offset=".65" stop-color="${esc(primary)}" stop-opacity=".48"/><stop offset="1" stop-color="${esc(primary)}" stop-opacity=".1"/></linearGradient></defs><text x="${width * .07}" y="${height * .16}" fill="${esc(accent)}" font-family="Arial" font-weight="900" font-size="${Math.round(width * .022)}">${esc((agency.name || "ESTARA").toUpperCase())}</text><foreignObject x="${width * .07}" y="${height * .34}" width="${width * .7}" height="${height * .28}"><div xmlns="http://www.w3.org/1999/xhtml" style="font:800 ${Math.round(width * .052)}px/.98 Georgia;color:white;letter-spacing:0">${esc(title)}</div></foreignObject><text x="${width * .07}" y="${height * .75}" fill="#fff" font-family="Georgia" font-size="${Math.round(width * .044)}">${esc(price)}</text><text x="${width * .07}" y="${height * .84}" fill="#fff" font-family="Arial" font-size="${Math.round(width * .018)}">${esc(details)}</text></svg>`;
+  const anchor = settings.textAlign === "center" ? "middle" : "start";
+  const x = settings.textAlign === "center" ? width * .35 : width * .07;
+  const showLogo = settings.showLogo !== false;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="${esc(snapshot.design === "editorial" ? "#fbfaf5" : primary)}"/>${photo ? `<image href="${esc(photo)}" x="${width * .48}" y="${height * .08}" width="${width * .45}" height="${height * .74}" preserveAspectRatio="xMidYMid slice"/>` : ""}<rect width="100%" height="100%" fill="url(#shade)"/><defs><linearGradient id="shade" x1="0" y1="0" x2="1" y2="0"><stop stop-color="${esc(primary)}" stop-opacity=".94"/><stop offset=".65" stop-color="${esc(primary)}" stop-opacity=".48"/><stop offset="1" stop-color="${esc(primary)}" stop-opacity=".1"/></linearGradient></defs><circle cx="${x}" cy="${height * .2}" r="${Math.round(width * .028)}" fill="${esc(accent)}"/><text x="${x}" y="${height * .215}" text-anchor="middle" fill="${esc(primary)}" font-family="Arial" font-weight="900" font-size="${Math.round(width * .024)}">${esc(String(settings.icon || "home").slice(0, 1).toUpperCase())}</text>${showLogo ? `<text x="${x}" y="${height * .16}" text-anchor="${anchor}" fill="${esc(accent)}" font-family="Arial" font-weight="900" font-size="${Math.round(width * .022)}">${esc((agency.name || "ESTARA").toUpperCase())}</text>` : ""}<text x="${x}" y="${height * .29}" text-anchor="${anchor}" fill="${esc(accent)}" font-family="Arial" font-weight="900" font-size="${Math.round(width * .018)}">${esc(settings.badge || "Just listed")}</text><foreignObject x="${settings.textAlign === "center" ? width * .08 : width * .07}" y="${height * .34}" width="${width * .7}" height="${height * .28}"><div xmlns="http://www.w3.org/1999/xhtml" style="font:800 ${Math.round(width * .052)}px/.98 Georgia;color:white;letter-spacing:0;text-align:${settings.textAlign === "center" ? "center" : "left"}">${esc(title)}</div></foreignObject><text x="${x}" y="${height * .75}" text-anchor="${anchor}" fill="#fff" font-family="Georgia" font-size="${Math.round(width * .044)}">${esc(price)}</text><text x="${x}" y="${height * .84}" text-anchor="${anchor}" fill="#fff" font-family="Arial" font-size="${Math.round(width * .018)}">${esc(details)}</text></svg>`;
 }

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { getPlatformIdentity } from "../../db/platform-settings";
 import DemoExperience from "./demo-client";
+import "./demo.css";
 
 export const dynamic = "force-dynamic";
 
