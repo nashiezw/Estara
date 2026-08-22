@@ -34,6 +34,7 @@ The source-level contract lives in `db/production-providers.ts`. `.env.example` 
 - `FCM_PRIVATE_KEY`
 - `NEXT_PUBLIC_FCM_VAPID_KEY`
 - `SENTRY_DSN`
+- `SENTRY_RELEASE`
 - `SENTRY_AUTH_TOKEN`
 - `SENTRY_ORG`
 - `SENTRY_PROJECT`

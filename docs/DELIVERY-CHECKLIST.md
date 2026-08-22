@@ -190,6 +190,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [-] File type, size and magic-byte validation; Cloudflare WAF malicious upload scanning selected, production rule activation pending
 - [x] Tenant-scoped audit trail and searchable audit UI
 - [-] Structured correlation logs, protected error events and provider-readiness visibility; Sentry and Cloudflare log retention selected, live alert routing pending activation
+- [x] Cloudflare worker is wrapped with Sentry error capture, release tagging and no default PII when production Sentry is configured
 - [x] Protected live queue, API, storage and database health monitoring
 - [x] Automated encrypted backups
 - [-] Point-in-time recovery policy documented for D1 Time Travel; production-backend verification and isolated restore rehearsal pending

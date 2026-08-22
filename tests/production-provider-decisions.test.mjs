@@ -66,3 +66,19 @@ test("provider readiness reports missing configuration without exposing secret v
   assert.ok(configured.areas.every((area) => area.missingEnv.length === 0));
   assert.ok(configured.areas.every((area) => area.status === "selected_pending_activation"));
 });
+
+test("Cloudflare worker initializes protected Sentry error retention when configured", async () => {
+  const [worker, packageJson, wrangler] = await Promise.all([
+    read("../worker/index.ts"),
+    read("../package.json"),
+    read("../wrangler.jsonc"),
+  ]);
+
+  assert.match(packageJson, /"@sentry\/cloudflare"/);
+  assert.match(wrangler, /"nodejs_compat"/);
+  assert.match(worker, /import \* as Sentry from "@sentry\/cloudflare"/);
+  assert.match(worker, /Sentry\.withSentry/);
+  assert.match(worker, /dsn:\s*env\.SENTRY_DSN/);
+  assert.match(worker, /release:\s*env\.SENTRY_RELEASE/);
+  assert.match(worker, /sendDefaultPii:\s*false/);
+});

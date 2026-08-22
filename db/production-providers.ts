@@ -49,7 +49,7 @@ export const PRODUCTION_PROVIDER_DECISIONS: readonly ProductionProviderDecision[
     area: "error_retention_alerting",
     provider: "Sentry for Cloudflare plus Cloudflare platform logs",
     status: "selected_pending_activation",
-    requiredEnv: ["SENTRY_DSN", "SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT"],
+    requiredEnv: ["SENTRY_DSN", "SENTRY_RELEASE", "SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT"],
     activationEvidence: [
       "Server and browser release tags match deployed revision",
       "Protected error events are retained outside the app database",

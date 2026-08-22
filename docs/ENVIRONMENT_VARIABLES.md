@@ -38,6 +38,7 @@ These are bindings rather than normal `.env` variables in most Cloudflare deploy
 | `FCM_PRIVATE_KEY` | Firebase service account private key. | Optional secret until push is launched. | Firebase service account. |
 | `NEXT_PUBLIC_FCM_VAPID_KEY` | Browser-visible push VAPID key. | Optional until push is launched. | Firebase web push settings. |
 | `SENTRY_DSN` | Error monitoring DSN. | Production required for monitoring. | Sentry project settings. |
+| `SENTRY_RELEASE` | Deployed app release identifier sent with server error events. | Production required for monitoring. | Deployment commit SHA or release name. |
 | `SENTRY_AUTH_TOKEN` | Token for release/source map operations. | Production required if release uploads are used. | Sentry auth token. |
 | `SENTRY_ORG` | Sentry organisation slug. | Production required if release uploads are used. | Sentry settings. |
 | `SENTRY_PROJECT` | Sentry project slug. | Production required if release uploads are used. | Sentry settings. |
