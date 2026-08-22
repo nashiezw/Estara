@@ -187,6 +187,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [-] Focus-visible, reduced-motion, labelled capture, mobile input improvements and mobile journey audit criteria complete; real Android/iOS device audit pending
 - [x] Global loading, failure, retry, non-disclosing not-found boundaries and client-mutation state audit complete
 - [x] Private workspace tools return users to the authenticated workspace instead of the public landing page
+- [x] Key blank states point users to concrete next actions instead of dead-end text
 - [x] Property-capture unsaved-work protection and device draft recovery
 - [x] Private document storage and expiring single-use access URLs
 - [-] File type, size and magic-byte validation; Cloudflare WAF malicious upload scanning selected, production rule activation pending
