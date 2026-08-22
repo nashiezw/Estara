@@ -47,7 +47,7 @@ export async function GET() {
   const user = await getChatGPTUser();
   if (!user) return Response.json({ error: "Sign in is required." }, { status: 401 });
   const w = await requireWorkspace(user);
-  const [platform, agency, logo] = await Promise.all([
+  const [platform, agency, logo, icon] = await Promise.all([
     env.DB.prepare("SELECT * FROM platform_settings WHERE id='default'").first(),
     env.DB.prepare("SELECT a.name,a.slug,s.* FROM agencies a JOIN agency_settings s ON s.agency_id=a.id WHERE a.id=?")
       .bind(w.agencyId)
@@ -55,8 +55,11 @@ export async function GET() {
     env.DB.prepare("SELECT id FROM media_assets WHERE agency_id=? AND kind='agency_logo' LIMIT 1")
       .bind(w.agencyId)
       .first<{ id: string }>(),
+    env.DB.prepare("SELECT id FROM media_assets WHERE agency_id=? AND kind='agency_icon' LIMIT 1")
+      .bind(w.agencyId)
+      .first<{ id: string }>(),
   ]);
-  return Response.json({ platform, agency: { ...(agency || {}), logo_id: logo?.id || null } });
+  return Response.json({ platform, agency: { ...(agency || {}), logo_id: logo?.id || null, icon_id: icon?.id || null } });
 }
 
 export async function PATCH(request: Request) {

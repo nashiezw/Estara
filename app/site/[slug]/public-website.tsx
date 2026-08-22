@@ -19,6 +19,7 @@ type PublicAgency = {
   typography: string;
   responseSlaMinutes: number;
   logoId: string | null;
+  iconId?: string | null;
   portalName: string;
   hideParentBrand: boolean;
   poweredByWording: string;

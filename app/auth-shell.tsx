@@ -8,7 +8,7 @@ export default async function AuthShell({ children }: { children: React.ReactNod
     <main className="auth-shell">
       <section className="auth-brand">
         <Link href="/" className="auth-mark">
-          <i>{platform.shortName.slice(0, 1)}</i>
+          {platform.iconUrl || platform.logoUrl ? <img src={platform.iconUrl || platform.logoUrl} alt="" /> : <i>{platform.shortName.slice(0, 1)}</i>}
           <span>{platform.shortName}<small>{platform.descriptor}</small></span>
         </Link>
         <div>

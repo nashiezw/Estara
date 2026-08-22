@@ -75,6 +75,7 @@ export default async function Home() {
   }
 
   const initial = platform.shortName.slice(0, 1);
+  const platformMark = platform.iconUrl || platform.logoUrl;
   const parent = platform.parentBrand ? `A ${platform.parentBrand} product` : platform.descriptor;
   const publicDomain = platformDomainFromHost(host, platform.domain);
   const loginHref = appHref("/login", publicDomain);
@@ -91,7 +92,7 @@ export default async function Home() {
     <main className="estara-landing estara-home">
       <nav className="home-nav" aria-label="Primary navigation">
         <a href="/" className="home-logo" aria-label={`${platform.shortName} home`}>
-          {platform.logoUrl ? <img src={platform.logoUrl} alt={`${platform.shortName} logo`} /> : <i>{initial}</i>}
+          {platform.logoUrl || platformMark ? <img src={platform.logoUrl || platformMark} alt={`${platform.shortName} logo`} /> : <i>{initial}</i>}
           <span>{platform.shortName}<small>{parent}</small></span>
         </a>
         <div className="home-nav-links">{navLinks.map((link) => <a href={link.href} key={link.label}>{link.label}</a>)}</div>
@@ -184,7 +185,7 @@ export default async function Home() {
       </section>
 
       <footer className="home-footer">
-        <a href="/" className="home-logo">{platform.logoUrl ? <img src={platform.logoUrl} alt={`${platform.shortName} logo`} /> : <i>{initial}</i>}<span>{platform.shortName}<small>{parent}</small></span></a>
+        <a href="/" className="home-logo">{platform.logoUrl || platformMark ? <img src={platform.logoUrl || platformMark} alt={`${platform.shortName} logo`} /> : <i>{initial}</i>}<span>{platform.shortName}<small>{parent}</small></span></a>
         <nav>
           <a href={contactsHref}>Contacts</a>
           <a href={propertiesHref}>Properties</a>

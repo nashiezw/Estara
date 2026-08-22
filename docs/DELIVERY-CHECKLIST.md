@@ -21,7 +21,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 1. Foundation
 
-- [-] Platform settings: central identity, metadata, domain suffix and powered-by wording exist; landing, workspace shell, billing, seller portal, platform admin, invite, health, contacts, branches, pipeline, deals, matching, marketing studio, operations, roles, search, Ask, developer, integrations, reports, property record, property portal and shortlist branding now read platform settings; provider-backed production settings still need launch verification
+- [-] Platform settings: central identity, metadata, domain suffix, powered-by wording, platform logo and browser icon exist; landing, auth, workspace shell, billing, seller portal, platform admin, invite, health, contacts, branches, pipeline, deals, matching, marketing studio, operations, roles, search, Ask, developer, integrations, reports, property record, property portal and shortlist branding now read platform settings; provider-backed production settings still need launch verification
 - [x] Authenticated private workspace using platform-provided identity
 - [x] Server-resolved tenant workspace
 - [x] Agency membership table
@@ -42,7 +42,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Guided account and agency onboarding
 - [x] Owner-facing setup copy connects identity, colours, services, website style, public address and first-property capture to the real public website, enquiry and marketing outcomes
 - [x] Agency details and business activities
-- [x] Logo upload to private object storage
+- [x] Separate agency logo and agency icon uploads to private object storage
 - [x] Agency colour tokens and typography persist and apply across implemented workspace, public website, marketing SVG and PDF outputs
 - [x] Team invitation and membership acceptance
 - [x] Website template selection
@@ -51,7 +51,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [-] Own-domain onboarding implemented for DNS proof; hosting-provider attachment pending
 - [x] Completion screen and first-property handoff
 - [x] Agency-branded workspace screens
-- [x] Persisted agency branding used across all implemented public outputs
+- [x] Persisted agency logo, icon, colour and typography branding used across implemented workspace and public outputs
 
 ## 3. Property
 
@@ -86,7 +86,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Public property detail page
 - [x] Call, WhatsApp, enquire, viewing and share actions
 - [x] Similar properties
-- [-] Tenant slug routing, preview URLs and host-based tenant-subdomain resolution implemented; hosting-provider tenant hostname attachment pending
+- [-] Tenant slug routing, preview URLs, clean default website links and host-based tenant-subdomain resolution implemented; hosting-provider tenant hostname attachment pending
 - [x] Custom-domain ownership token
 - [x] DNS verification lifecycle
 - [-] Automated TLS activation request tracked; provider certificate activation pending
@@ -184,7 +184,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] In-app notification centre
 - [-] Email and push delivery ledger implemented; Resend and Firebase Cloud Messaging selected, live provider delivery pending activation
 - [-] Persistent low-data mode suppresses listing image requests; local low-data byte-reduction budget, production measurement verifier and measurement viewports defined; production hosted measurement pending
-- [-] Focus-visible, reduced-motion, labelled capture, mobile input improvements and mobile journey audit criteria complete; real Android/iOS device audit pending
+- [-] Focus-visible, reduced-motion, labelled capture, mobile input improvements, Super Admin/workspace/domain responsive polish and mobile journey audit criteria complete; real Android/iOS device audit pending
 - [x] Global loading, failure, retry, non-disclosing not-found boundaries and client-mutation state audit complete
 - [x] Private workspace tools return users to the authenticated workspace instead of the public landing page
 - [x] Key blank states point users to concrete next actions instead of dead-end text

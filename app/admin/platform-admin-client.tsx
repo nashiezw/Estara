@@ -58,7 +58,7 @@ const pageCopy: Record<string, { eyebrow: string; title: string; summary: string
 export default function PlatformAdminClient({ displayName }: { displayName: string }) {
   const [data, setData] = useState<Data>(empty), [tab, setTab] = useState("overview"), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true), [notice, setNotice] = useState(""), [error, setError] = useState("");
   const published = useMemo(() => data.plans.filter(plan => plan.status === "published"), [data.plans]);
-  const platform = data.platform || { platformName: "Platform", shortName: "PL", logoUrl: "", darkLogoUrl: "" };
+  const platform = data.platform || { platformName: "Platform", shortName: "PL", logoUrl: "", iconUrl: "", darkLogoUrl: "", darkIconUrl: "" };
   const load = async (initial = false) => {
     if (initial) setLoading(true);
     try {
@@ -85,7 +85,7 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
     }
   };
   if (loading) return <main className="platform-admin-loading">
-    <div><i>{platform.shortName.slice(0, 1)}</i><span>CONTROL PLANE</span><h1>Opening control plane</h1><p>Preparing tenant, revenue and evidence intelligence.</p></div>
+    <div>{platform.iconUrl ? <img src={platform.iconUrl} alt="" /> : <i>{platform.shortName.slice(0, 1)}</i>}<span>CONTROL PLANE</span><h1>Opening control plane</h1><p>Preparing tenant, revenue and evidence intelligence.</p></div>
   </main>;
   if (error) return <main className="platform-denied"><span>CONTROL PLANE</span><h1>Platform access is restricted.</h1><p>{error}</p><p>Use the normal ESTARA login first. The first signed-in user becomes Super Admin only when no platform operator exists yet. After that, an existing Super Admin must add your user ID under Operator access.</p><a href="/login">Log in</a><a href="/workspace">Return to workspace</a></main>;
   const activePage = pageCopy[tab] || pageCopy.overview;
@@ -93,7 +93,7 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
   const adminTheme: AdminThemeVars = { "--admin-brand": data.settings?.primaryColor || "#153b34", "--admin-accent": data.settings?.accentColor || "#e6bd5f" };
   return <main className="platform-admin platform-admin-premium platform-admin-compact" style={adminTheme}>
     <aside className="platform-shell">
-      <a className="platform-mark" href="/">{(platform.darkLogoUrl || platform.logoUrl) ? <img src={platform.darkLogoUrl || platform.logoUrl} alt={`${platform.platformName} logo`} /> : <i>{platform.shortName.slice(0, 1)}</i>}<span>{platform.platformName}<small>Control plane</small></span></a>
+      <a className="platform-mark" href="/">{(platform.darkLogoUrl || platform.logoUrl || platform.darkIconUrl || platform.iconUrl) ? <img src={platform.darkLogoUrl || platform.logoUrl || platform.darkIconUrl || platform.iconUrl} alt={`${platform.platformName} logo`} /> : <i>{platform.shortName.slice(0, 1)}</i>}<span>{platform.platformName}<small>Control plane</small></span></a>
       <div className="platform-side-status"><span>Launch mode</span><strong>{data.settings?.domain ? "Production staging" : "Domain pending"}</strong><small>{data.operations?.publicIntake10m || 0} public intakes in 10m</small></div>
       <nav>{navGroups.map(group => <section className="platform-nav-group" key={group}><span>{group}</span>{tabs.filter(item => item.group === group).map(item => <button className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)} key={item.id}><i>{item.icon}</i><span>{item.label}</span></button>)}</section>)}</nav>
       <footer className="platform-operator-card">
@@ -116,7 +116,7 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
           <span>ACTIVE SESSION</span>
           <b>{data.actor?.role === "super_admin" ? "Super Admin" : "Role Limited"}</b>
           <small>{data.settings?.domain || "Production domain pending"}</small>
-          <button className="platform-refresh" disabled={busy} onClick={() => load(false)}>Refresh console</button>
+          <button className="platform-refresh" disabled={busy} onClick={() => load(false)}>{busy ? "Refreshing..." : "Refresh console"}</button>
         </aside>
       </header>
       {showPageStrip && <PageStrip tab={tab} data={data} />}
@@ -249,6 +249,7 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
   const [form, setForm] = useState<Settings>(normaliseSettings(settings));
   const [uploading, setUploading] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [uploadNotice, setUploadNotice] = useState("");
   useEffect(() => { if (settings) setForm(normaliseSettings(settings)); }, [settings]);
   const change = (key: keyof Settings, value: string) => setForm(current => ({ ...current, [key]: value }));
   const changeColour = (key: "primaryColor" | "accentColor", value: string) => setForm(current => ({ ...current, [key]: normaliseHex(value) }));
@@ -256,6 +257,7 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
     if (!file) return;
     setUploading(type);
     setUploadError("");
+    setUploadNotice("");
     try {
       const body = new FormData();
       body.set("type", type);
@@ -264,6 +266,7 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
       if (!response.ok) throw new Error(result.error || "Upload failed.");
       const field = type === "logo" ? "logoUrl" : type === "icon" ? "iconUrl" : type === "dark-logo" ? "darkLogoUrl" : "darkIconUrl";
       setForm(current => ({ ...current, [field]: result.url }));
+      setUploadNotice(`${type.replace("-", " ")} uploaded and saved to platform settings.`);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Upload failed.");
     } finally {
@@ -273,13 +276,14 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
   return <form className="platform-settings-workbench" onSubmit={(event: FormEvent) => { event.preventDefault(); send("PATCH", { action: "update_platform_settings", ...form, primaryColor: normaliseHex(form.primaryColor), accentColor: normaliseHex(form.accentColor) }); }}>
     <section className="platform-card platform-brand-console">
       <span>PLATFORM BRAND</span><h2>{form.platformName || "Platform identity"}</h2><p>{form.tagline || "Set the commercial promise every login, workspace and public footer can inherit."}</p>
-      <div style={{ background: form.primaryColor, borderTop: `8px solid ${form.accentColor}` }}>{(form.darkLogoUrl || form.logoUrl) ? <img src={form.darkLogoUrl || form.logoUrl} alt={`${form.platformName || "Platform"} dark logo preview`} /> : <b style={{ color: form.accentColor }}>{form.shortName?.slice(0, 1) || "E"}</b>}<span>{form.poweredByWording || "Powered by platform"}</span></div>
+      <div style={{ background: form.primaryColor, borderTop: `8px solid ${form.accentColor}` }}>{(form.darkLogoUrl || form.logoUrl || form.darkIconUrl || form.iconUrl) ? <img src={form.darkLogoUrl || form.logoUrl || form.darkIconUrl || form.iconUrl} alt={`${form.platformName || "Platform"} dark logo preview`} /> : <b style={{ color: form.accentColor }}>{form.shortName?.slice(0, 1) || "E"}</b>}<span>{form.poweredByWording || "Powered by platform"}</span></div>
       <div className="platform-brand-assets">
         <span><strong>Logo</strong><small>{form.logoUrl ? "Custom logo URL saved" : "Uses short-name initial until a logo URL is added"}</small></span>
         <span><strong>Browser icon</strong><small>{form.iconUrl ? "Custom browser icon URL saved" : "Uses default favicon until an icon URL is added"}</small></span>
         <span><strong>Dark logo</strong><small>{form.darkLogoUrl ? "Custom dark-surface logo saved" : "Dark screens fall back to the normal logo"}</small></span>
         <span><strong>Dark icon</strong><small>{form.darkIconUrl ? "Custom dark-surface icon saved" : "Dark saved-site surfaces fall back to the normal icon"}</small></span>
       </div>
+      {uploadNotice && <p className="platform-notice" role="status">{uploadNotice}</p>}
       {uploadError && <p className="platform-error" role="alert">{uploadError}</p>}
     </section>
     <section className="platform-card platform-settings-form">
@@ -297,10 +301,10 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
         </fieldset>
         <fieldset>
           <legend>Logo & Icon</legend>
-          <label className="wide platform-asset-upload"><strong>Upload platform logo</strong><small>This controls the ESTARA mark on the homepage, demo, workspace, Super Admin and share previews.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || uploading === "logo"} onChange={event => uploadBrandAsset("logo", event.target.files?.[0])} /></label>
-          <label className="wide platform-asset-upload"><strong>Upload browser icon</strong><small>This controls the tab icon and mobile saved-site icon where the browser supports it.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || uploading === "icon"} onChange={event => uploadBrandAsset("icon", event.target.files?.[0])} /></label>
-          <label className="wide platform-asset-upload"><strong>Upload dark logo</strong><small>This logo is used on dark sidebars, dark admin panels and dark demo/workspace surfaces.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || uploading === "dark-logo"} onChange={event => uploadBrandAsset("dark-logo", event.target.files?.[0])} /></label>
-          <label className="wide platform-asset-upload"><strong>Upload dark browser icon</strong><small>Optional dark-mode icon. If empty, the main browser icon is used.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || uploading === "dark-icon"} onChange={event => uploadBrandAsset("dark-icon", event.target.files?.[0])} /></label>
+          <label className="wide platform-asset-upload"><strong>{uploading === "logo" ? "Uploading platform logo..." : "Upload platform logo"}</strong><small>This controls the ESTARA wordmark on the homepage, demo, workspace, Super Admin and share previews.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || Boolean(uploading)} onChange={event => uploadBrandAsset("logo", event.target.files?.[0])} /></label>
+          <label className="wide platform-asset-upload"><strong>{uploading === "icon" ? "Uploading browser icon..." : "Upload browser icon"}</strong><small>This replaces the letter mark, tab icon and mobile saved-site icon where the browser supports it.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || Boolean(uploading)} onChange={event => uploadBrandAsset("icon", event.target.files?.[0])} /></label>
+          <label className="wide platform-asset-upload"><strong>{uploading === "dark-logo" ? "Uploading dark logo..." : "Upload dark logo"}</strong><small>This logo is used on dark sidebars, dark admin panels and dark demo/workspace surfaces.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || Boolean(uploading)} onChange={event => uploadBrandAsset("dark-logo", event.target.files?.[0])} /></label>
+          <label className="wide platform-asset-upload"><strong>{uploading === "dark-icon" ? "Uploading dark browser icon..." : "Upload dark browser icon"}</strong><small>Optional dark-mode icon. If empty, the main platform icon is used.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || Boolean(uploading)} onChange={event => uploadBrandAsset("dark-icon", event.target.files?.[0])} /></label>
           <label className="wide">Platform logo URL<input value={form.logoUrl} onChange={event => change("logoUrl", event.target.value)} placeholder="/api/platform/asset?type=logo" /></label>
           <label className="wide">Browser icon URL<input value={form.iconUrl} onChange={event => change("iconUrl", event.target.value)} placeholder="/api/platform/asset?type=icon" /></label>
           <label className="wide">Dark logo URL<input value={form.darkLogoUrl} onChange={event => change("darkLogoUrl", event.target.value)} placeholder="/api/platform/asset?type=dark-logo" /></label>
@@ -329,7 +333,7 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
           </div>
         </fieldset>
       </div>
-      <button disabled={busy}>Save platform settings</button>
+      <button disabled={busy || Boolean(uploading)}>{busy ? "Saving platform settings..." : "Save platform settings"}</button>
     </section>
   </form>;
 }

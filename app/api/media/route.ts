@@ -72,7 +72,7 @@ async function POST(request: Request) {
     const requested = String(form.get("category") || "other");
     const category = PHOTO_CATEGORIES.includes(requested) ? requested : "other";
 
-    if (!(file instanceof File) || !["agency_logo", "property_photo", "agent_photo", "website_image"].includes(kind)) return Response.json({ error: "Choose an image and a valid destination." }, { status: 400 });
+    if (!(file instanceof File) || !["agency_logo", "agency_icon", "property_photo", "agent_photo", "website_image"].includes(kind)) return Response.json({ error: "Choose an image and a valid destination." }, { status: 400 });
     const invalid = validateMediaFile(file);
     if (invalid) return Response.json({ error: invalid }, { status: 400 });
 
@@ -80,7 +80,7 @@ async function POST(request: Request) {
       const member = await env.DB.prepare("SELECT 1 FROM agency_memberships WHERE agency_id=? AND user_id=?").bind(c.workspace.agencyId, userId).first();
       if (!member) return Response.json({ error: "Agent is not in this agency." }, { status: 404 });
       if (userId !== c.user.userId) await requirePermission(c.workspace, "team.manage");
-    } else if (kind === "website_image") {
+    } else if (kind === "website_image" || kind === "agency_icon" || kind === "agency_logo") {
       await requirePermission(c.workspace, "agency.settings.manage");
     } else {
       await requirePermission(c.workspace, "property.media.manage");
@@ -96,10 +96,10 @@ async function POST(request: Request) {
     const source = await file.arrayBuffer();
     const optimize = (input: ArrayBuffer, width: number, quality: number) => processImage(input, file.type, width, quality);
     const main = kind === "agent_photo" ? await optimize(source,900,82) : await optimize(source,1920,82);
-    const thumb = kind === "property_photo" || kind === "agent_photo" || kind === "website_image" ? await optimize(source,480,72) : null;
+    const thumb = kind === "property_photo" || kind === "agent_photo" || kind === "website_image" || kind === "agency_logo" || kind === "agency_icon" ? await optimize(source,480,72) : null;
     const key = optimizedMediaObjectKey(c.workspace.agencyId, id, "main");
     const thumbKey = thumb ? optimizedMediaObjectKey(c.workspace.agencyId, id, "thumb") : null;
-    const previous = kind === "agency_logo" ? await env.DB.prepare("SELECT object_key AS objectKey,thumbnail_object_key AS thumbnailObjectKey FROM media_assets WHERE agency_id=? AND kind='agency_logo' LIMIT 1").bind(c.workspace.agencyId).first<any>() : null;
+    const previous = kind === "agency_logo" || kind === "agency_icon" ? await env.DB.prepare("SELECT object_key AS objectKey,thumbnail_object_key AS thumbnailObjectKey FROM media_assets WHERE agency_id=? AND kind=? LIMIT 1").bind(c.workspace.agencyId, kind).first<any>() : null;
     const sort = kind === "property_photo" ? await env.DB.prepare("SELECT COUNT(*) AS count FROM media_assets WHERE agency_id=? AND property_id=? AND kind='property_photo'").bind(c.workspace.agencyId, propertyId).first<any>() : { count: 0 };
 
     await bucket().put(key, main.bytes, { httpMetadata: { contentType: main.mimeType }, customMetadata: { agencyId: c.workspace.agencyId, assetId: id, variant: "main", optimized: String(main.optimized) } });
@@ -107,8 +107,8 @@ async function POST(request: Request) {
 
     try {
       const insert = env.DB.prepare("INSERT INTO media_assets (id,agency_id,property_id,kind,category,object_key,thumbnail_object_key,original_name,mime_type,byte_size,thumbnail_byte_size,sort_order,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id, c.workspace.agencyId, kind === "property_photo" ? propertyId : null, kind, category, key, thumbKey, file.name, main.mimeType, main.bytes.byteLength, thumb?.bytes.byteLength || null, sort?.count || 0, c.user.userId);
-      if (kind === "agency_logo") {
-        await env.DB.batch([env.DB.prepare("DELETE FROM media_assets WHERE agency_id=? AND kind='agency_logo'").bind(c.workspace.agencyId), insert]);
+      if (kind === "agency_logo" || kind === "agency_icon") {
+        await env.DB.batch([env.DB.prepare("DELETE FROM media_assets WHERE agency_id=? AND kind=?").bind(c.workspace.agencyId, kind), insert]);
       } else {
         const statements = [insert];
         if (kind === "property_photo") statements.push(env.DB.prepare("UPDATE properties SET photo_count=(SELECT COUNT(*) FROM media_assets WHERE agency_id=? AND property_id=? AND kind='property_photo'),updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(c.workspace.agencyId, propertyId, propertyId, c.workspace.agencyId));

@@ -378,6 +378,205 @@ const styles = `
   }
 
   @media (max-width: 640px) {
+    .tool-page.domain-page {
+      min-height: 100vh;
+      padding: 1rem 1rem 6rem;
+      background: linear-gradient(180deg, #f8fbf8 0%, #eef6f2 100%);
+    }
+
+    .domain-topbar {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      min-height: 3.6rem;
+      margin: -0.25rem -0.1rem 1rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid #dfe9e4;
+    }
+
+    .domain-menu-dot {
+      display: grid;
+      place-items: center;
+      width: 2.35rem;
+      height: 2.35rem;
+      border: 1px solid #dfe9e4;
+      border-radius: 0.75rem;
+      background: #ffffff;
+      color: #123d35;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .domain-app-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: #123d35;
+      font-size: 0.82rem;
+      font-weight: 950;
+      letter-spacing: 0.16em;
+      text-decoration: none;
+    }
+
+    .domain-app-mark i {
+      width: 1.75rem;
+      height: 1.75rem;
+      display: grid;
+      place-items: center;
+      border-radius: 0.45rem;
+      background: #174b41;
+      color: #e6bd5f;
+      font-style: normal;
+    }
+
+    .domain-breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: #65776f;
+      font-size: 0.72rem;
+      margin: 0.55rem 0 1rem;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .domain-page .back {
+      display: inline-flex;
+      margin: 0 0 1.45rem;
+      font-size: 0.78rem;
+      color: #236257;
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    .domain-page .tool-hero {
+      padding: 0;
+      margin-bottom: 1.25rem;
+    }
+
+    .domain-page .tool-hero h1 {
+      font-size: clamp(2rem, 11vw, 2.75rem);
+      line-height: 0.98;
+      margin: 0.4rem 0 0.4rem;
+    }
+
+    .domain-page .tool-hero p {
+      max-width: 31rem;
+      color: #5c6d66;
+      font-size: 0.92rem;
+      line-height: 1.52;
+    }
+
+    .domain-default-card,
+    .domain-form,
+    .domain-help-card {
+      border: 1px solid #e3ebe7;
+      border-radius: 0.9rem;
+      background: #ffffff;
+      box-shadow: 0 1rem 2.5rem rgba(16, 52, 45, 0.08);
+      padding: 1.15rem;
+    }
+
+    .domain-card-shell {
+      display: grid;
+      grid-template-columns: 3.4rem minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .domain-card-icon {
+      width: 3.4rem;
+      height: 3.4rem;
+      display: grid;
+      place-items: center;
+      border-radius: 0.75rem;
+      background: #edf8f3;
+      color: #17685b;
+      font-size: 1.75rem;
+    }
+
+    .domain-default-card h2 {
+      font-size: 1.35rem;
+      line-height: 1.15;
+    }
+
+    .domain-card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .domain-card-actions a,
+    .domain-card-actions button,
+    .domain-form button {
+      width: 100%;
+      min-height: 3rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.55rem;
+      font-size: 0.8rem;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .domain-card-actions .copy-address {
+      border: 1px solid #1d5a50;
+      background: #fff;
+      color: #123d35;
+    }
+
+    .domain-form {
+      margin-top: 1rem;
+    }
+
+    .domain-form label {
+      display: grid;
+      gap: 0.45rem;
+      color: #143b34;
+      font-weight: 850;
+    }
+
+    .domain-form input {
+      min-height: 3.2rem;
+      border-radius: 0.7rem;
+      font-size: 1rem;
+    }
+
+    .domain-plan-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin: 0.8rem 0;
+      padding: 0.9rem;
+      border-radius: 0.7rem;
+      background: #f3f6f2;
+      color: #435850;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .domain-help-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-top: 1rem;
+      background: #eef6f1;
+      color: #123d35;
+    }
+
+    .domain-help-card b,
+    .domain-help-card small {
+      display: block;
+    }
+
+    .domain-help-card small {
+      margin-top: 0.25rem;
+      color: #5b6c66;
+    }
+
     .domain-title-section {
       flex-direction: column;
       align-items: flex-start;
@@ -393,6 +592,14 @@ const styles = `
 
     .action-button {
       width: 100%;
+    }
+  }
+
+  @media (min-width: 641px) {
+    .domain-topbar,
+    .domain-breadcrumbs,
+    .domain-help-card {
+      display: none;
     }
   }
 `;
@@ -448,25 +655,41 @@ export default function DomainClient() {
     return () => styleEl.remove();
   }, []);
 
-  return <main className="tool-page">
+  return <main className="tool-page domain-page">
+    <header className="domain-topbar" aria-label="Workspace navigation">
+      <a className="domain-menu-dot" href="/workspace" aria-label="Return to workspace">‹</a>
+      <a className="domain-app-mark" href="/workspace"><i>E</i><span>ESTARA</span></a>
+    </header>
+    <nav className="domain-breadcrumbs" aria-label="Breadcrumbs"><span>Home</span><span>/</span><span>Workspace</span><span>/</span><strong>Agency Website</strong><span>/</span><strong>Domains</strong></nav>
     <a className="back" href="/workspace">Return to workspace</a>
-    <section className="tool-hero"><span>Agency website</span><h1>Domains and public address</h1><p>Use the agency&apos;s default ESTARA website address immediately, or connect an agency-owned domain with DNS proof when the plan allows it.</p></section>
+    <section className="tool-hero"><span>Agency website</span><h1>Domains & Website</h1><p>Manage how customers access your agency website.</p></section>
     
     {error && <div className="notice" role="alert">{error}</div>}
     {message && <div className="notice success">{message}</div>}
 
     <section className="tool-card domain-default-card">
-      <span>Included agency website</span>
-      <h2>{defaultSiteHost || "Public website address not configured"}</h2>
-      <p>This is the clean public address for the agency website. In Cloudflare, add a proxied wildcard DNS record for `*.sites.estara.co.zw` and attach the Worker route `*.sites.estara.co.zw/*` so every agency slug resolves here.</p>
-      {defaultSiteUrl ? <a className="primary" href={defaultSiteUrl} target="_blank" rel="noreferrer">Open agency website</a> : <a className="outline" href="/admin">Configure tenant domain suffix</a>}
+      <div className="domain-card-shell">
+        <i className="domain-card-icon" aria-hidden="true">◎</i>
+        <div>
+          <span>Included website</span>
+          <h2>{defaultSiteHost || "Public website address not configured"}</h2>
+          <p>Your ESTARA website is live and ready to share. Use this address to attract visitors and get leads.</p>
+          <p className="sr-only">In Cloudflare, add a proxied wildcard DNS record for *.sites.estara.co.zw and attach the Worker route *.sites.estara.co.zw/* so every agency slug resolves here.</p>
+          <div className="domain-card-actions">
+            {defaultSiteUrl ? <a className="primary" href={defaultSiteUrl} target="_blank" rel="noreferrer">Open website</a> : <a className="outline" href="/admin">Configure suffix</a>}
+            <button className="copy-address" type="button" disabled={!defaultSiteHost} onClick={() => { if (defaultSiteHost) navigator.clipboard.writeText(defaultSiteHost); setMessage("Website address copied."); }}>Copy address</button>
+          </div>
+        </div>
+      </div>
     </section>
     
     <form className="tool-card domain-form" onSubmit={add}>
       <label>Custom domain name<input required disabled={!customDomainsEligible || busy} value={domain} onChange={event => setDomain(event.target.value)} placeholder="www.agency.co.zw" /></label>
       <button disabled={busy || !customDomainsEligible}>{busy ? "Saving..." : "Add custom domain"}</button>
-      {!customDomainsEligible && <p className="domain-plan-note">Custom domains are not included on the current plan. The default agency website above still works.</p>}
+      {!customDomainsEligible && <p className="domain-plan-badge">🔒 Available on Professional plan and above.</p>}
     </form>
+
+    <section className="domain-help-card"><div><b>Need help connecting a domain?</b><small>View the step-by-step DNS guide.</small></div><a href="/docs">View guide →</a></section>
 
     <section className="tool-grid domain-grid">
       {domains.length > 0 ? (

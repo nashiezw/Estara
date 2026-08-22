@@ -14,7 +14,9 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] New-agency acceptance test covers the final product path from agency setup through property activation, enquiry, follow-up, viewing and seller reporting.
 - [x] Master specification traceability gate exists so the 123-section source document remains visible to release work.
 - [x] Platform identity defaults, metadata, tenant-domain suffix and public powered-by wording are centralized.
+- [x] Platform logo and browser icon uploads now propagate through landing, auth, workspace and Super Admin surfaces instead of falling back to the letter mark when an asset exists.
 - [x] Agency colour and typography settings persist and are applied across implemented workspace, public website, Marketing Studio SVG and PDF outputs.
+- [x] Agency settings now separate the public/wordmark logo from the compact agency icon, and both uploads persist as tenant-scoped private media.
 - [x] Website template selection now previews each template as a realistic mini public website, and Marketing Studio supports editable design, text, image, badge, icon, logo and alignment controls.
 - [x] Workspace website settings now show a larger selected-template preview with header, hero, listings, service chips and footer cues before saving the template.
 - [x] Public website reads now normalize invalid legacy template and typography keys, and local preview seeding uses a real public website template instead of a Marketing Studio design key.
@@ -29,12 +31,14 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] Production launch evidence register lists every remaining public-launch gate, required proof and current deployment blocker.
 - [x] A machine-verifiable launch evidence bundle gate is implemented as `npm run launch:evidence -- docs/evidence/production-launch.json`.
 - [x] Host-based tenant-subdomain and active custom-domain routing are implemented with unknown production hosts failing closed.
+- [x] Domains and website workspace page now presents the default agency website as a premium mobile-ready card, with open/copy actions and clean default website URL handling.
 - [x] D1 restore rehearsal evidence verifier is implemented as `npm run d1:restore:verify -- docs/evidence/d1-restore-rehearsal.json`.
 - [x] Cloudflare Worker error capture is wired through Sentry with release tagging and no default PII once production Sentry secrets are configured.
 - [x] Deal-stage moves and platform billing receipt capture use inline review forms instead of browser popup prompts, with guard tests covering the regression.
 - [x] Remaining destructive/recovery UI actions use inline review or page-level error states instead of browser prompt, confirm or alert dialogs.
 - [x] Private workspace tool back links route to the authenticated workspace instead of the public landing page, with a regression guard covering the linked tools.
 - [x] The local visual system foundation now unifies homepage, auth, guided onboarding and workspace shell tokens, radius, headings and card treatment.
+- [x] Super Admin and workspace mobile shell polish now keeps navigation, buttons, loading feedback and form copy readable on narrow screens.
 - [x] Website content and image editing now includes page-by-page public review links so owners can inspect each public page from settings.
 
 ## Must Complete Before Public Launch
