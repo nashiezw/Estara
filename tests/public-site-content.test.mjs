@@ -27,6 +27,10 @@ test("public website page content is editable, persisted and rendered", async ()
   assert.match(workspace, /PublicContentEditor/);
   assert.match(workspace, /Website page content/);
   assert.match(workspace, /Website images/);
+  assert.match(workspace, /Review public website pages/);
+  assert.match(workspace, /Review \{label\}/);
+  assert.match(workspace, /`\$\{previewBase\}\/properties`/);
+  assert.match(workspace, /`\$\{previewBase\}\/contact`/);
   assert.match(workspace, /kind","website_image"/);
   assert.match(publicSite, /agency\.publicContent/);
   assert.match(publicSite, /homeHeroImageId/);

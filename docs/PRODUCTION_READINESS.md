@@ -31,7 +31,7 @@ Status markers:
 
 - [x] Homepage has a product-led redesign around ESTARA as an operating system, Today's Business and Enter Once. Use Everywhere.
 - [-] Public website templates and footer have been improved, but need visual QA across every template/page/device.
-- [-] Agency website images/content can be edited in settings, but owner usability still needs end-to-end testing.
+- [-] Agency website images/content can be edited in settings with page-by-page public review links; owner usability still needs end-to-end testing.
 - [-] Agency/team profile data and public agent cards exist, but profile editing needs non-technical QA.
 - [-] Guided first-run onboarding exists and sends owners into first-property capture, but clean-agency user QA is still pending.
 - [-] Standalone ESTARA email/password auth has user, password hash, session, verification, reset and audited public mutation foundations; live email-provider delivery still needs production secrets and smoke testing.

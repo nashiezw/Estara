@@ -35,6 +35,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] Remaining destructive/recovery UI actions use inline review or page-level error states instead of browser prompt, confirm or alert dialogs.
 - [x] Private workspace tool back links route to the authenticated workspace instead of the public landing page, with a regression guard covering the linked tools.
 - [x] The local visual system foundation now unifies homepage, auth, guided onboarding and workspace shell tokens, radius, headings and card treatment.
+- [x] Website content and image editing now includes page-by-page public review links so owners can inspect each public page from settings.
 
 ## Must Complete Before Public Launch
 
