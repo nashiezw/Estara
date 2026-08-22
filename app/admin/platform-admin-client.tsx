@@ -4,9 +4,9 @@ import { FormEvent, useEffect, useMemo, useState, type CSSProperties } from "rea
 type Settings = {
   platformName: string; shortName: string; parentBrand: string; tagline: string; primaryColor: string; accentColor: string;
   supportEmail: string; supportPhone: string; supportWhatsapp: string; defaultCountry: string; defaultCurrency: string;
-  timezone: string; domain: string; tenantDomainSuffix: string; poweredByWording: string; logoUrl: string; iconUrl: string; updatedAt?: string;
+  timezone: string; domain: string; tenantDomainSuffix: string; poweredByWording: string; logoUrl: string; iconUrl: string; darkLogoUrl: string; darkIconUrl: string; updatedAt?: string;
 };
-type Data = { actor?: { role: string }; platform?: { platformName: string; shortName: string; logoUrl?: string; iconUrl?: string }; settings?: Settings; operations?: any; platformUsers: any[]; plans: any[]; agencies: any[]; invoices: any[]; coupons: any[]; events: any[] };
+type Data = { actor?: { role: string }; platform?: { platformName: string; shortName: string; logoUrl?: string; iconUrl?: string; darkLogoUrl?: string; darkIconUrl?: string }; settings?: Settings; operations?: any; platformUsers: any[]; plans: any[]; agencies: any[]; invoices: any[]; coupons: any[]; events: any[] };
 type AdminThemeVars = CSSProperties & { "--admin-brand": string; "--admin-accent": string };
 const empty: Data = { platformUsers: [], plans: [], agencies: [], invoices: [], coupons: [], events: [] };
 const tabs = [
@@ -24,6 +24,27 @@ const normaliseHex = (value: string) => {
   return /^[0-9a-f]{6}$/i.test(raw) ? `#${raw.toLowerCase()}` : value;
 };
 const colourValue = (value: string, fallback: string) => /^#[0-9a-f]{6}$/i.test(normaliseHex(value)) ? normaliseHex(value) : fallback;
+const defaultSettings: Settings = { platformName: "", shortName: "", parentBrand: "", tagline: "", primaryColor: "#153b34", accentColor: "#e6bd5f", supportEmail: "", supportPhone: "", supportWhatsapp: "", defaultCountry: "ZW", defaultCurrency: "USD", timezone: "Africa/Harare", domain: "", tenantDomainSuffix: "", poweredByWording: "Powered by ESTARA", logoUrl: "", iconUrl: "", darkLogoUrl: "", darkIconUrl: "" };
+const normaliseSettings = (settings?: any): Settings => ({
+  ...defaultSettings,
+  ...(settings || {}),
+  platformName: settings?.platformName ?? settings?.platform_name ?? defaultSettings.platformName,
+  shortName: settings?.shortName ?? settings?.short_name ?? defaultSettings.shortName,
+  parentBrand: settings?.parentBrand ?? settings?.parent_brand ?? defaultSettings.parentBrand,
+  primaryColor: settings?.primaryColor ?? settings?.primary_color ?? defaultSettings.primaryColor,
+  accentColor: settings?.accentColor ?? settings?.accent_color ?? defaultSettings.accentColor,
+  supportEmail: settings?.supportEmail ?? settings?.support_email ?? defaultSettings.supportEmail,
+  supportPhone: settings?.supportPhone ?? settings?.support_phone ?? defaultSettings.supportPhone,
+  supportWhatsapp: settings?.supportWhatsapp ?? settings?.support_whatsapp ?? defaultSettings.supportWhatsapp,
+  defaultCountry: settings?.defaultCountry ?? settings?.default_country ?? defaultSettings.defaultCountry,
+  defaultCurrency: settings?.defaultCurrency ?? settings?.default_currency ?? defaultSettings.defaultCurrency,
+  tenantDomainSuffix: settings?.tenantDomainSuffix ?? settings?.tenant_domain_suffix ?? defaultSettings.tenantDomainSuffix,
+  poweredByWording: settings?.poweredByWording ?? settings?.powered_by_wording ?? defaultSettings.poweredByWording,
+  logoUrl: settings?.logoUrl ?? settings?.logo_url ?? defaultSettings.logoUrl,
+  iconUrl: settings?.iconUrl ?? settings?.icon_url ?? defaultSettings.iconUrl,
+  darkLogoUrl: settings?.darkLogoUrl ?? settings?.dark_logo_url ?? defaultSettings.darkLogoUrl,
+  darkIconUrl: settings?.darkIconUrl ?? settings?.dark_icon_url ?? defaultSettings.darkIconUrl,
+});
 const pageCopy: Record<string, { eyebrow: string; title: string; summary: string }> = {
   overview: { eyebrow: "PLATFORM OPERATIONS", title: "Super admin command centre", summary: "Operate ESTARA across tenants, revenue, identity, support, domains and launch evidence." },
   agencies: { eyebrow: "TENANT INTELLIGENCE", title: "Agency intelligence", summary: "Monitor tenant workspaces, subscriptions, usage, public activity and commercial risk." },
@@ -37,13 +58,13 @@ const pageCopy: Record<string, { eyebrow: string; title: string; summary: string
 export default function PlatformAdminClient({ displayName }: { displayName: string }) {
   const [data, setData] = useState<Data>(empty), [tab, setTab] = useState("overview"), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true), [notice, setNotice] = useState(""), [error, setError] = useState("");
   const published = useMemo(() => data.plans.filter(plan => plan.status === "published"), [data.plans]);
-  const platform = data.platform || { platformName: "Platform", shortName: "PL", logoUrl: "" };
+  const platform = data.platform || { platformName: "Platform", shortName: "PL", logoUrl: "", darkLogoUrl: "" };
   const load = async (initial = false) => {
     if (initial) setLoading(true);
     try {
       const response = await fetch("/api/platform", { cache: "no-store" }), body = await response.json();
       if (!response.ok) throw new Error(body.error || "Platform console could not be loaded.");
-      setData(body); setError("");
+      setData({ ...body, settings: normaliseSettings(body.settings), platform: { ...body.platform, ...normaliseSettings(body.settings) } }); setError("");
     } finally {
       setLoading(false);
     }
@@ -55,7 +76,7 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
       const response = await fetch("/api/platform", { method, cache: "no-store", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), result = await response.json();
       if (!response.ok) throw new Error(result.error || "Operation failed.");
       setNotice("Saved and recorded in the platform audit trail.");
-      if (result.settings) setData(current => ({ ...current, settings: result.settings }));
+      if (result.settings) setData(current => ({ ...current, settings: normaliseSettings(result.settings), platform: { ...current.platform, ...normaliseSettings(result.settings) } }));
       await load();
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : "Operation failed.");
@@ -72,7 +93,7 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
   const adminTheme: AdminThemeVars = { "--admin-brand": data.settings?.primaryColor || "#153b34", "--admin-accent": data.settings?.accentColor || "#e6bd5f" };
   return <main className="platform-admin platform-admin-premium platform-admin-compact" style={adminTheme}>
     <aside className="platform-shell">
-      <a className="platform-mark" href="/">{platform.logoUrl ? <img src={platform.logoUrl} alt={`${platform.platformName} logo`} /> : <i>{platform.shortName.slice(0, 1)}</i>}<span>{platform.platformName}<small>Control plane</small></span></a>
+      <a className="platform-mark" href="/">{(platform.darkLogoUrl || platform.logoUrl) ? <img src={platform.darkLogoUrl || platform.logoUrl} alt={`${platform.platformName} logo`} /> : <i>{platform.shortName.slice(0, 1)}</i>}<span>{platform.platformName}<small>Control plane</small></span></a>
       <div className="platform-side-status"><span>Launch mode</span><strong>{data.settings?.domain ? "Production staging" : "Domain pending"}</strong><small>{data.operations?.publicIntake10m || 0} public intakes in 10m</small></div>
       <nav>{navGroups.map(group => <section className="platform-nav-group" key={group}><span>{group}</span>{tabs.filter(item => item.group === group).map(item => <button className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)} key={item.id}><i>{item.icon}</i><span>{item.label}</span></button>)}</section>)}</nav>
       <footer className="platform-operator-card">
@@ -225,12 +246,12 @@ function AgencyRow({ agency, plans, busy, send }: any) {
 }
 
 function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy: boolean; send: (method: string, body: any) => void }) {
-  const [form, setForm] = useState<Settings>(settings || { platformName: "", shortName: "", parentBrand: "", tagline: "", primaryColor: "#153b34", accentColor: "#e6bd5f", supportEmail: "", supportPhone: "", supportWhatsapp: "", defaultCountry: "ZW", defaultCurrency: "USD", timezone: "Africa/Harare", domain: "", tenantDomainSuffix: "", poweredByWording: "Powered by ESTARA", logoUrl: "", iconUrl: "" });
+  const [form, setForm] = useState<Settings>(normaliseSettings(settings));
   const [uploading, setUploading] = useState("");
-  useEffect(() => { if (settings) setForm(settings); }, [settings]);
+  useEffect(() => { if (settings) setForm(normaliseSettings(settings)); }, [settings]);
   const change = (key: keyof Settings, value: string) => setForm(current => ({ ...current, [key]: value }));
   const changeColour = (key: "primaryColor" | "accentColor", value: string) => setForm(current => ({ ...current, [key]: normaliseHex(value) }));
-  const uploadBrandAsset = async (type: "logo" | "icon", file?: File) => {
+  const uploadBrandAsset = async (type: "logo" | "icon" | "dark-logo" | "dark-icon", file?: File) => {
     if (!file) return;
     setUploading(type);
     try {
@@ -239,7 +260,8 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
       body.set("file", file);
       const response = await fetch("/api/platform/asset", { method: "POST", body }), result = await response.json();
       if (!response.ok) throw new Error(result.error || "Upload failed.");
-      setForm(current => ({ ...current, [type === "logo" ? "logoUrl" : "iconUrl"]: result.url }));
+      const field = type === "logo" ? "logoUrl" : type === "icon" ? "iconUrl" : type === "dark-logo" ? "darkLogoUrl" : "darkIconUrl";
+      setForm(current => ({ ...current, [field]: result.url }));
     } catch (error) {
       alert(error instanceof Error ? error.message : "Upload failed.");
     } finally {
@@ -249,10 +271,12 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
   return <form className="platform-settings-workbench" onSubmit={(event: FormEvent) => { event.preventDefault(); send("PATCH", { action: "update_platform_settings", ...form, primaryColor: normaliseHex(form.primaryColor), accentColor: normaliseHex(form.accentColor) }); }}>
     <section className="platform-card platform-brand-console">
       <span>PLATFORM BRAND</span><h2>{form.platformName || "Platform identity"}</h2><p>{form.tagline || "Set the commercial promise every login, workspace and public footer can inherit."}</p>
-      <div style={{ background: form.primaryColor, borderTop: `8px solid ${form.accentColor}` }}>{form.logoUrl ? <img src={form.logoUrl} alt={`${form.platformName || "Platform"} logo preview`} /> : <b style={{ color: form.accentColor }}>{form.shortName?.slice(0, 1) || "E"}</b>}<span>{form.poweredByWording || "Powered by platform"}</span></div>
+      <div style={{ background: form.primaryColor, borderTop: `8px solid ${form.accentColor}` }}>{(form.darkLogoUrl || form.logoUrl) ? <img src={form.darkLogoUrl || form.logoUrl} alt={`${form.platformName || "Platform"} dark logo preview`} /> : <b style={{ color: form.accentColor }}>{form.shortName?.slice(0, 1) || "E"}</b>}<span>{form.poweredByWording || "Powered by platform"}</span></div>
       <div className="platform-brand-assets">
         <span><strong>Logo</strong><small>{form.logoUrl ? "Custom logo URL saved" : "Uses short-name initial until a logo URL is added"}</small></span>
         <span><strong>Browser icon</strong><small>{form.iconUrl ? "Custom browser icon URL saved" : "Uses default favicon until an icon URL is added"}</small></span>
+        <span><strong>Dark logo</strong><small>{form.darkLogoUrl ? "Custom dark-surface logo saved" : "Dark screens fall back to the normal logo"}</small></span>
+        <span><strong>Dark icon</strong><small>{form.darkIconUrl ? "Custom dark-surface icon saved" : "Dark saved-site surfaces fall back to the normal icon"}</small></span>
       </div>
     </section>
     <section className="platform-card platform-settings-form">
@@ -272,8 +296,12 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
           <legend>Logo & Icon</legend>
           <label className="wide platform-asset-upload"><strong>Upload platform logo</strong><small>This controls the ESTARA mark on the homepage, demo, workspace, Super Admin and share previews.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || uploading === "logo"} onChange={event => uploadBrandAsset("logo", event.target.files?.[0])} /></label>
           <label className="wide platform-asset-upload"><strong>Upload browser icon</strong><small>This controls the tab icon and mobile saved-site icon where the browser supports it.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || uploading === "icon"} onChange={event => uploadBrandAsset("icon", event.target.files?.[0])} /></label>
+          <label className="wide platform-asset-upload"><strong>Upload dark logo</strong><small>This logo is used on dark sidebars, dark admin panels and dark demo/workspace surfaces.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || uploading === "dark-logo"} onChange={event => uploadBrandAsset("dark-logo", event.target.files?.[0])} /></label>
+          <label className="wide platform-asset-upload"><strong>Upload dark browser icon</strong><small>Optional dark-mode icon. If empty, the main browser icon is used.</small><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || uploading === "dark-icon"} onChange={event => uploadBrandAsset("dark-icon", event.target.files?.[0])} /></label>
           <label className="wide">Platform logo URL<input value={form.logoUrl} onChange={event => change("logoUrl", event.target.value)} placeholder="/api/platform/asset?type=logo" /></label>
           <label className="wide">Browser icon URL<input value={form.iconUrl} onChange={event => change("iconUrl", event.target.value)} placeholder="/api/platform/asset?type=icon" /></label>
+          <label className="wide">Dark logo URL<input value={form.darkLogoUrl} onChange={event => change("darkLogoUrl", event.target.value)} placeholder="/api/platform/asset?type=dark-logo" /></label>
+          <label className="wide">Dark browser icon URL<input value={form.darkIconUrl} onChange={event => change("darkIconUrl", event.target.value)} placeholder="/api/platform/asset?type=dark-icon" /></label>
         </fieldset>
         <fieldset>
           <legend>Support Desk</legend>

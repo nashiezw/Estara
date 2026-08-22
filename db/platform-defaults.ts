@@ -14,6 +14,8 @@ export type PlatformIdentity = {
   poweredByWording: string;
   logoUrl: string;
   iconUrl: string;
+  darkLogoUrl: string;
+  darkIconUrl: string;
 };
 
 export const DEFAULT_PLATFORM_IDENTITY: PlatformIdentity = {
@@ -32,4 +34,6 @@ export const DEFAULT_PLATFORM_IDENTITY: PlatformIdentity = {
   poweredByWording: "Powered by ESTARA",
   logoUrl: "",
   iconUrl: "",
+  darkLogoUrl: "",
+  darkIconUrl: "",
 };

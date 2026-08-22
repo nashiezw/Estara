@@ -6,7 +6,13 @@ import { safeDownloadName, validateMediaFile } from "../../../../db/media-policy
 
 export const dynamic = "force-dynamic";
 
-const allowedTypes = new Set(["logo", "icon"]);
+const allowedTypes = new Set(["logo", "icon", "dark-logo", "dark-icon"]);
+const assetColumns: Record<string, string> = {
+  logo: "logo_url",
+  icon: "icon_url",
+  "dark-logo": "dark_logo_url",
+  "dark-icon": "dark_icon_url",
+};
 const headers = { "cache-control": "public, max-age=86400", "x-content-type-options": "nosniff" };
 
 const bucket = () => {
@@ -51,12 +57,13 @@ export async function POST(request: Request) {
     if (invalid) return Response.json({ error: invalid }, { status: 400 });
 
     const source = await file.arrayBuffer();
-    const asset = await processBrandAsset(source, file.type, type === "icon" ? 256 : 900, type === "icon" ? 90 : 84);
+    const isIcon = type === "icon" || type === "dark-icon";
+    const asset = await processBrandAsset(source, file.type, isIcon ? 256 : 900, isIcon ? 90 : 84);
     await bucket().put(keyFor(type), asset.bytes, { httpMetadata: { contentType: asset.mimeType }, customMetadata: { scope: "platform", type, uploadedBy: context.userId, optimized: String(asset.optimized) } });
 
     await ensurePlatformIdentity();
     const url = `/api/platform/asset?type=${type}&v=${encodeURIComponent(crypto.randomUUID())}`;
-    await env.DB.prepare(`UPDATE platform_settings SET ${type === "logo" ? "logo_url" : "icon_url"}=?,updated_at=CURRENT_TIMESTAMP WHERE id='default'`).bind(url).run();
+    await env.DB.prepare(`UPDATE platform_settings SET ${assetColumns[type]}=?,updated_at=CURRENT_TIMESTAMP WHERE id='default'`).bind(url).run();
     await writePlatformAudit(context, `platform.${type}.uploaded`, "platform_settings", "default", { sourceMimeType: file.type, sourceByteSize: file.size, optimized: asset.optimized, optimizedByteSize: asset.bytes.byteLength });
     return Response.json({ type, url });
   } catch (error) {

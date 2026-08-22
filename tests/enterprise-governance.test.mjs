@@ -42,11 +42,16 @@ test("platform identity is centralized for metadata, defaults and public footer 
   assert.match(defaults, /DEFAULT_PLATFORM_IDENTITY/);
   assert.match(defaults, /logoUrl/);
   assert.match(defaults, /iconUrl/);
+  assert.match(defaults, /darkLogoUrl/);
+  assert.match(defaults, /darkIconUrl/);
   assert.match(platform, /getPlatformIdentity/);
   assert.match(platform, /ensurePlatformIdentity/);
   assert.match(platform, /ALTER TABLE platform_settings ADD COLUMN logo_url/);
   assert.match(platform, /ALTER TABLE platform_settings ADD COLUMN icon_url/);
+  assert.match(platform, /ALTER TABLE platform_settings ADD COLUMN dark_logo_url/);
+  assert.match(platform, /ALTER TABLE platform_settings ADD COLUMN dark_icon_url/);
   assert.match(platform, /logo_url AS logoUrl/);
+  assert.match(platform, /dark_logo_url AS darkLogoUrl/);
   assert.match(layout, /getPlatformIdentity/);
   assert.match(layout, /platform\.iconUrl/);
   assert.match(layout, /platform\.logoUrl/);
@@ -57,15 +62,24 @@ test("platform identity is centralized for metadata, defaults and public footer 
   assert.match(assetMigration, /SELECT 1/);
   assert.match(api, /logo_url AS logoUrl/);
   assert.match(api, /icon_url AS iconUrl/);
+  assert.match(api, /dark_logo_url AS darkLogoUrl/);
+  assert.match(api, /dark_icon_url AS darkIconUrl/);
   assert.match(api, /logoUrl: platform\.logoUrl/);
+  assert.match(api, /darkLogoUrl: platform\.darkLogoUrl/);
   assert.match(assetApi, /requirePlatformUser\(user, \["super_admin"\]\)/);
   assert.match(assetApi, /platform\/brand\/\$\{type\}\.webp/);
+  assert.match(assetApi, /"dark-logo"/);
+  assert.match(assetApi, /"dark-icon"/);
   assert.match(assetApi, /UPDATE platform_settings SET/);
   assert.match(settingsApi, /SELECT \* FROM platform_settings/);
   assert.match(admin, /Upload platform logo/);
   assert.match(admin, /Upload browser icon/);
+  assert.match(admin, /Upload dark logo/);
+  assert.match(admin, /Upload dark browser icon/);
   assert.match(admin, /Platform logo URL/);
   assert.match(admin, /Browser icon URL/);
+  assert.match(admin, /Dark logo URL/);
+  assert.match(admin, /Dark browser icon URL/);
 });
 
 test("entitlements remain data-driven through immutable plan versions", async () => {

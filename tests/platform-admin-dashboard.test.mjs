@@ -15,6 +15,9 @@ test("super admin dashboard exposes platform-wide command, settings and evidence
   assert.match(client, /GLOBAL PLATFORM CONFIGURATION/);
   assert.match(client, /supportEmail/);
   assert.match(client, /accentColor/);
+  assert.match(client, /darkLogoUrl/);
+  assert.match(client, /darkIconUrl/);
+  assert.match(client, /normaliseSettings/);
   assert.match(client, /tenantDomainSuffix/);
   assert.match(client, /CONTROL PLANE AUDITS/);
   assert.match(client, /Platform health/);
@@ -49,7 +52,11 @@ test("super admin dashboard exposes platform-wide command, settings and evidence
   assert.match(client, /WEEKLY PLATFORM INSIGHTS/);
   assert.match(route, /update_platform_settings/);
   assert.match(route, /accent_color AS accentColor/);
+  assert.match(route, /dark_logo_url AS darkLogoUrl/);
+  assert.match(route, /dark_icon_url AS darkIconUrl/);
   assert.match(route, /accent_color=\?/);
+  assert.match(route, /dark_logo_url=\?/);
+  assert.match(route, /dark_icon_url=\?/);
   assert.match(route, /const hex/);
   assert.match(route, /settings: await platformSettingsRow\(\)/);
   assert.match(route, /\["super_admin"\]/);
