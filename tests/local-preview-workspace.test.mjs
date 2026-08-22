@@ -9,6 +9,8 @@ test("local preview workspace uses one deterministic agency and slug", () => {
   assert.match(workspace, /const agencyId="local-preview-agency"/);
   assert.match(workspace, /INSERT OR IGNORE INTO agencies/);
   assert.match(workspace, /"prime-property"/);
+  assert.match(workspace, /"skyline","modern"/);
+  assert.doesNotMatch(workspace, /website_template=\?,typography=\?[\s\S]{0,220}"signature"/);
   assert.match(workspace, /INSERT OR IGNORE INTO agency_memberships/);
   assert.match(workspace, /"local-preview-membership"/);
   assert.match(workspace, /ensureLocalPreviewData\(agencyId,user\)/);

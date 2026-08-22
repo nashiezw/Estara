@@ -34,6 +34,9 @@ test("public website page content is editable, persisted and rendered", async ()
   assert.match(publicSite, /fallbackImages/);
   assert.match(publicData, /PRAGMA table_info\(agency_settings\)/);
   assert.match(publicData, /contentColumn\?"s\.public_content"/);
+  assert.match(publicData, /isWebsiteTemplateKey/);
+  assert.match(publicData, /websiteTemplate:isWebsiteTemplateKey\(String\(row\.websiteTemplate/);
+  assert.match(publicData, /typography:isTypographyKey\(String\(row\.typography/);
   assert.match(publicSite, /public-agents-shell/);
   assert.match(publicSite, /public-about-story/);
   assert.match(publicSite, /public-process/);

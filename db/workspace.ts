@@ -24,6 +24,10 @@ async function ensureSettings(agencyId:string){await ensurePlatformIdentity();aw
 
 async function ensureLocalPreviewData(agencyId:string,user:ChatGPTUser){
  if(user.userId!=="local-preview-principal")return;
+ await env.DB.batch([
+  env.DB.prepare(`UPDATE agencies SET name=?,slug=? WHERE id=?`).bind("Prime Property","prime-property",agencyId),
+  env.DB.prepare(`UPDATE agency_settings SET tagline=?,phone=?,whatsapp=?,email=?,website=?,business_activities=?,website_template=?,typography=?,onboarding_complete=1,response_sla_minutes=20,updated_at=CURRENT_TIMESTAMP WHERE agency_id=?`).bind("Harare's premium property command centre","+263 77 234 9810","+263 77 234 9810","hello@primeproperty.co.zw","https://prime-property.example",JSON.stringify(["Residential sales","Residential rentals","Property management","Developments"]),"skyline","modern",agencyId)
+ ]);
  const existing=await env.DB.prepare("SELECT COUNT(*) AS count FROM properties WHERE agency_id=?").bind(agencyId).first<{count:number}>();
  if(Number(existing?.count||0)>0){await ensureLocalPreviewSellerAccess(agencyId,user);return}
 
@@ -36,8 +40,6 @@ async function ensureLocalPreviewData(agencyId:string,user:ChatGPTUser){
  const grantId=crypto.randomUUID(),reportId=crypto.randomUUID();
 
  await env.DB.batch([
-  env.DB.prepare(`UPDATE agencies SET name=?,slug=? WHERE id=?`).bind("Prime Property","prime-property",agencyId),
-  env.DB.prepare(`UPDATE agency_settings SET tagline=?,phone=?,whatsapp=?,email=?,website=?,business_activities=?,website_template=?,typography=?,onboarding_complete=1,response_sla_minutes=20,updated_at=CURRENT_TIMESTAMP WHERE agency_id=?`).bind("Harare's premium property command centre","+263 77 234 9810","+263 77 234 9810","hello@primeproperty.co.zw","https://prime-property.example",JSON.stringify(["Residential sales","Residential rentals","Property management","Developments"]),"signature","modern",agencyId),
   env.DB.prepare(`INSERT OR IGNORE INTO contacts (id,agency_id,full_name,phone_e164,email_normalized,roles,requirements,notes,assigned_user_id,created_by) VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(contactBuyer,agencyId,"Tariro Moyo","+263772349810","tariro@example.com",JSON.stringify(["buyer"]),"Borrowdale or Greendale, 4+ bedrooms, move-in ready","Prefers WhatsApp and weekend viewings.",user.userId,user.userId),
   env.DB.prepare(`INSERT OR IGNORE INTO contacts (id,agency_id,full_name,phone_e164,email_normalized,roles,requirements,notes,assigned_user_id,created_by) VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(contactSeller,agencyId,"Sarah Ncube","+263719902221",user.email,JSON.stringify(["seller"]),"Owner of Borrowdale Residence","Wants weekly evidence-led reporting.",user.userId,user.userId),
   env.DB.prepare(`INSERT OR IGNORE INTO contacts (id,agency_id,full_name,phone_e164,email_normalized,roles,requirements,notes,assigned_user_id,created_by) VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(contactTenant,agencyId,"Daniel Ncube","+263713450918","daniel@example.com",JSON.stringify(["tenant","buyer"]),"Executive rental, northern suburbs","Needs secure parking and fibre.",user.userId,user.userId),
