@@ -22,6 +22,7 @@ test("Cloudflare deploy command uses the generated Vinext Worker config", async 
   assert.match(deployScript, /PUBLIC_SITE_DOMAIN: publicSiteDomain/);
   assert.match(deployScript, /\*.\$\{publicSiteDomain\}\/\*/);
   assert.match(deployScript, /custom_domain: true/);
+  assert.match(deployScript, /zone_name: platformDomain/);
   assert.match(deployScript, /uniqueRoutes/);
   assert.match(deployScript, /prepareGeneratedWranglerConfig\(\)/);
   assert.equal(
@@ -29,6 +30,16 @@ test("Cloudflare deploy command uses the generated Vinext Worker config", async 
     "npm run build && wrangler deploy --dry-run --outdir .wrangler-dry-run --config dist/server/wrangler.json",
   );
   assert.doesNotMatch(packageJson.scripts.deploy, /npx\s+wrangler\s+deploy/);
+});
+
+test("agency wildcard hostnames are routed as Worker routes, not unsupported wildcard custom domains", async () => {
+  const deployScript = await readFile("scripts/deploy-cloudflare.mjs", "utf8");
+  const ownerGuide = await readFile("docs/OWNER_SETUP_GUIDE.md", "utf8");
+
+  assert.match(deployScript, /pattern: `\*.\$\{publicSiteDomain\}\/\*`, zone_name: platformDomain/);
+  assert.doesNotMatch(deployScript, /pattern: `\*.\$\{publicSiteDomain\}`,\s*custom_domain: true/);
+  assert.match(ownerGuide, /Type `AAAA`, Name `\*\.sites`, Content `100::`, Proxy status Proxied/);
+  assert.match(ownerGuide, /Worker route `\*\.sites\.estara\.co\.zw\/\*`/);
 });
 
 test("Cloudflare deploy config does not depend on build-time dashboard variables", async () => {

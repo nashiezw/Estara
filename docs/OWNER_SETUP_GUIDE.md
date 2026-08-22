@@ -528,8 +528,8 @@ Steps for the platform suffix:
 2. Open `estara.co.zw`.
 3. Open DNS > Records.
 4. Add a CNAME record.
-5. For Name, type `*.sites`.
-6. For Target, use the target Cloudflare gives for the ESTARA Worker route, or attach `*.sites.estara.co.zw` from Workers & Pages > ESTARA project > Settings > Domains & Routes if Cloudflare allows the wildcard custom domain.
+5. Add a proxied wildcard placeholder DNS record: Type `AAAA`, Name `*.sites`, Content `100::`, Proxy status Proxied.
+6. In Workers & Pages > ESTARA project > Settings > Domains & Routes, confirm the Worker route `*.sites.estara.co.zw/*` is attached to the ESTARA Worker. Do not use a wildcard Custom Domain for this; Cloudflare Worker Custom Domains only match exact hostnames, while ESTARA agency subdomains need wildcard routing.
 7. In the ESTARA super admin dashboard, open Platform settings.
 8. Set Platform domain to `estara.co.zw`.
 9. Set Tenant domain suffix to `sites.estara.co.zw`.

@@ -68,6 +68,7 @@ test("tenant subdomain proxy keeps agency website paths clean", async () => {
   const sectionPage = await readFile(new URL("../app/site/[slug]/[section]/page.tsx", import.meta.url), "utf8");
   const propertyPage = await readFile(new URL("../app/site/[slug]/properties/[id]/page.tsx", import.meta.url), "utf8");
   const workspace = await readFile(new URL("../app/estara-app.tsx", import.meta.url), "utf8");
+  const client = await readFile(new URL("../app/domains/domains-client.tsx", import.meta.url), "utf8");
   const seo = await readFile(new URL("../db/public-seo.ts", import.meta.url), "utf8");
   assert.match(proxy, /PUBLIC_SITE_DOMAIN \|\| "sites\.estara\.co\.zw"/);
   assert.match(proxy, /export function proxy/);
@@ -79,6 +80,8 @@ test("tenant subdomain proxy keeps agency website paths clean", async () => {
   assert.match(sectionPage, /pathMode = host\.replace/);
   assert.match(propertyPage, /pathMode = host\.replace/);
   assert.match(workspace, /publicWebsiteHref\(brand\)/);
+  assert.match(client, /proxied wildcard DNS record/);
+  assert.match(client, /\*\.sites\.estara\.co\.zw\/\*/);
   assert.match(seo, /host\.startsWith\(`\$\{agency\.slug\.toLowerCase\(\)\}\.`\)/);
 });
 
@@ -87,10 +90,22 @@ test("tenant subdomain routing is single-label and slug-safe", async () => {
     import("../db/public-site.ts"),
     readFile(new URL("../db/public-site.ts", import.meta.url), "utf8"),
   ]);
+  assert.equal(tenantSlugFromHost("houselink.sites.estara.co.zw", "sites.estara.co.zw"), "houselink");
+  assert.equal(tenantSlugFromHost("houselink.sites.estara.co.zw:443", ".sites.estara.co.zw"), "houselink");
   assert.equal(tenantSlugFromHost("prime.estara.co.zw", "estara.co.zw"), "prime");
   assert.equal(tenantSlugFromHost("prime.estara.co.zw:443", ".estara.co.zw"), "prime");
   assert.equal(tenantSlugFromHost("estara.co.zw", "estara.co.zw"), null);
   assert.equal(tenantSlugFromHost("a.b.estara.co.zw", "estara.co.zw"), null);
   assert.equal(tenantSlugFromHost("bad--slug.estara.co.zw", "estara.co.zw"), null);
   assert.match(publicSite, /tenantDomainSuffix\|\|env\.PUBLIC_SITE_DOMAIN/);
+});
+
+test("default platform identity uses the production agency website suffix", async () => {
+  const defaults = await readFile(new URL("../db/platform-defaults.ts", import.meta.url), "utf8");
+  const settings = await readFile(new URL("../db/platform-settings.ts", import.meta.url), "utf8");
+  const proxy = await readFile(new URL("../proxy.ts", import.meta.url), "utf8");
+  assert.match(defaults, /domain: "estara\.co\.zw"/);
+  assert.match(defaults, /tenantDomainSuffix: "sites\.estara\.co\.zw"/);
+  assert.match(settings, /tenantDomainSuffix: pick\(row\.tenantDomainSuffix, DEFAULT_PLATFORM_IDENTITY\.tenantDomainSuffix\)/);
+  assert.match(proxy, /PUBLIC_SITE_DOMAIN \|\| "sites\.estara\.co\.zw"/);
 });

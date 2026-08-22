@@ -458,7 +458,7 @@ export default function DomainClient() {
     <section className="tool-card domain-default-card">
       <span>Included agency website</span>
       <h2>{defaultSiteHost || "Public website address not configured"}</h2>
-      <p>This is the clean public address for the agency website. In Cloudflare, `*.sites.estara.co.zw` should point to the ESTARA Worker so every agency slug resolves here.</p>
+      <p>This is the clean public address for the agency website. In Cloudflare, add a proxied wildcard DNS record for `*.sites.estara.co.zw` and attach the Worker route `*.sites.estara.co.zw/*` so every agency slug resolves here.</p>
       {defaultSiteUrl ? <a className="primary" href={defaultSiteUrl} target="_blank" rel="noreferrer">Open agency website</a> : <a className="outline" href="/admin">Configure tenant domain suffix</a>}
     </section>
     
