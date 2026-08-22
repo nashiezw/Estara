@@ -50,7 +50,7 @@ Status markers:
 - [ ] Unify the visual system across homepage, onboarding, auth-like states and workspace modules.
 - [-] Add visual regression coverage for website templates and key public pages; automated template-structure guards now exist, screenshot/device QA remains pending.
 - [-] Improve empty states so every major blank page points to the next action; first-run onboarding now points to first property capture.
-- [ ] Add stronger owner-facing copy inside setup flows.
+- [x] Owner-facing setup copy now explains how identity, colours, services, website style, public address and first-property capture shape the public site, enquiries and marketing flow.
 - [-] SEO metadata, OpenGraph, Twitter cards and JSON-LD structured data now exist on public agency/property pages; final production crawl/share QA remains pending.
 - [-] Accessibility foundations now include public-site skip links, labelled navigation and focus targets; manual keyboard, screen-reader, contrast and touch-target QA remains pending.
 - [-] Review performance/bundle weight for mobile and low-data conditions; automated compressed asset budgets now pass, hosted/mobile measurements remain pending.

@@ -40,6 +40,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 ## 2. Agency onboarding and branding
 
 - [x] Guided account and agency onboarding
+- [x] Owner-facing setup copy connects identity, colours, services, website style, public address and first-property capture to the real public website, enquiry and marketing outcomes
 - [x] Agency details and business activities
 - [x] Logo upload to private object storage
 - [x] Agency colour tokens and typography persist and apply across implemented workspace, public website, marketing SVG and PDF outputs

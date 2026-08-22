@@ -17,6 +17,14 @@ test("new agencies enter a guided launch flow that leads to the first property",
   assert.match(app, /Brand colours/);
   assert.match(app, /Website style/);
   assert.match(app, /Public address/);
+  assert.match(app, /Give the agency a public identity owners can trust/);
+  assert.match(app, /This name, promise and contact block appears on the workspace, public website, enquiries and marketing/);
+  assert.match(app, /Choose the colours every client touchpoint will inherit/);
+  assert.match(app, /Choose the services this agency sells today/);
+  assert.match(app, /Preview each full website style before launch/);
+  assert.match(app, /Claim the address clients will open first/);
+  assert.match(app, /capture one complete property so the website, enquiries and marketing flow is proven end to end/);
+  assert.match(app, /Control what owners and clients see across the workspace, public website, enquiries and marketing/);
   assert.match(app, /Launch workspace and add first property/);
   assert.match(app, /setCapture\(true\);setView\("properties"\)/);
   assert.match(app, /first-property-empty/);

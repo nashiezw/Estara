@@ -16,6 +16,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] Platform identity defaults, metadata, tenant-domain suffix and public powered-by wording are centralized.
 - [x] Agency colour and typography settings persist and are applied across implemented workspace, public website, Marketing Studio SVG and PDF outputs.
 - [x] Website template selection now previews each template as a realistic mini public website, and Marketing Studio supports editable design, text, image, badge, icon, logo and alignment controls.
+- [x] Owner setup copy now explains how agency identity, colours, services, website style, public address and first-property capture connect to the public website, enquiries and marketing flow.
 - [x] App-facing product labels across landing, workspace, admin, billing, seller, invite, health, integrations and secondary tool screens read centralized platform identity instead of source-fixed copy.
 - [x] `npm run launch:readiness` reports public-launch blockers, while `npm run launch:readiness -- --all` reports every unfinished roadmap row.
 - [x] Production launch evidence register lists every remaining public-launch gate, required proof and current deployment blocker.
