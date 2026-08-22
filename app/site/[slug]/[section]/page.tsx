@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPublicAgency, listPublicAgents, listPublicProperties } from "../../../../db/public-site";
-import { publicMediaUrl, publicOrigin, publicUrl, sectionDescription, sectionTitle } from "../../../../db/public-seo";
+import { publicIconUrl, publicMediaUrl, publicOrigin, publicUrl, sectionDescription, sectionTitle } from "../../../../db/public-seo";
 import { PublicSection } from "../public-website";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const origin = publicOrigin(h);
   const heroKey = `${section}HeroImageId` as keyof typeof agency.publicContent;
   const imageId = String(agency.publicContent[heroKey] || agency.publicContent.featuredImageId || agency.logoId || "");
+  const icon = publicIconUrl(origin, agency);
   const description = sectionDescription(section, agency);
   const url = publicUrl(origin, agency, `/${section}`);
   return {
@@ -26,6 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description,
     alternates: { canonical: url },
     robots: { index: true, follow: true },
+    icons: icon ? { icon, apple: icon } : undefined,
     openGraph: { title: sectionTitle(section, agency), description, type: "website", url, siteName: agency.name, images: publicMediaUrl(origin, agency, imageId) ? [publicMediaUrl(origin, agency, imageId)!] : [] },
     twitter: { card: "summary_large_image", title: sectionTitle(section, agency), description, images: publicMediaUrl(origin, agency, imageId) ? [publicMediaUrl(origin, agency, imageId)!] : [] },
   };

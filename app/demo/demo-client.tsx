@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-type Platform = { shortName: string; logoUrl?: string; darkLogoUrl?: string };
+type Platform = { shortName: string; logoUrl?: string; iconUrl?: string; darkLogoUrl?: string; darkIconUrl?: string };
 type DemoItem = { id: string; title: string; location: string; price: string; status: string; enquiry: string; score: number };
 
 const modules = [
@@ -42,7 +42,7 @@ export default function DemoExperience({ platform, loginHref, registerHref }: { 
     <main className="demo-workspace">
       <aside className="demo-workspace-rail">
         <a href="/" className="demo-workspace-brand">
-          {(platform.darkLogoUrl || platform.logoUrl) ? <img src={platform.darkLogoUrl || platform.logoUrl} alt={`${platform.shortName} logo`} /> : <i>{platform.shortName.slice(0, 1)}</i>}
+          {(platform.darkLogoUrl || platform.logoUrl || platform.darkIconUrl || platform.iconUrl) ? <img src={platform.darkLogoUrl || platform.logoUrl || platform.darkIconUrl || platform.iconUrl} alt={`${platform.shortName} logo`} /> : <i>{platform.shortName.slice(0, 1)}</i>}
           <span>{platform.shortName}<small>Live product demo</small></span>
         </a>
         <nav aria-label="Demo workspace modules">

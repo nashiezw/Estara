@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { getPublicAgency, getPublicProperty, listPublicProperties } from "../../../../../db/public-site";
-import { propertyDescription, propertyJsonLd, publicMediaUrl, publicOrigin, publicUrl, safeJsonLd } from "../../../../../db/public-seo";
+import { propertyDescription, propertyJsonLd, publicIconUrl, publicMediaUrl, publicOrigin, publicUrl, safeJsonLd } from "../../../../../db/public-seo";
 import { PageView, PublicEnquiryForm, ShareButton, TrackedLink } from "../../public-client";
 import { PropertyGrid, PublicFooter, PublicHeader } from "../../public-website";
 
@@ -17,6 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!property) return { robots: { index: false, follow: false } };
   const requestHeaders=await headers(),host=requestHeaders.get("host"),origin=publicOrigin(requestHeaders);
   const image = publicMediaUrl(origin, agency, property.heroMediaId);
+  const icon = publicIconUrl(origin, agency);
   const description=propertyDescription(property,agency);
   const url=publicUrl(origin,agency,`/properties/${encodeURIComponent(id)}`);
   return {
@@ -24,6 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description,
     alternates: { canonical: url },
     robots:{index:true,follow:true},
+    icons: icon ? { icon, apple: icon } : undefined,
     openGraph: { title: property.title, description, type: "website", url, siteName: agency.name, images:image?[image]:[] },
     twitter:{card:"summary_large_image",title:property.title,description,images:image?[image]:[]},
   };

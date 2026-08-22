@@ -21,7 +21,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 ## 1. Foundation
 
-- [-] Platform settings: central identity, metadata, domain suffix, powered-by wording, platform logo and browser icon exist; landing, auth, workspace shell, billing, seller portal, platform admin, invite, health, contacts, branches, pipeline, deals, matching, marketing studio, operations, roles, search, Ask, developer, integrations, reports, property record, property portal and shortlist branding now read platform settings; provider-backed production settings still need launch verification
+- [-] Platform settings: central identity, metadata, domain suffix and powered-by wording exist; landing, workspace shell, billing, seller portal, platform admin, invite, health, contacts, branches, pipeline, deals, matching, marketing studio, operations, roles, search, Ask, developer, integrations, reports, property record, property portal and shortlist branding now read platform settings; auth, platform logo and browser icon propagation are implemented; provider-backed production settings still need launch verification
 - [x] Authenticated private workspace using platform-provided identity
 - [x] Server-resolved tenant workspace
 - [x] Agency membership table
@@ -184,7 +184,8 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] In-app notification centre
 - [-] Email and push delivery ledger implemented; Resend and Firebase Cloud Messaging selected, live provider delivery pending activation
 - [-] Persistent low-data mode suppresses listing image requests; local low-data byte-reduction budget, production measurement verifier and measurement viewports defined; production hosted measurement pending
-- [-] Focus-visible, reduced-motion, labelled capture, mobile input improvements, Super Admin/workspace/domain responsive polish and mobile journey audit criteria complete; real Android/iOS device audit pending
+- [-] Focus-visible, reduced-motion, labelled capture, mobile input improvements and mobile journey audit criteria complete; real Android/iOS device audit pending
+- [x] Super Admin, workspace and domains responsive polish for compact navigation, readable actions and mobile layout integrity
 - [x] Global loading, failure, retry, non-disclosing not-found boundaries and client-mutation state audit complete
 - [x] Private workspace tools return users to the authenticated workspace instead of the public landing page
 - [x] Key blank states point users to concrete next actions instead of dead-end text

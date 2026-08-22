@@ -34,6 +34,10 @@ export function publicMediaUrl(origin: string, agency: PublicAgency, mediaId?: s
   return mediaId ? `${origin}/api/public/${encodeURIComponent(agency.slug)}/media?id=${encodeURIComponent(mediaId)}` : undefined;
 }
 
+export function publicIconUrl(origin: string, agency: PublicAgency) {
+  return publicMediaUrl(origin, agency, agency.iconId || agency.logoId);
+}
+
 export function agencyDescription(agency: PublicAgency) {
   return agency.tagline || `${agency.name} shares verified property listings, local market guidance and direct enquiry support.`;
 }
