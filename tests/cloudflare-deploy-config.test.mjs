@@ -75,6 +75,17 @@ test("Cloudflare build allows every esbuild version seen in install and deploy l
   }
 });
 
+test("Cloudflare clean install has optional Rolldown WASI lockfile entries", async () => {
+  const lock = JSON.parse(await readFile("package-lock.json", "utf8"));
+  const packages = lock.packages || {};
+
+  assert.equal(packages["node_modules/@rolldown/binding-wasm32-wasi"].dependencies["@emnapi/core"], "1.10.0");
+  assert.equal(packages["node_modules/@rolldown/binding-wasm32-wasi"].dependencies["@emnapi/runtime"], "1.10.0");
+  assert.equal(packages["node_modules/@rolldown/binding-wasm32-wasi/node_modules/@emnapi/core"].version, "1.10.0");
+  assert.equal(packages["node_modules/@rolldown/binding-wasm32-wasi/node_modules/@emnapi/runtime"].version, "1.10.0");
+  assert.equal(packages["node_modules/@rolldown/binding-wasm32-wasi/node_modules/@emnapi/wasi-threads"].version, "1.2.1");
+});
+
 test("late production migrations are safe on partially prepared databases", async () => {
   const [authMigration, accentMigration] = await Promise.all([
     readFile("drizzle/0028_standalone_auth.sql", "utf8"),
