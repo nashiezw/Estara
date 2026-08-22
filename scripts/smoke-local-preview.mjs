@@ -4,8 +4,25 @@ const checks = [
   { path: "/api/workspace", status: 200, includes: ["Prime Property", "Borrowdale Residence"] },
   { path: "/api/settings", status: 200, includes: ["Prime Property", "prime-property"] },
   { path: "/workspace", status: 200, includes: ["Prime Property", "Properties"] },
-  { path: "/site/prime-property", status: 200, includes: ["Prime Property", "Borrowdale Residence", "WhatsApp"] },
+  {
+    path: "/site/prime-property",
+    status: 200,
+    includes: ["Prime Property", "Borrowdale Residence", "WhatsApp"],
+    links: [
+      "/site/prime-property/properties",
+      "/site/prime-property/sale",
+      "/site/prime-property/rent",
+      "/site/prime-property/agents",
+      "/site/prime-property/services",
+      "/site/prime-property/about",
+      "/site/prime-property/contact",
+    ],
+  },
   { path: "/site/prime-property/properties", status: 200, includes: ["Prime Property", "Borrowdale Residence", "Properties"] },
+  { path: "/site/prime-property/sale", status: 200, includes: ["Prime Property", "Property for sale"] },
+  { path: "/site/prime-property/rent", status: 200, includes: ["Prime Property", "Property to rent"] },
+  { path: "/site/prime-property/agents", status: 200, includes: ["Prime Property", "Meet the agency"] },
+  { path: "/site/prime-property/services", status: 200, includes: ["Prime Property", "Services"] },
   { path: "/site/prime-property/about", status: 200, includes: ["Prime Property", "Borrowdale Residence"] },
   { path: "/site/prime-property/contact", status: 200, includes: ["Prime Property", "WhatsApp"] },
 ];
@@ -15,8 +32,9 @@ async function verify(check) {
   const response = await fetch(url);
   const body = await response.text();
   const missing = check.includes.filter((text) => !body.includes(text));
-  if (response.status !== check.status || missing.length) {
-    throw new Error(`${check.path} expected ${check.status} with ${check.includes.join(", ")}; got ${response.status}${missing.length ? `, missing ${missing.join(", ")}` : ""}`);
+  const missingLinks = (check.links || []).filter((href) => !body.includes(`href="${href}"`));
+  if (response.status !== check.status || missing.length || missingLinks.length) {
+    throw new Error(`${check.path} expected ${check.status} with ${check.includes.join(", ")}; got ${response.status}${missing.length ? `, missing ${missing.join(", ")}` : ""}${missingLinks.length ? `, missing links ${missingLinks.join(", ")}` : ""}`);
   }
   return `${check.path} ${response.status}`;
 }

@@ -15,11 +15,17 @@ test("local preview smoke tool checks workspace and seeded public website routes
     "/workspace",
     "/site/prime-property",
     "/site/prime-property/properties",
+    "/site/prime-property/sale",
+    "/site/prime-property/rent",
+    "/site/prime-property/agents",
+    "/site/prime-property/services",
     "/site/prime-property/about",
     "/site/prime-property/contact",
   ]) {
     assert.match(script, new RegExp(path.replaceAll("/", "\\/")));
   }
+  assert.match(script, /href="\$\{href\}"/);
+  assert.match(script, /missing links/);
   assert.match(script, /Prime Property/);
   assert.match(script, /Borrowdale Residence/);
   assert.match(script, /WhatsApp/);
