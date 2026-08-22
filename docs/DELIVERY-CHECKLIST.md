@@ -45,6 +45,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Agency colour tokens and typography persist and apply across implemented workspace, public website, marketing SVG and PDF outputs
 - [x] Team invitation and membership acceptance
 - [x] Website template selection
+- [x] Website template picker previews each style as a realistic mini public website before selection
 - [x] Subdomain selection
 - [-] Own-domain onboarding implemented for DNS proof; hosting-provider attachment pending
 - [x] Completion screen and first-property handoff
@@ -95,6 +96,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 
 - [x] Interactive production Marketing Studio
 - [x] Branded creative preview
+- [x] Editable creative controls for design, text, image source, badge, icon, logo visibility and layout alignment
 - [x] WhatsApp copy/share interaction
 - [x] Versioned structured templates
 - [x] WhatsApp card and dedicated status assets
