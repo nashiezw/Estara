@@ -22,6 +22,9 @@ Cloudflare D1 migrations to the same local database id used by `npm run dev`, so
 the workspace API and `/site/prime-property` public website preview have the
 tables they need.
 
+After starting the local server on port `3004`, run `npm run dev:smoke` to check
+the workspace API, settings API, workspace page and seeded public website pages.
+
 ## Cloudflare Worker Deployment
 
 This app commits a small `wrangler.jsonc` so Cloudflare does not run Wrangler's
@@ -111,6 +114,7 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 
 - `npm run dev`: start local development
 - `npm run dev:migrate`: apply D1 migrations to the local preview database
+- `npm run dev:smoke`: verify the local workspace and public website preview routes
 - `npm run build`: verify the vinext build output
 - `npm run deploy`: build and deploy the generated Cloudflare Worker
 - `npm run deploy:dry-run`: build and verify the Worker package without uploading
