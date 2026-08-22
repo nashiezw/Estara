@@ -12,9 +12,15 @@ Drizzle support.
 
 ```bash
 npm install
+npm run dev:migrate
 npm run dev
 npm run build
 ```
+
+Run `npm run dev:migrate` before local end-to-end preview checks. It applies the
+Cloudflare D1 migrations to the same local database id used by `npm run dev`, so
+the workspace API and `/site/prime-property` public website preview have the
+tables they need.
 
 ## Cloudflare Worker Deployment
 
@@ -104,6 +110,7 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 ## Useful Commands
 
 - `npm run dev`: start local development
+- `npm run dev:migrate`: apply D1 migrations to the local preview database
 - `npm run build`: verify the vinext build output
 - `npm run deploy`: build and deploy the generated Cloudflare Worker
 - `npm run deploy:dry-run`: build and verify the Worker package without uploading

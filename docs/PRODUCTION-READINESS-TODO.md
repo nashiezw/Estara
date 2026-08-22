@@ -19,6 +19,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] Owner setup copy now explains how agency identity, colours, services, website style, public address and first-property capture connect to the public website, enquiries and marketing flow.
 - [x] Key empty states now point users to concrete next actions for first-property capture, branch setup, verified backups, contact capture and governed integrations.
 - [x] Local preview seeding now uses one deterministic agency and `prime-property` website slug so the workspace website preview route has a stable target during end-to-end checks.
+- [x] `npm run dev:migrate` now prepares the local D1 preview database with the committed migrations before local workspace/public-site smoke checks.
 - [x] App-facing product labels across landing, workspace, admin, billing, seller, invite, health, integrations and secondary tool screens read centralized platform identity instead of source-fixed copy.
 - [x] `npm run launch:readiness` reports public-launch blockers, while `npm run launch:readiness -- --all` reports every unfinished roadmap row.
 - [x] Production launch evidence register lists every remaining public-launch gate, required proof and current deployment blocker.
