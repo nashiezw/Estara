@@ -16,6 +16,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] Platform identity defaults, metadata, tenant-domain suffix and public powered-by wording are centralized.
 - [x] Agency colour and typography settings persist and are applied across implemented workspace, public website, Marketing Studio SVG and PDF outputs.
 - [x] Website template selection now previews each template as a realistic mini public website, and Marketing Studio supports editable design, text, image, badge, icon, logo and alignment controls.
+- [x] Workspace website settings now show a larger selected-template preview with header, hero, listings, service chips and footer cues before saving the template.
 - [x] Owner setup copy now explains how agency identity, colours, services, website style, public address and first-property capture connect to the public website, enquiries and marketing flow.
 - [x] Key empty states now point users to concrete next actions for first-property capture, branch setup, verified backups, contact capture and governed integrations.
 - [x] Local preview seeding now uses one deterministic agency and `prime-property` website slug so the workspace website preview route has a stable target during end-to-end checks.

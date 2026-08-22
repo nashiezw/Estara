@@ -30,6 +30,8 @@ test("agency website templates are numerous, curated and selectable end to end",
   assert.match(settings, /invalidatePublicSite\(w\.agencyId\)/);
   assert.match(app, /WEBSITE_TEMPLATES\.map/);
   assert.match(app, /Website template<select/);
+  assert.match(app, /TemplateWebsitePreview/);
+  assert.match(app, /selectedTemplate=WEBSITE_TEMPLATES\.find/);
   assert.match(publicSite, /template-\$\{agency\.websiteTemplate\}/g);
   assert.match(publicSite, /public-layout-\$\{agency\.websiteTemplate\}/g);
   assert.match(publicSite, /public-feature-photo photo-\$\{properties\.length % 3\}/);
@@ -76,4 +78,18 @@ test("website templates restyle the full public site journey, not only the home 
       assert.match(css, new RegExp(`\\.template-${template.key}[^{]*\\.public-inner-${section}`));
     }
   }
+});
+
+test("website template selector has a full selected-site preview", async () => {
+  const app = await read("../app/estara-app.tsx");
+
+  assert.match(app, /function TemplateWebsitePreview/);
+  assert.match(app, /aria-label=\{`\$\{template\.name\} website preview`\}/);
+  assert.match(app, /<TemplateWebsitePreview template=\{selectedTemplate\} brand=\{brand\}/);
+  assert.match(app, /template-website-preview-\$\{template\.key\}/);
+  assert.match(app, /Home, listings, services, agents and contact pages inherit this structure/);
+  assert.match(app, /gridTemplateColumns:modern\?\"\.9fr 1\.1fr\":\"1fr 140px\"/);
+  assert.match(app, /template\.key===\"boutique\"/);
+  assert.match(app, /template\.key===\"skyline\"/);
+  assert.match(app, /template\.key===\"estate\"/);
 });
