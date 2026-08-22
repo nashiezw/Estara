@@ -25,13 +25,19 @@ async function domainTarget(agencySlug: string) {
   return suffix ? `${agencySlug}.${suffix.replace(/^\*\./, "")}` : "";
 }
 
-async function context() {
+async function context(requireCustomDomains = true) {
   const user = await getChatGPTUser();
   if (!user) return null;
   const workspace = await requireWorkspace(user);
   await requirePermission(workspace, "agency.settings.manage");
-  await requireEntitlement(workspace.agencyId, user.userId, "customDomains");
-  return { user, workspace };
+  let customDomainsEligible = true;
+  try {
+    await requireEntitlement(workspace.agencyId, user.userId, "customDomains");
+  } catch (error) {
+    if (requireCustomDomains) throw error;
+    customDomainsEligible = false;
+  }
+  return { user, workspace, customDomainsEligible };
 }
 
 function fail(error: unknown) {
@@ -42,10 +48,17 @@ function fail(error: unknown) {
 
 export async function GET() {
   try {
-    const c = await context();
+    const c = await context(false);
     if (!c) return Response.json({ error: "Sign in is required." }, { status: 401 });
+    const agency = await env.DB.prepare("SELECT slug FROM agencies WHERE id=?").bind(c.workspace.agencyId).first<{ slug: string }>();
+    const defaultSiteUrl = agency?.slug ? await domainTarget(agency.slug) : "";
     const rows = await env.DB.prepare("SELECT id,domain,ownership_token AS ownershipToken,expected_cname AS expectedCname,status,failure_reason AS failureReason,verified_at AS verifiedAt,ssl_requested_at AS sslRequestedAt,activated_at AS activatedAt,disabled_at AS disabledAt,created_at AS createdAt FROM custom_domains WHERE agency_id=? ORDER BY created_at DESC").bind(c.workspace.agencyId).all();
-    return Response.json({ domains: rows.results.map((row: any) => ({ ...row, txtName: `_estara-domain.${row.domain}`, txtValue: row.ownershipToken })) });
+    return Response.json({
+      customDomainsEligible: c.customDomainsEligible,
+      defaultSiteUrl: defaultSiteUrl ? `https://${defaultSiteUrl}` : "",
+      defaultSiteHost: defaultSiteUrl,
+      domains: rows.results.map((row: any) => ({ ...row, txtName: `_estara-domain.${row.domain}`, txtValue: row.ownershipToken })),
+    });
   } catch (error) {
     return fail(error);
   }

@@ -19,6 +19,14 @@ export function publicOrigin(headers: HeaderLike) {
 }
 
 export function publicUrl(origin: string, agency: PublicAgency, path = "") {
+  const host = (() => {
+    try {
+      return new URL(origin).hostname.toLowerCase();
+    } catch {
+      return "";
+    }
+  })();
+  if (host.startsWith(`${agency.slug.toLowerCase()}.`) && !host.startsWith("app.")) return `${origin}${path || ""}`;
   return `${origin}/site/${encodeURIComponent(agency.slug)}${path}`;
 }
 

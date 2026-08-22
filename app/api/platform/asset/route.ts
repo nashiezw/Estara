@@ -15,19 +15,19 @@ const bucket = () => {
   return value;
 };
 
-const images = () => {
-  const value = env.IMAGES;
-  if (!value) throw new Error("Image processing is unavailable.");
-  return value;
-};
+type BrandAsset = { bytes: Uint8Array; mimeType: string; optimized: boolean };
+
+const imageProcessor = () => ((env as any).IMAGES || null);
 
 const keyFor = (type: string) => `platform/brand/${type}.webp`;
 
-async function optimize(bytes: ArrayBuffer, width: number, quality: number) {
-  const result = await images().input(new Blob([bytes]).stream()).transform({ width, fit: "scale-down" }).output({ format: "webp", quality });
+async function processBrandAsset(bytes: ArrayBuffer, sourceMimeType: string, width: number, quality: number): Promise<BrandAsset> {
+  const processor = imageProcessor();
+  if (!processor) return { bytes: new Uint8Array(bytes), mimeType: sourceMimeType, optimized: false };
+  const result = await processor.input(new Blob([bytes]).stream()).transform({ width, fit: "scale-down" }).output({ format: "webp", quality });
   const response = result.response();
   if (!response.ok) throw new Error("Image optimization failed.");
-  return new Uint8Array(await response.arrayBuffer());
+  return { bytes: new Uint8Array(await response.arrayBuffer()), mimeType: "image/webp", optimized: true };
 }
 
 export async function GET(request: Request) {
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   if (!allowedTypes.has(type)) return Response.json({ error: "Brand asset was not found." }, { status: 404 });
   const object = await bucket().get(keyFor(type));
   if (!object) return Response.json({ error: "Brand asset was not found." }, { status: 404 });
-  return new Response(object.body, { headers: { ...headers, "content-type": "image/webp", "content-disposition": `inline; filename="${safeDownloadName(`estara-${type}.webp`)}"` } });
+  return new Response(object.body, { headers: { ...headers, "content-type": object.httpMetadata?.contentType || "image/webp", "content-disposition": `inline; filename="${safeDownloadName(`estara-${type}.webp`)}"` } });
 }
 
 export async function POST(request: Request) {
@@ -51,16 +51,16 @@ export async function POST(request: Request) {
     if (invalid) return Response.json({ error: invalid }, { status: 400 });
 
     const source = await file.arrayBuffer();
-    const asset = await optimize(source, type === "icon" ? 256 : 900, type === "icon" ? 90 : 84);
-    await bucket().put(keyFor(type), asset, { httpMetadata: { contentType: "image/webp" }, customMetadata: { scope: "platform", type, uploadedBy: context.userId } });
+    const asset = await processBrandAsset(source, file.type, type === "icon" ? 256 : 900, type === "icon" ? 90 : 84);
+    await bucket().put(keyFor(type), asset.bytes, { httpMetadata: { contentType: asset.mimeType }, customMetadata: { scope: "platform", type, uploadedBy: context.userId, optimized: String(asset.optimized) } });
 
     await ensurePlatformIdentity();
     const url = `/api/platform/asset?type=${type}&v=${encodeURIComponent(crypto.randomUUID())}`;
     await env.DB.prepare(`UPDATE platform_settings SET ${type === "logo" ? "logo_url" : "icon_url"}=?,updated_at=CURRENT_TIMESTAMP WHERE id='default'`).bind(url).run();
-    await writePlatformAudit(context, `platform.${type}.uploaded`, "platform_settings", "default", { sourceMimeType: file.type, sourceByteSize: file.size, optimizedByteSize: asset.byteLength });
+    await writePlatformAudit(context, `platform.${type}.uploaded`, "platform_settings", "default", { sourceMimeType: file.type, sourceByteSize: file.size, optimized: asset.optimized, optimizedByteSize: asset.bytes.byteLength });
     return Response.json({ type, url });
   } catch (error) {
     if (error instanceof PlatformAuthorizationError) return Response.json({ error: error.message }, { status: 403 });
-    return Response.json({ error: error instanceof Error && error.message === "Image processing is unavailable." ? error.message : "Platform brand upload failed. Please retry." }, { status: 500 });
+    return Response.json({ error: "Platform brand upload failed. Please retry." }, { status: 500 });
   }
 }

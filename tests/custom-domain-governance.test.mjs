@@ -37,10 +37,17 @@ test("domain lifecycle proves ownership before activation", async () => {
 
 test("domain route is permission checked, entitlement gated and avoids fake TLS success", async () => {
   const route = await readFile(new URL("../app/api/domains/route.ts", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/domains/page.tsx", import.meta.url), "utf8");
+  const client = await readFile(new URL("../app/domains/domains-client.tsx", import.meta.url), "utf8");
   const publicSite = await readFile(new URL("../db/public-site.ts", import.meta.url), "utf8");
   const root = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(route, /requirePermission\(workspace, "agency\.settings\.manage"\)/);
   assert.match(route, /requireEntitlement\(workspace\.agencyId, user\.userId, "customDomains"\)/);
+  assert.match(route, /defaultSiteUrl/);
+  assert.match(route, /customDomainsEligible/);
+  assert.match(page, /workspace-tools\.css/);
+  assert.match(page, /requireChatGPTUser\("\/domains"\)/);
+  assert.match(client, /defaultSiteHost/);
   assert.match(route, /ownershipToken/);
   assert.match(route, /observedTxt === row\.ownershipToken/);
   assert.match(route, /observedCname === row\.expectedCname\.toLowerCase\(\)/);
@@ -52,6 +59,23 @@ test("domain route is permission checked, entitlement gated and avoids fake TLS 
   assert.match(root, /getPublicAgencyByHost\(host,\s*platform\.tenantDomainSuffix\)/);
   assert.match(root, /PublicHome agency=\{agency\}/);
   assert.match(root, /notFound\(\)/);
+});
+
+test("tenant subdomain proxy keeps agency website paths clean", async () => {
+  const proxy = await readFile(new URL("../proxy.ts", import.meta.url), "utf8");
+  const root = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const publicWebsite = await readFile(new URL("../app/site/[slug]/public-website.tsx", import.meta.url), "utf8");
+  const workspace = await readFile(new URL("../app/estara-app.tsx", import.meta.url), "utf8");
+  const seo = await readFile(new URL("../db/public-seo.ts", import.meta.url), "utf8");
+  assert.match(proxy, /PUBLIC_SITE_DOMAIN \|\| "sites\.estara\.co\.zw"/);
+  assert.match(proxy, /export function proxy/);
+  assert.match(proxy, /NextResponse\.rewrite/);
+  assert.match(proxy, /NextResponse\.redirect\(url, 308\)/);
+  assert.match(root, /pathMode="clean"/);
+  assert.match(publicWebsite, /mode === "clean"/);
+  assert.match(publicWebsite, /publicPath\(agency/);
+  assert.match(workspace, /publicWebsiteHref\(brand\)/);
+  assert.match(seo, /host\.startsWith\(`\$\{agency\.slug\.toLowerCase\(\)\}\.`\)/);
 });
 
 test("tenant subdomain routing is single-label and slug-safe", async () => {

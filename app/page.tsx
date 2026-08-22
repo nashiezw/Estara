@@ -70,7 +70,7 @@ export default async function Home() {
     const [{ getPublicAgencyByHost, listPublicProperties }, { PublicHome }] =
       await Promise.all([import("../db/public-site"), import("./site/[slug]/public-website")]);
     const agency = await getPublicAgencyByHost(host, platform.tenantDomainSuffix);
-    if (agency) return <PublicHome agency={agency} properties={await listPublicProperties(agency.id)} />;
+    if (agency) return <PublicHome agency={agency} properties={await listPublicProperties(agency.id)} pathMode="clean" />;
     notFound();
   }
 

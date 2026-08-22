@@ -100,22 +100,25 @@ const propertyImage = (agency: PublicAgency, property?: PublicProperty, index = 
 const content = (agency: PublicAgency, key: keyof PublicContent, fallback: string) => agency.publicContent?.[key] || fallback;
 const layoutClass = (agency: PublicAgency) => `public-layout public-layout-${agency.websiteTemplate}`;
 const sectionImageSlot = (section: string): ImageSlot => `${section}HeroImageId` as ImageSlot;
+type PublicPathMode = "site" | "clean";
+const publicPath = (agency: PublicAgency, path = "", mode: PublicPathMode = "site") =>
+  mode === "clean" ? path || "/" : `/site/${agency.slug}${path}`;
 
-export function PublicHeader({ agency }: { agency: PublicAgency }) {
+export function PublicHeader({ agency, pathMode = "site" }: { agency: PublicAgency; pathMode?: PublicPathMode }) {
   const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
   const nav = [
-    ["Home", `/site/${agency.slug}`],
-    ["Properties", `/site/${agency.slug}/properties`],
-    ["For sale", `/site/${agency.slug}/sale`],
-    ["To rent", `/site/${agency.slug}/rent`],
-    ["Agents", `/site/${agency.slug}/agents`],
-    ["Services", `/site/${agency.slug}/services`],
-    ["About", `/site/${agency.slug}/about`],
+    ["Home", publicPath(agency, "", pathMode)],
+    ["Properties", publicPath(agency, "/properties", pathMode)],
+    ["For sale", publicPath(agency, "/sale", pathMode)],
+    ["To rent", publicPath(agency, "/rent", pathMode)],
+    ["Agents", publicPath(agency, "/agents", pathMode)],
+    ["Services", publicPath(agency, "/services", pathMode)],
+    ["About", publicPath(agency, "/about", pathMode)],
   ];
   return (
     <header className="public-header">
       <a className="public-skip" href="#main-content">Skip to content</a>
-      <Link href={`/site/${agency.slug}`} className="public-brand">
+      <Link href={publicPath(agency, "", pathMode)} className="public-brand">
         {agency.logoId ? (
           <img src={`/api/public/${agency.slug}/media?id=${encodeURIComponent(agency.logoId)}`} alt={`${agency.name} logo`} />
         ) : (
@@ -139,7 +142,7 @@ export function PublicHeader({ agency }: { agency: PublicAgency }) {
           {nav.map(([label, href]) => (
             <Link href={href} key={href}>{label}</Link>
           ))}
-          <Link href={`/site/${agency.slug}/contact`}>Contact</Link>
+          <Link href={publicPath(agency, "/contact", pathMode)}>Contact</Link>
         </div>
       </details>
       <div className="public-header-actions">
@@ -148,18 +151,18 @@ export function PublicHeader({ agency }: { agency: PublicAgency }) {
             WhatsApp
           </TrackedLink>
         ) : (
-          <Link href={`/site/${agency.slug}/contact`}>Contact</Link>
+          <Link href={publicPath(agency, "/contact", pathMode)}>Contact</Link>
         )}
       </div>
     </header>
   );
 }
 
-export function PropertyGrid({ agency, properties }: { agency: PublicAgency; properties: PublicProperty[] }) {
+export function PropertyGrid({ agency, properties, pathMode = "site" }: { agency: PublicAgency; properties: PublicProperty[]; pathMode?: PublicPathMode }) {
   return (
     <div className="public-grid">
       {properties.map((property, index) => (
-        <Link href={`/site/${agency.slug}/properties/${property.id}`} className="public-card" key={property.id}>
+        <Link href={publicPath(agency, `/properties/${property.id}`, pathMode)} className="public-card" key={property.id}>
           <div
             className={`public-photo photo-${index % 3}`}
             style={propertyImage(agency, property, index)}
@@ -212,15 +215,15 @@ function AgentGrid({ agency, agents }: { agency: PublicAgency; agents: PublicAge
   );
 }
 
-export function PublicFooter({ agency }: { agency: PublicAgency }) {
+export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgency; pathMode?: PublicPathMode }) {
   const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
   const nav = [
-    ["Properties", `/site/${agency.slug}/properties`],
-    ["For sale", `/site/${agency.slug}/sale`],
-    ["To rent", `/site/${agency.slug}/rent`],
-    ["Agents", `/site/${agency.slug}/agents`],
-    ["Services", `/site/${agency.slug}/services`],
-    ["Contact", `/site/${agency.slug}/contact`],
+    ["Properties", publicPath(agency, "/properties", pathMode)],
+    ["For sale", publicPath(agency, "/sale", pathMode)],
+    ["To rent", publicPath(agency, "/rent", pathMode)],
+    ["Agents", publicPath(agency, "/agents", pathMode)],
+    ["Services", publicPath(agency, "/services", pathMode)],
+    ["Contact", publicPath(agency, "/contact", pathMode)],
   ];
   const services = agency.businessActivities.length
     ? agency.businessActivities.slice(0, 5)
@@ -228,7 +231,7 @@ export function PublicFooter({ agency }: { agency: PublicAgency }) {
   return (
     <footer className="public-footer" aria-label="Agency website footer">
       <section className="public-footer-brand">
-        <Link href={`/site/${agency.slug}`} className="public-footer-mark">
+        <Link href={publicPath(agency, "", pathMode)} className="public-footer-mark">
           {agency.logoId ? (
             <img src={`/api/public/${agency.slug}/media?id=${encodeURIComponent(agency.logoId)}`} alt={`${agency.name} logo`} />
           ) : (
@@ -242,13 +245,13 @@ export function PublicFooter({ agency }: { agency: PublicAgency }) {
         <h2>Ready for a clearer property move?</h2>
         <p>{agency.tagline || `${agency.name} gives every client a direct path to verified property guidance and responsive follow-through.`}</p>
         <div className="public-footer-actions">
-          <Link href={`/site/${agency.slug}/properties`}>Explore properties</Link>
+          <Link href={publicPath(agency, "/properties", pathMode)}>Explore properties</Link>
           {whatsapp ? (
             <TrackedLink slug={agency.slug} eventType="whatsapp" href={`https://wa.me/${whatsapp}`}>
               WhatsApp the agency
             </TrackedLink>
           ) : (
-            <Link href={`/site/${agency.slug}/contact`}>Contact the agency</Link>
+            <Link href={publicPath(agency, "/contact", pathMode)}>Contact the agency</Link>
           )}
         </div>
       </section>
@@ -311,7 +314,7 @@ function TrustStrip({ agency, properties }: { agency: PublicAgency; properties: 
   );
 }
 
-export function PublicHome({ agency, properties }: { agency: PublicAgency; properties: PublicProperty[] }) {
+export function PublicHome({ agency, properties, pathMode = "site" }: { agency: PublicAgency; properties: PublicProperty[]; pathMode?: PublicPathMode }) {
   const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
   const featured = properties[0];
   return (
@@ -319,7 +322,7 @@ export function PublicHome({ agency, properties }: { agency: PublicAgency; prope
       className={`public-site template-${agency.websiteTemplate} typography-${agency.typography || "classic"}`}
       style={{ "--agency-primary": agency.primaryColor, "--agency-accent": agency.accentColor } as any}
     >
-      <PublicHeader agency={agency} />
+      <PublicHeader agency={agency} pathMode={pathMode} />
       <main id="main-content" className={`public-home public-home-${agency.websiteTemplate} ${layoutClass(agency)}`} tabIndex={-1}>
         <section className="public-hero" style={propertyImage(agency, featured, 0, "homeHeroImageId")}>
           <div>
@@ -327,7 +330,7 @@ export function PublicHome({ agency, properties }: { agency: PublicAgency; prope
             <h1>{content(agency, "homeHeadline", agency.name)}</h1>
             <p>{content(agency, "homeIntro", agency.tagline || `Local expertise, sharp presentation and trusted property advice from ${agency.name}.`)}</p>
             <div>
-              <Link href={`/site/${agency.slug}/properties`}>Explore properties</Link>
+              <Link href={publicPath(agency, "/properties", pathMode)}>Explore properties</Link>
               {whatsapp && (
                 <TrackedLink slug={agency.slug} eventType="whatsapp" href={`https://wa.me/${whatsapp}`}>
                   WhatsApp us
@@ -350,7 +353,7 @@ export function PublicHome({ agency, properties }: { agency: PublicAgency; prope
               <h2>{featured.title}</h2>
               <p>{featured.location}</p>
               <strong>{featured.price}</strong>
-              <Link href={`/site/${agency.slug}/properties/${featured.id}`}>View property</Link>
+              <Link href={publicPath(agency, `/properties/${featured.id}`, pathMode)}>View property</Link>
             </article>
           </section>
         )}
@@ -361,9 +364,9 @@ export function PublicHome({ agency, properties }: { agency: PublicAgency; prope
               <span>LIVE LISTINGS</span>
               <h2>Properties worth seeing</h2>
             </div>
-            <Link href={`/site/${agency.slug}/properties`}>View all</Link>
+            <Link href={publicPath(agency, "/properties", pathMode)}>View all</Link>
           </div>
-          <PropertyGrid agency={agency} properties={properties.slice(0, 6)} />
+          <PropertyGrid agency={agency} properties={properties.slice(0, 6)} pathMode={pathMode} />
         </section>
 
         <section className="public-services">
@@ -386,7 +389,7 @@ export function PublicHome({ agency, properties }: { agency: PublicAgency; prope
           </aside>
         </section>
       </main>
-      <PublicFooter agency={agency} />
+      <PublicFooter agency={agency} pathMode={pathMode} />
     </div>
   );
 }
@@ -396,11 +399,13 @@ export function PublicSection({
   properties,
   section,
   agents = [],
+  pathMode = "site",
 }: {
   agency: PublicAgency;
   properties: PublicProperty[];
   section: string;
   agents?: PublicAgent[];
+  pathMode?: PublicPathMode;
 }) {
   const titles: Record<string, [string, string]> = {
     properties: ["All properties", content(agency, "propertiesIntro", "Explore every live listing from our agency.")],
@@ -417,7 +422,7 @@ export function PublicSection({
       className={`public-site template-${agency.websiteTemplate} typography-${agency.typography || "classic"}`}
       style={{ "--agency-primary": agency.primaryColor, "--agency-accent": agency.accentColor } as any}
     >
-      <PublicHeader agency={agency} />
+      <PublicHeader agency={agency} pathMode={pathMode} />
       <main id="main-content" className={`public-inner public-inner-${section} ${layoutClass(agency)}`} tabIndex={-1}>
         <aside className="public-template-rail" aria-hidden="true">
           <span>{agency.name}</span>
@@ -434,7 +439,7 @@ export function PublicSection({
         </section>
 
         {["properties", "sale", "rent"].includes(section) ? (
-          <PropertyGrid agency={agency} properties={properties} />
+          <PropertyGrid agency={agency} properties={properties} pathMode={pathMode} />
         ) : section === "agents" ? (
           <section className="public-agents-shell">
             <article>
@@ -483,7 +488,7 @@ export function PublicSection({
           </div>
         )}
       </main>
-      <PublicFooter agency={agency} />
+      <PublicFooter agency={agency} pathMode={pathMode} />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 import { FormEvent, useEffect, useState } from "react";
 
 type DomainRecord = { id: string; domain: string; ownershipToken: string; expectedCname: string; txtName: string; txtValue: string; status: string; failureReason?: string | null };
+type DomainPayload = { domains: DomainRecord[]; customDomainsEligible: boolean; defaultSiteUrl: string; defaultSiteHost: string };
 
 const statusConfig: Record<string, { icon: string; color: string; label: string; description: string }> = {
   setup_required: { icon: "📝", color: "#fbbf24", label: "Setup Required", description: "Add DNS records to verify ownership" },
@@ -19,6 +20,37 @@ const styles = `
     flex-direction: column;
     gap: 0;
     overflow: hidden;
+  }
+
+  .domain-default-card {
+    display: grid;
+    gap: 0.9rem;
+    align-items: start;
+  }
+
+  .domain-default-card span {
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--tool-accent, #0f766e);
+  }
+
+  .domain-default-card h2 {
+    margin: 0;
+    font-size: clamp(1.4rem, 3vw, 2.3rem);
+    word-break: break-word;
+  }
+
+  .domain-default-card p,
+  .domain-plan-note {
+    color: #5b6c66;
+    line-height: 1.6;
+  }
+
+  .domain-default-card a {
+    width: fit-content;
+    text-decoration: none;
   }
 
   .domain-header {
@@ -367,6 +399,9 @@ const styles = `
 
 export default function DomainClient() {
   const [domains, setDomains] = useState<DomainRecord[]>([]);
+  const [customDomainsEligible, setCustomDomainsEligible] = useState(true);
+  const [defaultSiteUrl, setDefaultSiteUrl] = useState("");
+  const [defaultSiteHost, setDefaultSiteHost] = useState("");
   const [domain, setDomain] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -375,9 +410,12 @@ export default function DomainClient() {
 
   async function load() {
     const response = await fetch("/api/domains", { cache: "no-store" });
-    const body = await response.json();
+    const body = await response.json() as DomainPayload & { error?: string };
     if (!response.ok) throw new Error(body.error || "Domains could not be loaded.");
     setDomains(body.domains || []);
+    setCustomDomainsEligible(Boolean(body.customDomainsEligible));
+    setDefaultSiteUrl(body.defaultSiteUrl || "");
+    setDefaultSiteHost(body.defaultSiteHost || "");
   }
   useEffect(() => { load().catch((err) => setError(err.message)); }, []);
   
@@ -412,14 +450,22 @@ export default function DomainClient() {
 
   return <main className="tool-page">
     <a className="back" href="/workspace">Return to workspace</a>
-    <section className="tool-hero"><span>Agency website</span><h1>Custom domains</h1><p>Connect an agency-owned domain with explicit ownership proof, DNS verification and provider-gated activation.</p></section>
+    <section className="tool-hero"><span>Agency website</span><h1>Domains and public address</h1><p>Use the agency&apos;s default ESTARA website address immediately, or connect an agency-owned domain with DNS proof when the plan allows it.</p></section>
     
     {error && <div className="notice" role="alert">{error}</div>}
     {message && <div className="notice success">{message}</div>}
+
+    <section className="tool-card domain-default-card">
+      <span>Included agency website</span>
+      <h2>{defaultSiteHost || "Public website address not configured"}</h2>
+      <p>This is the clean public address for the agency website. In Cloudflare, `*.sites.estara.co.zw` should point to the ESTARA Worker so every agency slug resolves here.</p>
+      {defaultSiteUrl ? <a className="primary" href={defaultSiteUrl} target="_blank" rel="noreferrer">Open agency website</a> : <a className="outline" href="/admin">Configure tenant domain suffix</a>}
+    </section>
     
     <form className="tool-card domain-form" onSubmit={add}>
-      <label>Domain name<input required value={domain} onChange={event => setDomain(event.target.value)} placeholder="www.agency.co.zw" /></label>
-      <button disabled={busy}>{busy ? "Saving..." : "Add domain"}</button>
+      <label>Custom domain name<input required disabled={!customDomainsEligible || busy} value={domain} onChange={event => setDomain(event.target.value)} placeholder="www.agency.co.zw" /></label>
+      <button disabled={busy || !customDomainsEligible}>{busy ? "Saving..." : "Add custom domain"}</button>
+      {!customDomainsEligible && <p className="domain-plan-note">Custom domains are not included on the current plan. The default agency website above still works.</p>}
     </form>
 
     <section className="tool-grid domain-grid">

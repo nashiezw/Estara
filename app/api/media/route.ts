@@ -15,10 +15,11 @@ const bucket = () => {
   return value;
 };
 
-const images = () => {
-  const value = env.IMAGES;
-  if (!value) throw new Error("Image processing is unavailable.");
-  return value;
+type ProcessedImage = { bytes: Uint8Array; mimeType: string; optimized: boolean };
+
+const imageProcessor = () => {
+  const value = (env as any).IMAGES;
+  return value || null;
 };
 
 async function context(permission?: string) {
@@ -29,11 +30,13 @@ async function context(permission?: string) {
   return { user, workspace };
 }
 
-async function optimize(bytes: ArrayBuffer, width: number, quality: number) {
-  const result = await images().input(new Blob([bytes]).stream()).transform({ width, fit: "scale-down" }).output({ format:"webp", quality });
+async function processImage(bytes: ArrayBuffer, sourceMimeType: string, width: number, quality: number): Promise<ProcessedImage> {
+  const processor = imageProcessor();
+  if (!processor) return { bytes: new Uint8Array(bytes), mimeType: sourceMimeType, optimized: false };
+  const result = await processor.input(new Blob([bytes]).stream()).transform({ width, fit: "scale-down" }).output({ format:"webp", quality });
   const response = result.response();
   if (!response.ok) throw new Error("Image optimization failed.");
-  return new Uint8Array(await response.arrayBuffer());
+  return { bytes: new Uint8Array(await response.arrayBuffer()), mimeType: "image/webp", optimized: true };
 }
 
 async function GET(request: Request) {
@@ -91,18 +94,18 @@ async function POST(request: Request) {
 
     const id = crypto.randomUUID();
     const source = await file.arrayBuffer();
-    const main = kind === "agent_photo" ? await optimize(source, 900, 82) : await optimize(source,1920,82);
-    const thumb = kind === "property_photo" || kind === "agent_photo" || kind === "website_image" ? await optimize(source,480,72) : null;
+    const main = kind === "agent_photo" ? await processImage(source, file.type, 900, 82) : await processImage(source, file.type, 1920, 82);
+    const thumb = kind === "property_photo" || kind === "agent_photo" || kind === "website_image" ? await processImage(source, file.type, 480, 72) : null;
     const key = optimizedMediaObjectKey(c.workspace.agencyId, id, "main");
     const thumbKey = thumb ? optimizedMediaObjectKey(c.workspace.agencyId, id, "thumb") : null;
     const previous = kind === "agency_logo" ? await env.DB.prepare("SELECT object_key AS objectKey,thumbnail_object_key AS thumbnailObjectKey FROM media_assets WHERE agency_id=? AND kind='agency_logo' LIMIT 1").bind(c.workspace.agencyId).first<any>() : null;
     const sort = kind === "property_photo" ? await env.DB.prepare("SELECT COUNT(*) AS count FROM media_assets WHERE agency_id=? AND property_id=? AND kind='property_photo'").bind(c.workspace.agencyId, propertyId).first<any>() : { count: 0 };
 
-    await bucket().put(key, main, { httpMetadata: { contentType: "image/webp" }, customMetadata: { agencyId: c.workspace.agencyId, assetId: id, variant: "main" } });
-    if (thumb && thumbKey) await bucket().put(thumbKey, thumb, { httpMetadata: { contentType: "image/webp" }, customMetadata: { agencyId: c.workspace.agencyId, assetId: id, variant: "thumb" } });
+    await bucket().put(key, main.bytes, { httpMetadata: { contentType: main.mimeType }, customMetadata: { agencyId: c.workspace.agencyId, assetId: id, variant: "main", optimized: String(main.optimized) } });
+    if (thumb && thumbKey) await bucket().put(thumbKey, thumb.bytes, { httpMetadata: { contentType: thumb.mimeType }, customMetadata: { agencyId: c.workspace.agencyId, assetId: id, variant: "thumb", optimized: String(thumb.optimized) } });
 
     try {
-      const insert = env.DB.prepare("INSERT INTO media_assets (id,agency_id,property_id,kind,category,object_key,thumbnail_object_key,original_name,mime_type,byte_size,thumbnail_byte_size,sort_order,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id, c.workspace.agencyId, kind === "property_photo" ? propertyId : null, kind, category, key, thumbKey, file.name, "image/webp", main.byteLength, thumb?.byteLength || null, sort?.count || 0, c.user.userId);
+      const insert = env.DB.prepare("INSERT INTO media_assets (id,agency_id,property_id,kind,category,object_key,thumbnail_object_key,original_name,mime_type,byte_size,thumbnail_byte_size,sort_order,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(id, c.workspace.agencyId, kind === "property_photo" ? propertyId : null, kind, category, key, thumbKey, file.name, main.mimeType, main.bytes.byteLength, thumb?.bytes.byteLength || null, sort?.count || 0, c.user.userId);
       if (kind === "agency_logo") {
         await env.DB.batch([env.DB.prepare("DELETE FROM media_assets WHERE agency_id=? AND kind='agency_logo'").bind(c.workspace.agencyId), insert]);
       } else {
@@ -117,12 +120,12 @@ async function POST(request: Request) {
     }
 
     if (previous?.objectKey) await bucket().delete([previous.objectKey, ...previous.thumbnailObjectKey ? [previous.thumbnailObjectKey] : []]);
-    await writeAudit(c.workspace, "media.uploaded", "media_asset", id, { kind, category, propertyId: propertyId || null, userId: kind === "agent_photo" ? userId : null, sourceMimeType: file.type, sourceByteSize: file.size, optimizedByteSize: main.byteLength, thumbnailByteSize: thumb?.byteLength || null });
+    await writeAudit(c.workspace, "media.uploaded", "media_asset", id, { kind, category, propertyId: propertyId || null, userId: kind === "agent_photo" ? userId : null, sourceMimeType: file.type, sourceByteSize: file.size, optimized: main.optimized, optimizedByteSize: main.bytes.byteLength, thumbnailByteSize: thumb?.bytes.byteLength || null });
     await invalidatePublicSite(c.workspace.agencyId,propertyId||null);
-    return Response.json({ asset: { id, kind, category, propertyId: propertyId || null, url: `/api/media?id=${encodeURIComponent(id)}`, thumbnailUrl: thumbKey ? `/api/media?id=${encodeURIComponent(id)}&variant=thumb` : null }, optimization: { sourceBytes: file.size, outputBytes: main.byteLength, thumbnailBytes: thumb?.byteLength || 0 } }, { status: 201 });
+    return Response.json({ asset: { id, kind, category, propertyId: propertyId || null, url: `/api/media?id=${encodeURIComponent(id)}`, thumbnailUrl: thumbKey ? `/api/media?id=${encodeURIComponent(id)}&variant=thumb` : null }, optimization: { sourceBytes: file.size, outputBytes: main.bytes.byteLength, thumbnailBytes: thumb?.bytes.byteLength || 0, optimized: main.optimized } }, { status: 201 });
   } catch (error) {
     if (error instanceof AuthorizationError) return Response.json({ error: error.message }, { status: 403 });
-    return Response.json({ error: error instanceof Error && error.message === "Image processing is unavailable." ? error.message : "Image upload failed. Please retry." }, { status: 500 });
+    return Response.json({ error: "Image upload failed. Please retry." }, { status: 500 });
   }
 }
 
