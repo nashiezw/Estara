@@ -248,12 +248,14 @@ function AgencyRow({ agency, plans, busy, send }: any) {
 function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy: boolean; send: (method: string, body: any) => void }) {
   const [form, setForm] = useState<Settings>(normaliseSettings(settings));
   const [uploading, setUploading] = useState("");
+  const [uploadError, setUploadError] = useState("");
   useEffect(() => { if (settings) setForm(normaliseSettings(settings)); }, [settings]);
   const change = (key: keyof Settings, value: string) => setForm(current => ({ ...current, [key]: value }));
   const changeColour = (key: "primaryColor" | "accentColor", value: string) => setForm(current => ({ ...current, [key]: normaliseHex(value) }));
   const uploadBrandAsset = async (type: "logo" | "icon" | "dark-logo" | "dark-icon", file?: File) => {
     if (!file) return;
     setUploading(type);
+    setUploadError("");
     try {
       const body = new FormData();
       body.set("type", type);
@@ -263,7 +265,7 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
       const field = type === "logo" ? "logoUrl" : type === "icon" ? "iconUrl" : type === "dark-logo" ? "darkLogoUrl" : "darkIconUrl";
       setForm(current => ({ ...current, [field]: result.url }));
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Upload failed.");
+      setUploadError(error instanceof Error ? error.message : "Upload failed.");
     } finally {
       setUploading("");
     }
@@ -278,6 +280,7 @@ function PlatformSettings({ settings, busy, send }: { settings?: Settings; busy:
         <span><strong>Dark logo</strong><small>{form.darkLogoUrl ? "Custom dark-surface logo saved" : "Dark screens fall back to the normal logo"}</small></span>
         <span><strong>Dark icon</strong><small>{form.darkIconUrl ? "Custom dark-surface icon saved" : "Dark saved-site surfaces fall back to the normal icon"}</small></span>
       </div>
+      {uploadError && <p className="platform-error" role="alert">{uploadError}</p>}
     </section>
     <section className="platform-card platform-settings-form">
       <span>GLOBAL PLATFORM CONFIGURATION</span><h2>Identity, support and public routing</h2>

@@ -24,6 +24,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] D1 restore rehearsal evidence verifier is implemented as `npm run d1:restore:verify -- docs/evidence/d1-restore-rehearsal.json`.
 - [x] Cloudflare Worker error capture is wired through Sentry with release tagging and no default PII once production Sentry secrets are configured.
 - [x] Deal-stage moves and platform billing receipt capture use inline review forms instead of browser popup prompts, with guard tests covering the regression.
+- [x] Remaining destructive/recovery UI actions use inline review or page-level error states instead of browser prompt, confirm or alert dialogs.
 
 ## Must Complete Before Public Launch
 

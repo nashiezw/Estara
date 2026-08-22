@@ -1,1 +1,77 @@
-"use client";import{FormEvent,useCallback,useEffect,useState}from"react";type Credential={id:string;name:string;keyPrefix:string;scopes:string[];expiresAt?:string|null;lastUsedAt?:string|null;revokedAt?:string|null;createdAt:string};export default function DeveloperClient({platform}:{platform:{shortName:string}}){const[data,setData]=useState<{allowedScopes:string[];credentials:Credential[]}>({allowedScopes:[],credentials:[]}),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState(""),[token,setToken]=useState("");const load=useCallback(async()=>{setLoading(true);try{const r=await fetch("/api/api-credentials",{cache:"no-store"}),b=await r.json();if(!r.ok)throw new Error(b.error||"Developer access could not be loaded.");setData(b);setError("")}catch(e){setError(e instanceof Error?e.message:"Developer access could not be loaded.")}finally{setLoading(false)}},[]);useEffect(()=>{void load()},[load]);const create=async(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();setBusy(true);setError("");setMessage("");setToken("");const f=new FormData(e.currentTarget),scopes=f.getAll("scopes");try{const r=await fetch("/api/api-credentials",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name:f.get("name"),expiresAt:f.get("expiresAt")||null,scopes})}),b=await r.json();if(!r.ok)throw new Error(b.error||"Credential could not be created.");setToken(b.token);setMessage(`Credential created. Copy it now; ${platform.shortName} stores only its secure hash.`);e.currentTarget.reset();await load()}catch(e){setError(e instanceof Error?e.message:"Credential could not be created.")}finally{setBusy(false)}};const revoke=async(id:string)=>{if(!confirm("Revoke this credential now? Connected software will immediately lose access."))return;setBusy(true);try{const r=await fetch(`/api/api-credentials?id=${encodeURIComponent(id)}`,{method:"DELETE"}),b=await r.json();if(!r.ok)throw new Error(b.error);setMessage("Credential revoked.");await load()}catch(e){setError(e instanceof Error?e.message:"Credential could not be revoked.")}finally{setBusy(false)}};if(loading)return <main className="pm-shell"><div className="pm-state"><i className="pm-spinner"/>Preparing secure developer access…</div></main>;return <main className="pm-shell"><header className="pm-hero"><div><a className="pm-back" href="/workspace">← Workspace</a><p className="pm-kicker">SCOPED PUBLIC API</p><h1>Connect without surrendering control.</h1><p>Create revocable, least-privilege credentials. Secrets are shown once, hashed at rest, rate limited and logged.</p></div></header>{error&&<div className="pm-alert pm-error" role="alert">{error}<button onClick={load}>Retry</button></div>}{message&&<div className="pm-alert pm-success">✓ {message}</div>}{token&&<div className="pm-alert" style={{background:"#fff4cf",display:"grid"}}><strong>Copy this secret now — it cannot be recovered.</strong><input readOnly value={token} onFocus={e=>e.currentTarget.select()} aria-label="New API secret"/><button className="pm-primary" onClick={()=>navigator.clipboard.writeText(token)}>Copy secret</button></div>}<section className="pm-grid"><article className="pm-panel"><p className="pm-kicker">NEW CONNECTION</p><h2>Create scoped credential</h2><form onSubmit={create}><label>Connection name<input name="name" required maxLength={100} placeholder="Website lead importer"/></label><label>Expiry (maximum one year)<input name="expiresAt" type="date"/></label><fieldset style={{border:0,padding:0,margin:0,display:"grid",gap:8}}><legend style={{fontSize:12,fontWeight:800,marginBottom:8}}>PERMITTED OPERATIONS</legend>{data.allowedScopes.map(scope=><label key={scope} style={{display:"flex",alignItems:"center",gap:9}}><input name="scopes" type="checkbox" value={scope} style={{width:18,minHeight:18}}/>{scope}</label>)}</fieldset><button className="pm-primary" disabled={busy}>{busy?"Creating securely…":"Create credential"}</button></form></article><article className="pm-panel"><p className="pm-kicker">QUICK START</p><h2>Version 1 endpoints</h2><p><b>GET /api/v1/properties</b><br/>Read only currently available public listing facts. Supports <code>limit</code> and opaque <code>cursor</code>.</p><p><b>POST /api/v1/enquiries</b><br/>Create a canonical enquiry using an <code>Idempotency-Key</code> header. Requires name plus phone or email.</p><pre style={{whiteSpace:"pre-wrap",background:"#123b33",color:"#eaf3ee",padding:16,borderRadius:14,overflow:"auto"}}>{`Authorization: Bearer est_live_…\nContent-Type: application/json\nIdempotency-Key: your-unique-request-id`}</pre><p>Responses never expose owner details, private notes, documents or internal commissions.</p></article><article className="pm-panel pm-wide"><div className="pm-heading"><div><p className="pm-kicker">ACTIVE & HISTORIC</p><h2>Credentials</h2></div><span>{data.credentials.filter(x=>!x.revokedAt).length} active</span></div>{data.credentials.length?data.credentials.map(x=><div className="pm-row" key={x.id}><div><strong>{x.name}</strong><small>{x.keyPrefix}•••• · {x.scopes.join(", ")}</small><small>Created {new Date(x.createdAt).toLocaleDateString()}{x.lastUsedAt?` · last used ${new Date(x.lastUsedAt).toLocaleString()}`:" · never used"}</small></div><div>{x.revokedAt?<b>Revoked</b>:<button className="pm-secondary" disabled={busy} onClick={()=>revoke(x.id)}>Revoke</button>}</div></div>):<div className="pm-empty">No API credentials yet.</div>}</article></section></main>}
+"use client";
+
+import { FormEvent, useCallback, useEffect, useState } from "react";
+
+type Credential = { id: string; name: string; keyPrefix: string; scopes: string[]; expiresAt?: string | null; lastUsedAt?: string | null; revokedAt?: string | null; createdAt: string };
+
+export default function DeveloperClient({ platform }: { platform: { shortName: string } }) {
+  const [data, setData] = useState<{ allowedScopes: string[]; credentials: Credential[] }>({ allowedScopes: [], credentials: [] });
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [token, setToken] = useState("");
+  const [pendingRevoke, setPendingRevoke] = useState<Credential | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch("/api/api-credentials", { cache: "no-store" });
+      const b = await r.json();
+      if (!r.ok) throw new Error(b.error || "Developer access could not be loaded.");
+      setData(b);
+      setError("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Developer access could not be loaded.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const create = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    setMessage("");
+    setToken("");
+    const f = new FormData(e.currentTarget), scopes = f.getAll("scopes");
+    try {
+      const r = await fetch("/api/api-credentials", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: f.get("name"), expiresAt: f.get("expiresAt") || null, scopes }),
+      });
+      const b = await r.json();
+      if (!r.ok) throw new Error(b.error || "Credential could not be created.");
+      setToken(b.token);
+      setMessage(`Credential created. Copy it now; ${platform.shortName} stores only its secure hash.`);
+      e.currentTarget.reset();
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Credential could not be created.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const revoke = async (id: string) => {
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/api-credentials?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const b = await r.json();
+      if (!r.ok) throw new Error(b.error);
+      setPendingRevoke(null);
+      setMessage("Credential revoked.");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Credential could not be revoked.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) return <main className="pm-shell"><div className="pm-state"><i className="pm-spinner"/>Preparing secure developer access...</div></main>;
+  return <main className="pm-shell"><header className="pm-hero"><div><a className="pm-back" href="/workspace">Back to workspace</a><p className="pm-kicker">SCOPED PUBLIC API</p><h1>Connect without surrendering control.</h1><p>Create revocable, least-privilege credentials. Secrets are shown once, hashed at rest, rate limited and logged.</p></div></header>{error && <div className="pm-alert pm-error" role="alert">{error}<button onClick={load}>Retry</button></div>}{message && <div className="pm-alert pm-success">{message}</div>}{token && <div className="pm-alert" style={{ background: "#fff4cf", display: "grid" }}><strong>Copy this secret now. It cannot be recovered.</strong><input readOnly value={token} onFocus={e => e.currentTarget.select()} aria-label="New API secret"/><button className="pm-primary" onClick={() => navigator.clipboard.writeText(token)}>Copy secret</button></div>}<section className="pm-grid"><article className="pm-panel"><p className="pm-kicker">NEW CONNECTION</p><h2>Create scoped credential</h2><form onSubmit={create}><label>Connection name<input name="name" required maxLength={100} placeholder="Website lead importer"/></label><label>Expiry (maximum one year)<input name="expiresAt" type="date"/></label><fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 8 }}><legend style={{ fontSize: 12, fontWeight: 800, marginBottom: 8 }}>PERMITTED OPERATIONS</legend>{data.allowedScopes.map(scope => <label key={scope} style={{ display: "flex", alignItems: "center", gap: 9 }}><input name="scopes" type="checkbox" value={scope} style={{ width: 18, minHeight: 18 }}/>{scope}</label>)}</fieldset><button className="pm-primary" disabled={busy}>{busy ? "Creating securely..." : "Create credential"}</button></form></article><article className="pm-panel"><p className="pm-kicker">QUICK START</p><h2>Version 1 endpoints</h2><p><b>GET /api/v1/properties</b><br/>Read only currently available public listing facts. Supports <code>limit</code> and opaque <code>cursor</code>.</p><p><b>POST /api/v1/enquiries</b><br/>Create a canonical enquiry using an <code>Idempotency-Key</code> header. Requires name plus phone or email.</p><pre style={{ whiteSpace: "pre-wrap", background: "#123b33", color: "#eaf3ee", padding: 16, borderRadius: 14, overflow: "auto" }}>{`Authorization: Bearer est_live_...\nContent-Type: application/json\nIdempotency-Key: your-unique-request-id`}</pre><p>Responses never expose owner details, private notes, documents or internal commissions.</p></article><article className="pm-panel pm-wide"><div className="pm-heading"><div><p className="pm-kicker">ACTIVE & HISTORIC</p><h2>Credentials</h2></div><span>{data.credentials.filter(x => !x.revokedAt).length} active</span></div>{data.credentials.length ? data.credentials.map(x => <div className="pm-row" key={x.id}><div><strong>{x.name}</strong><small>{x.keyPrefix}**** · {x.scopes.join(", ")}</small><small>Created {new Date(x.createdAt).toLocaleDateString()}{x.lastUsedAt ? ` · last used ${new Date(x.lastUsedAt).toLocaleString()}` : " · never used"}</small>{pendingRevoke?.id === x.id && <div className="credential-revoke-review" role="region" aria-label={`Confirm revoke for ${x.name}`}><strong>Revoke {x.name}?</strong><small>Connected software will immediately lose access. This cannot reveal the secret again.</small><button className="pm-secondary" disabled={busy} onClick={() => revoke(x.id)}>Revoke credential</button><button className="pm-secondary" disabled={busy} onClick={() => setPendingRevoke(null)}>Cancel</button></div>}</div><div>{x.revokedAt ? <b>Revoked</b> : <button className="pm-secondary" disabled={busy} onClick={() => setPendingRevoke(x)}>Review revoke</button>}</div></div>) : <div className="pm-empty">No API credentials yet.</div>}</article></section></main>;
+}
