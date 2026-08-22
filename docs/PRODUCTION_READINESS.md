@@ -47,7 +47,7 @@ Status markers:
 
 ## P2 — Important Polish
 
-- [ ] Unify the visual system across homepage, onboarding, auth-like states and workspace modules.
+- [-] Shared visual system foundation now unifies homepage, auth, guided onboarding and workspace shell; remaining module-by-module screenshot/device QA is pending.
 - [-] Add visual regression coverage for website templates and key public pages; automated template-structure guards now exist, screenshot/device QA remains pending.
 - [-] Improve empty states so every major blank page points to the next action; first-run onboarding, branches, backups, contacts and integrations now point to concrete next actions, broader screenshot/device QA remains pending.
 - [x] Owner-facing setup copy now explains how identity, colours, services, website style, public address and first-property capture shape the public site, enquiries and marketing flow.
