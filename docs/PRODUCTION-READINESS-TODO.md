@@ -25,6 +25,7 @@ This list tracks the remaining work to move ESTARA from private, tested MVP to p
 - [x] Cloudflare Worker error capture is wired through Sentry with release tagging and no default PII once production Sentry secrets are configured.
 - [x] Deal-stage moves and platform billing receipt capture use inline review forms instead of browser popup prompts, with guard tests covering the regression.
 - [x] Remaining destructive/recovery UI actions use inline review or page-level error states instead of browser prompt, confirm or alert dialogs.
+- [x] Private workspace tool back links route to the authenticated workspace instead of the public landing page, with a regression guard covering the linked tools.
 
 ## Must Complete Before Public Launch
 
