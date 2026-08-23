@@ -479,7 +479,7 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
     catch { setError("Sharing was cancelled or unavailable."); }
   }
 
-  if (!data || !doc) return <main className="studio-empty"><h1>{error || "Opening Marketing Studio..."}</h1>{error && <button onClick={load}>Retry</button>}</main>;
+  if (!data || !doc) return <main className="studio-empty"><section><div className="studio-loading-mark"><span /><span /><span /></div><p>{platform.shortName}</p><h1>{error || "Opening Marketing Studio"}</h1><div className="studio-loading-preview"><i /><i /><i /></div>{error && <button onClick={load}>Retry</button>}</section></main>;
 
   const themeVars: StudioThemeVars = { "--studio-brand": platform.primaryColor || "#153b34", "--studio-accent": platform.accentColor || "#e6bd5f" };
 
