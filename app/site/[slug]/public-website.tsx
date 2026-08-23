@@ -107,6 +107,8 @@ const publicPath = (agency: PublicAgency, path = "", mode: PublicPathMode = "sit
 
 export function PublicHeader({ agency, pathMode = "site" }: { agency: PublicAgency; pathMode?: PublicPathMode }) {
   const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
+  const logo = agency.logoId ? mediaUrl(agency, agency.logoId) : "";
+  const icon = agency.iconId ? mediaUrl(agency, agency.iconId) : "";
   const nav = [
     ["Home", publicPath(agency, "", pathMode)],
     ["Properties", publicPath(agency, "/properties", pathMode)],
@@ -120,13 +122,13 @@ export function PublicHeader({ agency, pathMode = "site" }: { agency: PublicAgen
     <header className="public-header">
       <a className="public-skip" href="#main-content">Skip to content</a>
       <Link href={publicPath(agency, "", pathMode)} className="public-brand">
-        {agency.logoId ? (
-          <img src={`/api/public/${agency.slug}/media?id=${encodeURIComponent(agency.logoId)}`} alt={`${agency.name} logo`} />
+        {icon ? (
+          <img className="public-brand-icon" src={icon} alt="" />
         ) : (
           <b>{initials(agency.name)}</b>
         )}
         <span>
-          {agency.name}
+          {logo ? <img className="public-brand-logo" src={logo} alt={`${agency.name} logo`} /> : agency.name}
           <small>{agency.tagline || "Property specialists"}</small>
         </span>
       </Link>
@@ -218,6 +220,8 @@ function AgentGrid({ agency, agents }: { agency: PublicAgency; agents: PublicAge
 
 export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgency; pathMode?: PublicPathMode }) {
   const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
+  const logo = agency.logoId ? mediaUrl(agency, agency.logoId) : "";
+  const icon = agency.iconId ? mediaUrl(agency, agency.iconId) : "";
   const nav = [
     ["Properties", publicPath(agency, "/properties", pathMode)],
     ["For sale", publicPath(agency, "/sale", pathMode)],
@@ -233,13 +237,13 @@ export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgen
     <footer className="public-footer" aria-label="Agency website footer">
       <section className="public-footer-brand">
         <Link href={publicPath(agency, "", pathMode)} className="public-footer-mark">
-          {agency.logoId ? (
-            <img src={`/api/public/${agency.slug}/media?id=${encodeURIComponent(agency.logoId)}`} alt={`${agency.name} logo`} />
+          {icon ? (
+            <img className="public-brand-icon" src={icon} alt="" />
           ) : (
             <b>{initials(agency.name)}</b>
           )}
           <span>
-            {agency.portalName || agency.name}
+            {logo ? <img className="public-brand-logo" src={logo} alt={`${agency.name} logo`} /> : agency.portalName || agency.name}
             <small>{agency.tagline || "Property specialists"}</small>
           </span>
         </Link>

@@ -56,7 +56,7 @@ const pageCopy: Record<string, { eyebrow: string; title: string; summary: string
 };
 
 export default function PlatformAdminClient({ displayName }: { displayName: string }) {
-  const [data, setData] = useState<Data>(empty), [tab, setTab] = useState("overview"), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true), [notice, setNotice] = useState(""), [error, setError] = useState("");
+  const [data, setData] = useState<Data>(empty), [tab, setTab] = useState("overview"), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true), [notice, setNotice] = useState(""), [error, setError] = useState(""), [menuOpen, setMenuOpen] = useState(false);
   const published = useMemo(() => data.plans.filter(plan => plan.status === "published"), [data.plans]);
   const platform = data.platform || { platformName: "Platform", shortName: "PL", logoUrl: "", iconUrl: "", darkLogoUrl: "", darkIconUrl: "" };
   const load = async (initial = false) => {
@@ -91,11 +91,15 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
   const activePage = pageCopy[tab] || pageCopy.overview;
   const showPageStrip = tab === "settings";
   const adminTheme: AdminThemeVars = { "--admin-brand": data.settings?.primaryColor || "#153b34", "--admin-accent": data.settings?.accentColor || "#e6bd5f" };
-  return <main className="platform-admin platform-admin-premium platform-admin-compact" style={adminTheme}>
+  const chooseTab = (id: string) => { setTab(id); setMenuOpen(false); };
+  return <main className={`platform-admin platform-admin-premium platform-admin-compact${menuOpen ? " platform-menu-open" : ""}`} style={adminTheme}>
+    <button className="platform-menu-toggle" type="button" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>☰ Menu</button>
+    <button className="platform-menu-scrim" type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
     <aside className="platform-shell">
-      <a className="platform-mark" href="/">{(platform.darkLogoUrl || platform.logoUrl || platform.darkIconUrl || platform.iconUrl) ? <img src={platform.darkLogoUrl || platform.logoUrl || platform.darkIconUrl || platform.iconUrl} alt={`${platform.platformName} logo`} /> : <i>{platform.shortName.slice(0, 1)}</i>}<span>{platform.platformName}<small>Control plane</small></span></a>
+      <button className="platform-menu-close" type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)}>×</button>
+      <a className="platform-mark" href="/">{(platform.darkIconUrl || platform.iconUrl) ? <img className="brand-icon" src={platform.darkIconUrl || platform.iconUrl} alt="" /> : <i>{platform.shortName.slice(0, 1)}</i>}<span>{(platform.darkLogoUrl || platform.logoUrl) ? <img className="brand-logo" src={platform.darkLogoUrl || platform.logoUrl} alt={`${platform.platformName} logo`} /> : platform.platformName}<small>Control plane</small></span></a>
       <div className="platform-side-status"><span>Launch mode</span><strong>{data.settings?.domain ? "Production staging" : "Domain pending"}</strong><small>{data.operations?.publicIntake10m || 0} public intakes in 10m</small></div>
-      <nav>{navGroups.map(group => <section className="platform-nav-group" key={group}><span>{group}</span>{tabs.filter(item => item.group === group).map(item => <button className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)} key={item.id}><i>{item.icon}</i><span>{item.label}</span></button>)}</section>)}</nav>
+      <nav>{navGroups.map(group => <section className="platform-nav-group" key={group}><span>{group}</span>{tabs.filter(item => item.group === group).map(item => <button className={tab === item.id ? "active" : ""} onClick={() => chooseTab(item.id)} key={item.id}><i>{item.icon}</i><span>{item.label}</span></button>)}</section>)}</nav>
       <footer className="platform-operator-card">
         <span>Signed in as</span>
         <strong>{displayName}</strong>
