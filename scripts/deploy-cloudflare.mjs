@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const GENERATED_WRANGLER_CONFIG = "dist/server/wrangler.json";
 const PRODUCTION_VARS_CONFIG = "config/cloudflare-production-vars.json";
+const PRODUCTION_D1_DATABASE_NAME = "estara";
 const SECRET_VAR_NAMES = new Set([
   "BACKUP_ENCRYPTION_KEY",
   "CLOUDFLARE_API_TOKEN",
@@ -35,7 +36,7 @@ function main() {
 
   run("npm", ["run", "build"]);
   prepareGeneratedWranglerConfig();
-  run("wrangler", ["d1", "migrations", "apply", "site-creator-d1", "--remote", "--config", GENERATED_WRANGLER_CONFIG]);
+  run("wrangler", ["d1", "migrations", "apply", PRODUCTION_D1_DATABASE_NAME, "--remote", "--config", GENERATED_WRANGLER_CONFIG]);
   run("wrangler", ["deploy", "--config", GENERATED_WRANGLER_CONFIG]);
 }
 
@@ -47,11 +48,11 @@ export function prepareGeneratedWranglerConfig(configPath = GENERATED_WRANGLER_C
   const publicSiteDomain = cleanHost(productionVars.PUBLIC_SITE_DOMAIN || process.env.PUBLIC_SITE_DOMAIN || platformDomain || "estara.co.zw");
 
   config.d1_databases = (config.d1_databases ?? []).map((database) => {
-    if (database.binding !== "DB" && database.database_name !== "site-creator-d1") {
+    if (database.binding !== "DB" && database.database_name !== PRODUCTION_D1_DATABASE_NAME) {
       return database;
     }
 
-    return { ...database, migrations_dir: "../../drizzle" };
+    return { ...database, database_name: PRODUCTION_D1_DATABASE_NAME, migrations_dir: "../../drizzle" };
   });
   config.vars = validatedProductionVars({ ...(config.vars ?? {}), ...productionVars, PUBLIC_SITE_DOMAIN: publicSiteDomain });
   config.routes = uniqueRoutes([

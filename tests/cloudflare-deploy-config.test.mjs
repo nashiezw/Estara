@@ -18,7 +18,8 @@ test("Cloudflare deploy command uses the generated Vinext Worker config", async 
   );
   const deployScript = await readFile("scripts/deploy-cloudflare.mjs", "utf8");
   assert.match(deployScript, /const GENERATED_WRANGLER_CONFIG = "dist\/server\/wrangler\.json"/);
-  assert.match(deployScript, /run\("npm", \["run", "build"\]\);[\s\S]*"d1", "migrations", "apply", "site-creator-d1", "--remote", "--config", GENERATED_WRANGLER_CONFIG/);
+  assert.match(deployScript, /const PRODUCTION_D1_DATABASE_NAME = "estara"/);
+  assert.match(deployScript, /run\("npm", \["run", "build"\]\);[\s\S]*"d1", "migrations", "apply", PRODUCTION_D1_DATABASE_NAME, "--remote", "--config", GENERATED_WRANGLER_CONFIG/);
   assert.match(deployScript, /"deploy", "--config", GENERATED_WRANGLER_CONFIG/);
   assert.match(deployScript, /migrations_dir: "\.\.\/\.\.\/drizzle"/);
   assert.match(deployScript, /config\.d1_databases = \(config\.d1_databases \?\? \[\]\)\.map/);
@@ -55,6 +56,8 @@ test("production deploy config owns non-secret vars and rejects secrets in vars"
     }));
     prepareGeneratedWranglerConfig(configPath);
     const prepared = JSON.parse(await readFile(configPath, "utf8"));
+    assert.equal(prepared.d1_databases[0].binding, "DB");
+    assert.equal(prepared.d1_databases[0].database_name, "estara");
     assert.equal(prepared.vars.PUBLIC_SITE_DOMAIN, "estara.co.zw");
     assert.equal(prepared.vars.MEDIA_BUCKET, "site-creator-r2");
     assert.equal(prepared.vars.BACKUP_BUCKET, "estara-backups");
@@ -85,6 +88,7 @@ test("Cloudflare deploy config does not depend on build-time dashboard variables
   assert.doesNotMatch(deployScript, /Missing CLOUDFLARE_D1_DATABASE_ID/);
   assert.match(deployScript, /ESTARA_PRODUCTION_DEPLOY/);
   assert.match(viteConfig, /ESTARA_PRODUCTION_D1_DATABASE_ID/);
+  assert.match(viteConfig, /ESTARA_PRODUCTION_D1_DATABASE_NAME =\s*"estara"/);
   assert.match(viteConfig, /e4fec45c-a64d-45f7-a056-58c19e6f34db/);
   assert.match(viteConfig, /process\.env\.CLOUDFLARE_D1_DATABASE_ID/);
   assert.match(viteConfig, /process\.env\.CLOUDFLARE_DATABASE_ID/);
