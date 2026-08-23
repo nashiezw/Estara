@@ -93,7 +93,10 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
   const adminTheme: AdminThemeVars = { "--admin-brand": data.settings?.primaryColor || "#153b34", "--admin-accent": data.settings?.accentColor || "#e6bd5f" };
   const chooseTab = (id: string) => { setTab(id); setMenuOpen(false); };
   return <main className={`platform-admin platform-admin-premium platform-admin-compact${menuOpen ? " platform-menu-open" : ""}`} style={adminTheme}>
-    <button className="platform-menu-toggle" type="button" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>☰ Menu</button>
+    <div className="platform-mobile-topbar">
+      <button className="platform-menu-toggle" type="button" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>☰ Menu</button>
+      <a className="platform-mobile-brand" href="/">{platform.iconUrl ? <img className="brand-icon" src={platform.iconUrl} alt="" /> : <i>{platform.shortName.slice(0, 1)}</i>}<span>{platform.logoUrl ? <img className="brand-logo" src={platform.logoUrl} alt={`${platform.platformName} logo`} /> : platform.platformName}</span></a>
+    </div>
     <button className="platform-menu-scrim" type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
     <aside className="platform-shell">
       <button className="platform-menu-close" type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)}>×</button>

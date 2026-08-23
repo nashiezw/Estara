@@ -75,7 +75,8 @@ export default async function Home() {
   }
 
   const initial = platform.shortName.slice(0, 1);
-  const platformMark = platform.iconUrl || platform.logoUrl;
+  const platformIcon = platform.iconUrl || platform.darkIconUrl;
+  const platformLogo = platform.logoUrl || platform.darkLogoUrl;
   const parent = platform.parentBrand ? `A ${platform.parentBrand} product` : platform.descriptor;
   const publicDomain = platformDomainFromHost(host, platform.domain);
   const loginHref = appHref("/login", publicDomain);
@@ -92,8 +93,8 @@ export default async function Home() {
     <main className="estara-landing estara-home">
       <nav className="home-nav" aria-label="Primary navigation">
         <a href="/" className="home-logo" aria-label={`${platform.shortName} home`}>
-          {platform.logoUrl || platformMark ? <img src={platform.logoUrl || platformMark} alt={`${platform.shortName} logo`} /> : <i>{initial}</i>}
-          <span>{platform.shortName}<small>{parent}</small></span>
+          {platformIcon ? <img className="brand-icon" src={platformIcon} alt="" /> : <i>{initial}</i>}
+          <span>{platformLogo ? <img className="brand-logo" src={platformLogo} alt={`${platform.shortName} logo`} /> : platform.shortName}<small>{parent}</small></span>
         </a>
         <div className="home-nav-links">{navLinks.map((link) => <a href={link.href} key={link.label}>{link.label}</a>)}</div>
         <span className="home-nav-actions"><a href={loginHref}>Log in</a><a href={registerHref}>Create account</a></span>
@@ -185,7 +186,7 @@ export default async function Home() {
       </section>
 
       <footer className="home-footer">
-        <a href="/" className="home-logo">{platform.logoUrl || platformMark ? <img src={platform.logoUrl || platformMark} alt={`${platform.shortName} logo`} /> : <i>{initial}</i>}<span>{platform.shortName}<small>{parent}</small></span></a>
+        <a href="/" className="home-logo">{platformIcon ? <img className="brand-icon" src={platformIcon} alt="" /> : <i>{initial}</i>}<span>{platformLogo ? <img className="brand-logo" src={platformLogo} alt={`${platform.shortName} logo`} /> : platform.shortName}<small>{parent}</small></span></a>
         <nav>
           <a href={contactsHref}>Contacts</a>
           <a href={propertiesHref}>Properties</a>
