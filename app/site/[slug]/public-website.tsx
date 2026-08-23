@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { PublicEnquiryForm, TrackedLink } from "./public-client";
 import "../../public-templates.css";
 
@@ -121,7 +120,7 @@ export function PublicHeader({ agency, pathMode = "site" }: { agency: PublicAgen
   return (
     <header className="public-header">
       <a className="public-skip" href="#main-content">Skip to content</a>
-      <Link href={publicPath(agency, "", pathMode)} className="public-brand">
+      <a href={publicPath(agency, "", pathMode)} className="public-brand">
         {icon ? (
           <img className="public-brand-icon" src={icon} alt="" />
         ) : (
@@ -131,21 +130,21 @@ export function PublicHeader({ agency, pathMode = "site" }: { agency: PublicAgen
           {logo ? <img className="public-brand-logo" src={logo} alt={`${agency.name} logo`} /> : agency.name}
           <small>{agency.tagline || "Property specialists"}</small>
         </span>
-      </Link>
+      </a>
       <nav aria-label="Primary navigation">
         {nav.map(([label, href]) => (
-          <Link href={href} key={href}>
+          <a href={href} key={href}>
             {label}
-          </Link>
+          </a>
         ))}
       </nav>
       <details className="public-mobile-menu">
         <summary>Menu</summary>
         <div>
           {nav.map(([label, href]) => (
-            <Link href={href} key={href}>{label}</Link>
+            <a href={href} key={href}>{label}</a>
           ))}
-          <Link href={publicPath(agency, "/contact", pathMode)}>Contact</Link>
+          <a href={publicPath(agency, "/contact", pathMode)}>Contact</a>
         </div>
       </details>
       <div className="public-header-actions">
@@ -154,7 +153,7 @@ export function PublicHeader({ agency, pathMode = "site" }: { agency: PublicAgen
             WhatsApp
           </TrackedLink>
         ) : (
-          <Link href={publicPath(agency, "/contact", pathMode)}>Contact</Link>
+          <a href={publicPath(agency, "/contact", pathMode)}>Contact</a>
         )}
       </div>
     </header>
@@ -165,7 +164,7 @@ export function PropertyGrid({ agency, properties, pathMode = "site" }: { agency
   return (
     <div className="public-grid">
       {properties.map((property, index) => (
-        <Link href={publicPath(agency, `/properties/${property.id}`, pathMode)} className="public-card" key={property.id}>
+        <a href={publicPath(agency, `/properties/${property.id}`, pathMode)} className="public-card" key={property.id}>
           <div
             className={`public-photo photo-${index % 3}`}
             style={propertyImage(agency, property, index)}
@@ -184,7 +183,7 @@ export function PropertyGrid({ agency, properties, pathMode = "site" }: { agency
               {property.size && <span>{property.size}</span>}
             </footer>
           </article>
-        </Link>
+        </a>
       ))}
       {!properties.length && <p className="public-empty">No live properties match this page yet.</p>}
     </div>
@@ -236,7 +235,7 @@ export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgen
   return (
     <footer className="public-footer" aria-label="Agency website footer">
       <section className="public-footer-brand">
-        <Link href={publicPath(agency, "", pathMode)} className="public-footer-mark">
+        <a href={publicPath(agency, "", pathMode)} className="public-footer-mark">
           {icon ? (
             <img className="public-brand-icon" src={icon} alt="" />
           ) : (
@@ -246,24 +245,24 @@ export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgen
             {logo ? <img className="public-brand-logo" src={logo} alt={`${agency.name} logo`} /> : agency.portalName || agency.name}
             <small>{agency.tagline || "Property specialists"}</small>
           </span>
-        </Link>
+        </a>
         <h2>Ready for a clearer property move?</h2>
         <p>{agency.tagline || `${agency.name} gives every client a direct path to verified property guidance and responsive follow-through.`}</p>
         <div className="public-footer-actions">
-          <Link href={publicPath(agency, "/properties", pathMode)}>Explore properties</Link>
+          <a href={publicPath(agency, "/properties", pathMode)}>Explore properties</a>
           {whatsapp ? (
             <TrackedLink slug={agency.slug} eventType="whatsapp" href={`https://wa.me/${whatsapp}`}>
               WhatsApp the agency
             </TrackedLink>
           ) : (
-            <Link href={publicPath(agency, "/contact", pathMode)}>Contact the agency</Link>
+            <a href={publicPath(agency, "/contact", pathMode)}>Contact the agency</a>
           )}
         </div>
       </section>
       <nav className="public-footer-nav" aria-label="Footer navigation">
         <h3>Website</h3>
         {nav.map(([label, href]) => (
-          <Link href={href} key={href}>{label}</Link>
+          <a href={href} key={href}>{label}</a>
         ))}
       </nav>
       <div className="public-footer-services">
@@ -335,7 +334,7 @@ export function PublicHome({ agency, properties, pathMode = "site" }: { agency: 
             <h1>{content(agency, "homeHeadline", agency.name)}</h1>
             <p>{content(agency, "homeIntro", agency.tagline || `Local expertise, sharp presentation and trusted property advice from ${agency.name}.`)}</p>
             <div>
-              <Link href={publicPath(agency, "/properties", pathMode)}>Explore properties</Link>
+              <a href={publicPath(agency, "/properties", pathMode)}>Explore properties</a>
               {whatsapp && (
                 <TrackedLink slug={agency.slug} eventType="whatsapp" href={`https://wa.me/${whatsapp}`}>
                   WhatsApp us
@@ -358,7 +357,7 @@ export function PublicHome({ agency, properties, pathMode = "site" }: { agency: 
               <h2>{featured.title}</h2>
               <p>{featured.location}</p>
               <strong>{featured.price}</strong>
-              <Link href={publicPath(agency, `/properties/${featured.id}`, pathMode)}>View property</Link>
+              <a href={publicPath(agency, `/properties/${featured.id}`, pathMode)}>View property</a>
             </article>
           </section>
         )}
@@ -369,7 +368,7 @@ export function PublicHome({ agency, properties, pathMode = "site" }: { agency: 
               <span>LIVE LISTINGS</span>
               <h2>Properties worth seeing</h2>
             </div>
-            <Link href={publicPath(agency, "/properties", pathMode)}>View all</Link>
+            <a href={publicPath(agency, "/properties", pathMode)}>View all</a>
           </div>
           <PropertyGrid agency={agency} properties={properties.slice(0, 6)} pathMode={pathMode} />
         </section>
@@ -497,3 +496,4 @@ export function PublicSection({
     </div>
   );
 }
+

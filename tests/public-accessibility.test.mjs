@@ -14,6 +14,9 @@ test("public websites provide keyboard skip links and labelled navigation", asyn
   assert.match(publicSite, /className="public-skip"/);
   assert.match(publicSite, /href="#main-content"/);
   assert.match(publicSite, /aria-label="Primary navigation"/);
+  assert.doesNotMatch(publicSite, /next\/link/);
+  assert.match(publicSite, /<a href=\{href\} key=\{href\}>\{label\}<\/a>/);
+  assert.match(publicSite, /<a href=\{publicPath\(agency, "\/properties", pathMode\)\}>Explore properties<\/a>/);
   assert.match(publicSite, /<main id="main-content"/g);
   assert.match(publicSite, /tabIndex=\{-1\}/g);
   assert.match(propertyPage, /<main id="main-content"/);
