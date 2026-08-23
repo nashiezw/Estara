@@ -55,7 +55,7 @@
 .studio-context-toolbar.asset-toolbar .wide{min-width:auto;padding:0 10px;font-size:10px;font-weight:800}
 .studio-recent-row button[draggable=true],.studio-element-row button[draggable=true],.studio-category-grid button[draggable=true],.studio-masonry button[draggable=true]{cursor:grab}
 .studio-recent-row button[draggable=true]:active,.studio-element-row button[draggable=true]:active,.studio-category-grid button[draggable=true]:active,.studio-masonry button[draggable=true]:active{cursor:grabbing}
-.studio-mobile-export-menu,.studio-mobile-tools-toggle,.studio-mobile-tools-close,.studio-mobile-tool-tabs{display:none}
+.studio-mobile-export-menu,.studio-mobile-tools-toggle,.studio-mobile-panel-head,.studio-mobile-tools-close,.studio-mobile-tool-tabs{display:none}
 
 @media(max-width:820px){
   .studio-page{min-height:100dvh;overflow-x:hidden;background:#eef0f5}
@@ -80,8 +80,8 @@
   .studio-workspace{position:relative!important;grid-row:1!important;min-height:0!important;overflow:hidden!important;grid-template-rows:minmax(0,1fr)!important}
   .studio-workbar{position:absolute!important;left:8px!important;right:8px!important;top:8px!important;z-index:70!important;height:auto!important;min-height:0!important;padding:0!important;gap:6px!important;overflow-x:auto!important;overflow-y:visible!important;background:transparent!important;border:0!important;display:flex!important;align-items:start!important;scrollbar-width:none!important}
   .studio-workbar::-webkit-scrollbar{display:none!important}
-  .studio-workbar>span{flex:0 0 auto!important;min-width:78px!important;max-width:108px!important;height:32px!important;display:grid!important;place-items:center!important;padding:0 8px!important;border:1px solid #dbe2dd!important;border-radius:10px!important;background:rgba(255,255,255,.94)!important;font-size:8px!important;box-shadow:0 8px 22px rgba(15,23,42,.1)!important}
-  .studio-context-toolbar,.studio-zoom-controls{flex:0 0 auto!important;max-width:min(100%,calc(100vw - 112px))!important;overflow-x:auto!important;overflow-y:hidden!important;box-shadow:0 8px 22px rgba(15,23,42,.12)!important}
+  .studio-workbar>.studio-selection-status{display:none!important}
+  .studio-context-toolbar,.studio-zoom-controls{flex:0 0 auto!important;max-width:min(100%,calc(100vw - 104px))!important;overflow-x:auto!important;overflow-y:hidden!important;box-shadow:0 8px 22px rgba(15,23,42,.12)!important}
   .studio-zoom-controls{position:static!important;background:rgba(255,255,255,.94)!important}
   .studio-mobile-tools-toggle{display:grid!important;place-items:center!important;flex:0 0 auto!important;height:32px!important;min-height:32px!important;border:1px solid #dbe2dd!important;border-radius:10px!important;background:var(--studio-accent)!important;color:var(--studio-brand)!important;font-size:10px!important;font-weight:950!important;padding:0 12px!important;box-shadow:0 8px 22px rgba(15,23,42,.12)!important}
   .studio-stage{min-height:0!important;place-items:center!important;padding:58px 10px 14px!important;overflow:hidden!important;touch-action:none!important}
@@ -89,13 +89,24 @@
   .studio-left-panel,.studio-inspector{position:absolute!important;left:8px!important;right:8px!important;top:auto!important;bottom:62px!important;width:auto!important;height:min(58dvh,420px)!important;max-height:none!important;min-height:0!important;z-index:86!important;padding:12px 14px!important;overflow:hidden!important;border:1px solid #dde1ea!important;border-radius:16px!important;background:#fff!important;box-shadow:0 -16px 42px rgba(15,23,42,.2)!important;transform:translateY(calc(100% + 74px))!important;transition:transform .26s ease!important}
   .studio-left-panel.open,.studio-inspector.open{transform:translateY(0)!important}
   .studio-left-panel:before,.studio-inspector:before{content:"";display:block;width:42px;height:4px;margin:0 auto 8px;border-radius:999px;background:#c7d0ca}
-  .studio-left-panel h2,.studio-inspector h2{font-size:16px!important;margin:0 0 8px!important}
+  .studio-left-panel h2{display:none!important}
+  .studio-inspector h2{font-size:16px!important;margin:0 0 8px!important}
   .studio-left-panel>span{display:none!important}
-  .studio-mobile-tools-close{display:grid!important;position:absolute!important;right:12px!important;top:10px!important;width:34px!important;height:34px!important;min-height:34px!important;border-radius:999px!important;padding:0!important}
-  .studio-mobile-tool-tabs{display:flex!important;gap:6px!important;margin:0 -2px 10px!important;padding:0 2px 2px!important;overflow:hidden!important;flex-wrap:wrap!important}
-  .studio-mobile-tool-tabs button{height:28px!important;min-height:28px!important;border-radius:999px!important;padding:0 9px!important;font-size:10px!important}
-  .studio-mobile-tool-tabs button.active{background:var(--studio-brand)!important;color:#fff!important;border-color:var(--studio-brand)!important}
-  .studio-left-panel .studio-tool-panel,.studio-left-panel .studio-layer-list,.studio-left-panel>.studio-panel-section,.studio-left-panel>.studio-category-grid{max-height:calc(58dvh - 96px)!important;overflow:auto!important}
+  .studio-mobile-panel-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;margin:0 0 10px!important;padding-right:0!important}
+  .studio-mobile-panel-head small{display:block!important;margin-bottom:2px!important;font-size:9px!important;letter-spacing:.14em!important;text-transform:uppercase!important;font-weight:950!important;color:#8b6f21!important}
+  .studio-mobile-panel-head strong{display:block!important;max-width:190px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:17px!important;line-height:1.1!important;color:var(--studio-brand)!important}
+  .studio-mobile-history{display:flex!important;align-items:center!important;gap:6px!important;flex:0 0 auto!important}
+  .studio-mobile-history button{display:grid!important;place-items:center!important;width:34px!important;height:34px!important;min-height:34px!important;border:1px solid #dbe2dd!important;border-radius:999px!important;background:#fff!important;color:var(--studio-brand)!important;padding:0!important;box-shadow:0 6px 16px rgba(15,23,42,.07)!important}
+  .studio-mobile-history button:disabled{opacity:.38!important}
+  .studio-mobile-history svg{width:17px!important;height:17px!important;fill:none!important;stroke:currentColor!important;stroke-width:2!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+  .studio-mobile-tools-close{display:grid!important}
+  .studio-mobile-tool-tabs{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:7px!important;margin:0 0 12px!important;padding:0!important;overflow:visible!important}
+  .studio-mobile-tool-tabs button{height:44px!important;min-height:44px!important;border-radius:12px!important;padding:5px 3px!important;font-size:9px!important;line-height:1.05!important;display:grid!important;place-items:center!important;gap:3px!important;background:#fff!important;border:1px solid #e0e6e2!important;color:var(--studio-brand)!important;box-shadow:0 1px 0 rgba(15,23,42,.03)!important}
+  .studio-mobile-tool-tabs button b{display:grid!important;place-items:center!important;width:18px!important;height:18px!important;border-radius:7px!important;background:color-mix(in srgb,var(--studio-accent) 20%,#fff)!important;font-size:10px!important;line-height:1!important}
+  .studio-mobile-tool-tabs button span{display:block!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+  .studio-mobile-tool-tabs button.active{background:var(--studio-brand)!important;color:#fff!important;border-color:var(--studio-brand)!important;box-shadow:0 8px 18px rgba(21,59,52,.14)!important}
+  .studio-mobile-tool-tabs button.active b{background:var(--studio-accent)!important;color:var(--studio-brand)!important}
+  .studio-left-panel .studio-tool-panel,.studio-left-panel .studio-layer-list,.studio-left-panel>.studio-panel-section,.studio-left-panel>.studio-category-grid{max-height:calc(58dvh - 142px)!important;overflow:auto!important}
   .studio-command{margin-bottom:8px!important}
   .studio-command input{height:40px!important}
   .studio-ai-row{margin-bottom:12px!important}
