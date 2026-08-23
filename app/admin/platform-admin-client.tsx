@@ -107,6 +107,7 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
         <span>Signed in as</span>
         <strong>{displayName}</strong>
         <small>{data.actor?.role?.replace("_", " ")}</small>
+        <button type="button" disabled={busy} onClick={() => load(false)}>{busy ? "Refreshing..." : "Refresh console"}</button>
         <a href="/workspace">Agency workspace</a>
         <a href="/health">Platform health</a>
         <a href="/signout-with-chatgpt?return_to=/">Sign out</a>

@@ -40,4 +40,10 @@ test("public footer is a premium agency conversion footer, not a plain contact s
   assert.match(css, /\.template-estate \.public-footer/);
   assert.match(css, /\.template-coastal \.public-footer/);
   assert.match(css, /\.template-portfolio \.public-footer/);
+  assert.match(css, /\.public-footer-mark\{padding:0!important;border:0!important;background:transparent!important/);
+  assert.match(css, /\.public-footer-mark \.public-brand-icon\{width:58px!important;height:58px!important;padding:0!important;border-radius:0!important;background:transparent!important/);
+  assert.match(css, /\.public-footer-mark \.public-brand-logo\{height:38px!important;max-width:250px!important;padding:0!important/);
+  assert.match(css, /\.public-footer\{grid-template-columns:minmax\(300px,1\.02fr\)/);
+  assert.match(css, /\.public-footer h2\{max-width:520px!important;margin:24px 0 12px!important;font:clamp\(30px,3\.4vw,48px\)\/1\.02 Georgia,serif!important/);
+  assert.match(css, /\.public-footer-nav a,\.public-footer-services span,\.public-footer-contact a\{min-height:43px!important/);
 });

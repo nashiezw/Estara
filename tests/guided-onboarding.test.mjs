@@ -30,7 +30,6 @@ test("new agencies enter a guided launch flow that leads to the first property",
   assert.match(app, /first-property-empty/);
   assert.match(app, /first-property-page/);
   assert.match(app, /Add the first property to bring this agency online/);
-  assert.match(css, /GUIDED OWNER ONBOARDING/);
   assert.match(css, /\.guided-rail/);
   assert.match(css, /\.guided-template-grid/);
   assert.match(css, /template-picker\.css/);

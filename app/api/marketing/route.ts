@@ -22,18 +22,115 @@ const fail = (error: unknown) =>
     ? Response.json({ error: error.message }, { status: 403 })
     : Response.json({ error: String(error).slice(0, 300) || "Marketing operation failed." }, { status: 500 });
 const designIcons = new Set(["home", "key", "pin", "camera"]);
+const designLayouts = new Set(["image-led", "split", "text-first"]);
+const cleanNumber = (value: unknown, fallback: number, min: number, max: number) => Math.max(min, Math.min(max, Number(value ?? fallback) || fallback));
+const cleanHex = (value: unknown) => /^#[0-9a-f]{6}$/i.test(clean(value, 20)) ? clean(value, 20) : "";
+const bucket = () => {
+  const value = (env as unknown as { MEDIA?: R2Bucket }).MEDIA;
+  if (!value) throw new Error("Private media storage is unavailable.");
+  return value;
+};
+const exportTypes: Record<string, { contentType: string; ext: string }> = {
+  png: { contentType: "image/png", ext: "png" },
+  jpg: { contentType: "image/jpeg", ext: "jpg" },
+  jpeg: { contentType: "image/jpeg", ext: "jpg" },
+  svg: { contentType: "image/svg+xml", ext: "svg" },
+};
+const cleanDesignDocument = (value: unknown) => {
+  const doc = typeof value === "object" && value ? value as Record<string, unknown> : null;
+  const elements = Array.isArray(doc?.elements) ? doc.elements.slice(0, 80).map((raw) => {
+    const item = typeof raw === "object" && raw ? raw as Record<string, unknown> : {};
+    return {
+      id: clean(item.id, 100),
+      type: clean(item.type, 20),
+      name: clean(item.name, 120),
+      role: clean(item.role, 80),
+      binding: clean(item.binding, 80),
+      text: clean(item.text, 1200),
+      src: clean(item.src, 1200),
+      x: cleanNumber(item.x, 0, -5000, 5000),
+      y: cleanNumber(item.y, 0, -5000, 5000),
+      width: cleanNumber(item.width, 1, 1, 6000),
+      height: cleanNumber(item.height, 1, 1, 6000),
+      rotation: cleanNumber(item.rotation, 0, -360, 360),
+      opacity: cleanNumber(item.opacity, 1, 0, 1),
+      visible: item.visible !== false,
+      locked: item.locked === true,
+      fill: cleanHex(item.fill),
+      stroke: cleanHex(item.stroke),
+      radius: cleanNumber(item.radius, 0, 0, 999),
+      fontSize: cleanNumber(item.fontSize, 24, 4, 300),
+      fontFamily: clean(item.fontFamily, 80),
+      fontWeight: clean(item.fontWeight, 20),
+      fontStyle: clean(item.fontStyle, 20),
+      textDecoration: clean(item.textDecoration, 30),
+      textTransform: clean(item.textTransform, 20) === "uppercase" ? "uppercase" : "none",
+      letterSpacing: cleanNumber(item.letterSpacing, 0, -20, 80),
+      lineHeight: cleanNumber(item.lineHeight, 1.05, .5, 4),
+      textEffect: clean(item.textEffect, 40),
+      animation: clean(item.animation, 80),
+      align: ["left", "center", "right"].includes(clean(item.align, 20)) ? clean(item.align, 20) : "left",
+      color: cleanHex(item.color),
+      z: cleanNumber(item.z, 0, -1000, 1000),
+    };
+  }) : [];
+  if (!doc || !elements.length) return null;
+  return {
+    schemaVersion: 1,
+    editorVersion: 3,
+    id: clean(doc.id, 100),
+    name: clean(doc.name, 180) || "Marketing design",
+    width: cleanNumber(doc.width, 1200, 1, 6000),
+    height: cleanNumber(doc.height, 628, 1, 6000),
+    format: clean(doc.format, 40),
+    templateId: clean(doc.templateId, 80),
+    propertyId: clean(doc.propertyId, 100),
+    updatedAt: clean(doc.updatedAt, 80),
+    elements,
+  };
+};
 const cleanDesignSettings = (value: unknown) => {
   const input = typeof value === "object" && value ? value as Record<string, unknown> : {};
   const icon = clean(input.icon, 20);
   const textAlign = clean(input.textAlign, 20);
+  const layout = clean(input.layout, 30);
   return {
     photoMediaId: clean(input.photoMediaId, 100),
     photoUrl: /^https?:\/\//.test(clean(input.photoUrl, 800)) ? clean(input.photoUrl, 800) : "",
     badge: clean(input.badge, 48) || "Just listed",
     icon: designIcons.has(icon) ? icon : "home",
     showLogo: input.showLogo !== false,
+    showImage: input.showImage !== false,
+    showBadge: input.showBadge !== false,
+    showFacts: input.showFacts !== false,
+    showPrice: input.showPrice !== false,
     textAlign: textAlign === "center" ? "center" : "left",
+    layout: designLayouts.has(layout) ? layout : "image-led",
+    overlay: cleanNumber(input.overlay, 72, 20, 92),
+    headlineScale: cleanNumber(input.headlineScale, 100, 72, 132),
+    imageX: cleanNumber(input.imageX, 50, 0, 100),
+    imageY: cleanNumber(input.imageY, 50, 0, 100),
+    radius: cleanNumber(input.radius, 8, 0, 32),
+    brandPrimary: cleanHex(input.brandPrimary),
+    brandAccent: cleanHex(input.brandAccent),
+    detailsLine: clean(input.detailsLine, 160),
+    priceLabel: clean(input.priceLabel, 80),
+    ctaLabel: clean(input.ctaLabel, 80),
+    campaignName: clean(input.campaignName, 120),
+    audience: clean(input.audience, 120),
+    objective: clean(input.objective, 120),
+    designDocument: cleanDesignDocument(input.designDocument),
   };
+};
+const decodeExportData = (value: unknown, expectedContentType: string) => {
+  const dataUrl = clean(value, 12_000_000);
+  const match = /^data:([^;,]+);base64,([a-zA-Z0-9+/=]+)$/.exec(dataUrl);
+  if (!match || match[1] !== expectedContentType) throw new Error("Export file data was not valid.");
+  const binary = atob(match[2]);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  if (!bytes.byteLength || bytes.byteLength > 10_000_000) throw new Error("Export file is empty or too large.");
+  return bytes;
 };
 
 async function ensureTemplates(agencyId: string, userId: string) {
@@ -171,6 +268,31 @@ async function POST(request: Request) {
       }
       await writeAudit(c.workspace, "marketing.outputs.rendered", "property", propertyId, { formats, design });
       return Response.json({ created }, { status: 201 });
+    }
+
+    if (action === "save_export" && snapshot) {
+      const exportKind = clean(body.exportKind, 20).toLowerCase();
+      const exportSpec = exportTypes[exportKind];
+      if (!exportSpec) return Response.json({ error: "Choose PNG, JPEG or SVG before saving." }, { status: 400 });
+      const format = clean(body.format, 40) in MARKETING_FORMATS ? clean(body.format, 40) : "instagram_post";
+      const design = clean(body.design, 40) || "custom-design";
+      const designSettings = cleanDesignSettings(body.designSettings);
+      const template = await env.DB.prepare("SELECT id FROM marketing_template_versions WHERE agency_id=? AND format=? AND status='published' ORDER BY version DESC LIMIT 1").bind(c.workspace.agencyId, format).first<any>();
+      if (!template) return Response.json({ error: "A matching marketing template was not found." }, { status: 404 });
+      const copy = factualCopy(snapshot.property);
+      const jobId = crypto.randomUUID();
+      const outputId = crypto.randomUUID();
+      const bytes = decodeExportData(body.dataUrl, exportSpec.contentType);
+      const objectKey = `tenants/${c.workspace.agencyId}/marketing/${jobId}/creative.${exportSpec.ext}`;
+      await bucket().put(objectKey, bytes, { httpMetadata: { contentType: exportSpec.contentType }, customMetadata: { agencyId: c.workspace.agencyId, jobId, format, exportKind: exportSpec.ext } });
+      await env.DB.batch([
+        env.DB.prepare("INSERT INTO marketing_render_jobs(id,agency_id,property_id,template_version_id,format,status,input_snapshot,created_by,completed_at) VALUES(?,?,?,?,?,'complete',?,?,CURRENT_TIMESTAMP)")
+          .bind(jobId, c.workspace.agencyId, propertyId, template.id, format, JSON.stringify({ ...snapshot, design, designSettings, copy }), c.user.userId),
+        env.DB.prepare("INSERT INTO marketing_outputs(id,agency_id,job_id,kind,object_key,content_type,byte_size) VALUES(?,?,?,?,?,?,?)")
+          .bind(outputId, c.workspace.agencyId, jobId, `creative.${exportSpec.ext}`, objectKey, exportSpec.contentType, bytes.byteLength),
+      ]);
+      await writeAudit(c.workspace, "marketing.export.saved", "marketing_job", jobId, { propertyId, format, exportKind: exportSpec.ext });
+      return Response.json({ output: { id: outputId, jobId, kind: `creative.${exportSpec.ext}`, contentType: exportSpec.contentType, byteSize: bytes.byteLength } }, { status: 201 });
     }
 
     if (action === "retry") {

@@ -130,3 +130,21 @@
 .public-footer-bottom small{margin:0;color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase;letter-spacing:.14em}
 @media(max-width:980px){.public-footer,.template-modern .public-footer,.template-editorial .public-footer{grid-template-columns:1fr 1fr}.public-footer-brand{grid-column:1/-1}.public-footer-proof{grid-template-columns:repeat(3,minmax(0,1fr))}.public-footer-bottom{grid-column:1/-1}}
 @media(max-width:620px){.public-footer,.template-modern .public-footer,.template-editorial .public-footer{grid-template-columns:1fr;padding:42px 20px 0}.public-footer h2{font-size:38px;max-width:360px}.public-footer p{font-size:13px}.public-footer-mark{width:100%;align-items:center}.public-footer-mark span{overflow:hidden}.public-footer-proof{grid-template-columns:1fr}.public-footer-actions{display:grid}.public-footer-actions a{width:100%}.public-footer-nav,.public-footer-services,.public-footer-contact{padding-top:6px}.public-footer-bottom{display:grid;gap:8px;margin-top:34px}.public-footer-bottom small{line-height:1.5}}
+.public-footer-mark{padding:0!important;border:0!important;background:transparent!important;backdrop-filter:none!important;box-shadow:none!important;gap:14px!important}
+.public-footer-mark .public-brand-icon{width:58px!important;height:58px!important;padding:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;object-fit:contain!important}
+.public-footer-mark .public-brand-logo{height:38px!important;max-width:250px!important;padding:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;filter:none!important;object-fit:contain!important}
+.public-footer-mark b{width:58px!important;height:58px!important;border-radius:14px!important;box-shadow:none!important}
+@media(max-width:620px){.public-footer-mark{width:max-content!important;max-width:100%;gap:13px!important}.public-footer-mark .public-brand-icon{width:54px!important;height:54px!important}.public-footer-mark .public-brand-logo{height:34px!important;max-width:220px!important}}
+.public-footer{grid-template-columns:minmax(300px,1.02fr) minmax(150px,.46fr) minmax(170px,.5fr) minmax(190px,.56fr)!important;gap:clamp(30px,4.2vw,58px)!important;align-items:start!important;padding:clamp(48px,6vw,72px) clamp(20px,7vw,112px) 20px!important}
+.public-footer h2{max-width:520px!important;margin:24px 0 12px!important;font:clamp(30px,3.4vw,48px)/1.02 Georgia,serif!important;letter-spacing:0!important}
+.public-footer-brand p{max-width:500px!important;font-size:12px!important;line-height:1.65!important;margin:0!important}
+.public-footer h3{margin:0 0 22px!important;font-size:9px!important;line-height:1!important;letter-spacing:.18em!important}
+.public-footer-nav,.public-footer-services,.public-footer-contact{padding-top:10px!important;gap:0!important}
+.public-footer-nav a,.public-footer-services span,.public-footer-contact a{min-height:43px!important;border-bottom:1px solid rgba(255,255,255,.1)!important;font-size:12px!important;line-height:1.45!important}
+.public-footer-contact small{margin-top:12px!important;font-size:10px!important;line-height:1.5!important}
+.public-footer-actions{margin-top:22px!important}
+.public-footer-proof{max-width:520px!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin-top:22px!important}
+.public-footer-proof span{min-height:70px!important;padding:12px!important}
+.public-footer-bottom{margin-top:clamp(30px,4vw,52px)!important;padding:16px 0 0!important}
+@media(max-width:980px){.public-footer{grid-template-columns:1fr 1fr!important}.public-footer-brand{grid-column:1/-1!important}.public-footer h2{max-width:620px!important}.public-footer-proof{max-width:100%!important}}
+@media(max-width:620px){.public-footer{grid-template-columns:1fr!important;padding:40px 20px 18px!important;gap:26px!important}.public-footer h2{font-size:32px!important;max-width:340px!important;margin-top:22px!important}.public-footer-brand p{font-size:12px!important}.public-footer-actions{display:grid!important}.public-footer-actions a{width:100%!important}.public-footer-proof{grid-template-columns:1fr!important}.public-footer-nav,.public-footer-services,.public-footer-contact{padding-top:0!important}.public-footer-bottom{display:grid!important;gap:8px!important;margin-top:24px!important}}

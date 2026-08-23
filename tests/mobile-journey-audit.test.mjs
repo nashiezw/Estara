@@ -47,6 +47,9 @@ test("implemented mobile journeys expose the controls required by the audit", as
     ["phone mobile keyboard", /inputMode="tel"/],
     ["public enquiry form", /PublicEnquiryForm/],
     ["public viewing request", /Request a viewing/],
+    ["public website preview", /Preview public website/],
+    ["canonical subdomain preview", /const previewHref=publicPreviewHref\(brand\)/],
+    ["tenant website hostname", /https:\/\/\$\{brand\.slug\}\.\$\{suffix\}/],
     ["public retry alert", /role="alert"/],
     ["date-time mobile input", /type="datetime-local"/],
     ["keyboard focus styling", /:focus-visible/],
@@ -54,6 +57,7 @@ test("implemented mobile journeys expose the controls required by the audit", as
   ]) {
     assert.match(all, pattern, `missing ${label}`);
   }
+  assert.doesNotMatch(workspace, /Live address after DNS\/TLS/);
 });
 
 test("delivery checklist keeps mobile audit status honest", async () => {
