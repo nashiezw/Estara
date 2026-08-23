@@ -4,13 +4,15 @@ import test from "node:test";
 
 test("platform home treats first deploy hosts as the ESTARA landing page", async () => {
   const source = await readFile("app/page.tsx", "utf8");
+  const domain = await readFile("db/domain.ts", "utf8");
 
   assert.match(source, /export function isPlatformHost/);
-  assert.match(source, /domain\.endsWith\("\.workers\.dev"\)/);
-  assert.match(source, /domain\.endsWith\("\.pages\.dev"\)/);
-  assert.match(source, /!platformDomain && !tenantSuffix/);
-  assert.match(source, /domain === `www\.\$\{platformDomain\}`/);
-  assert.match(source, /domain === `app\.\$\{platformDomain\}`/);
+  assert.match(source, /isEstaraPlatformHost\(host, platform\.domain, platform\.tenantDomainSuffix\)/);
+  assert.match(domain, /domain\.endsWith\("\.workers\.dev"\)/);
+  assert.match(domain, /domain\.endsWith\("\.pages\.dev"\)/);
+  assert.match(domain, /!root && !suffix/);
+  assert.match(domain, /domain === `www\.\$\{root\}`/);
+  assert.match(domain, /domain === `app\.\$\{root\}`/);
   assert.match(source, /function appHref/);
   assert.match(source, /function platformDomainFromHost/);
   assert.match(source, /`https:\/\/app\.\$\{domain\}\$\{cleanPath\}`/);

@@ -1,10 +1,10 @@
 import { env } from "cloudflare:workers";
-import { headers } from "next/headers";
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { requireWorkspace } from "../../../db/workspace";
 import { AuthorizationError, requirePermission, writeAudit } from "../../../db/authorization";
 import { MARKETING_FORMATS, factualCopy, renderMarketingJob } from "../../../db/marketing-render";
 import { accessiblePropertyIds, requirePropertyBranchAccess } from "../../../db/access-scope";
+import { ESTARA_TENANT_DOMAIN_SUFFIX, hostedTenantUrl } from "../../../db/domain.ts";
 
 const dynamic = "force-dynamic";
 const clean = (value: unknown, max = 500) => String(value ?? "").trim().slice(0, max);
@@ -144,10 +144,8 @@ async function POST(request: Request) {
       const copyRow = await env.DB.prepare("SELECT headline,listing_description AS listingDescription,social_caption AS socialCaption FROM marketing_copy_versions WHERE agency_id=? AND property_id=? AND status='approved' ORDER BY version DESC LIMIT 1")
         .bind(c.workspace.agencyId, propertyId).first<any>();
       if (!copyRow) return Response.json({ error: "Approve factual marketing copy before rendering outputs." }, { status: 409 });
-      const requestHeaders = await headers();
-      const host = requestHeaders.get("host") || "";
-      const protocol = host.includes("localhost") ? "http" : "https";
-      const shareUrl = `${protocol}://${host}/site/${encodeURIComponent(snapshot.agency.slug)}/properties/${encodeURIComponent(propertyId)}`;
+      const tenantSuffix = await env.DB.prepare("SELECT tenant_domain_suffix AS tenantDomainSuffix FROM platform_settings WHERE id='default'").first<{ tenantDomainSuffix?: string }>();
+      const shareUrl = hostedTenantUrl(snapshot.agency.slug, tenantSuffix?.tenantDomainSuffix || env.PUBLIC_SITE_DOMAIN || ESTARA_TENANT_DOMAIN_SUFFIX, `/properties/${encodeURIComponent(propertyId)}`);
       const facts = factualCopy(snapshot.property);
       const design = clean(body.design, 40) || "signature";
       const designSettings = cleanDesignSettings(body.designSettings);

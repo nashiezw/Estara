@@ -4,6 +4,7 @@ import { invalidatePublicSite } from "../../../db/public-cache";
 import { requireWorkspace } from "../../../db/workspace";
 import { AuthorizationError, requirePermission, writeAudit } from "../../../db/authorization";
 import { isTypographyKey, isWebsiteTemplateKey, typographyForTemplate } from "../../../db/website-templates";
+import { RESERVED_TENANT_SUBDOMAINS } from "../../../db/domain.ts";
 
 const clean = (v: unknown, n = 160) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 const hex = (v: unknown, fallback: string) => {
@@ -49,6 +50,10 @@ export async function POST(r: Request) {
       slug.includes("--")
     ) {
       return Response.json({ error: "Complete every onboarding step with a valid subdomain." }, { status: 400 });
+    }
+
+    if (RESERVED_TENANT_SUBDOMAINS.has(slug)) {
+      return Response.json({ error: "That subdomain is reserved for ESTARA system use." }, { status: 409 });
     }
 
     const taken = await env.DB.prepare("SELECT id FROM agencies WHERE slug=? AND id<>?")

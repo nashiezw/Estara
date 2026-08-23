@@ -674,7 +674,7 @@ export default function DomainClient() {
           <span>Included website</span>
           <h2>{defaultSiteHost || "Public website address not configured"}</h2>
           <p>Your ESTARA website is live and ready to share. Use this address to attract visitors and get leads.</p>
-          <p className="sr-only">In Cloudflare, add a proxied wildcard DNS record for *.sites.estara.co.zw and attach the Worker route *.sites.estara.co.zw/* so every agency slug resolves here.</p>
+          <p className="sr-only">In Cloudflare, keep app.estara.co.zw explicit, add a proxied wildcard DNS record for *.estara.co.zw, and attach the Worker route *.estara.co.zw/* so every agency slug resolves here.</p>
           <div className="domain-card-actions">
             {defaultSiteUrl ? <a className="primary" href={defaultSiteUrl} target="_blank" rel="noreferrer">Open website</a> : <a className="outline" href="/admin">Configure suffix</a>}
             <button className="copy-address" type="button" disabled={!defaultSiteHost} onClick={() => { if (defaultSiteHost) navigator.clipboard.writeText(defaultSiteHost); setMessage("Website address copied."); }}>Copy address</button>

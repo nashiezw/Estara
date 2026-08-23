@@ -259,7 +259,7 @@ For ESTARA launch, use one main domain with clear rooms:
 - `estara.co.zw` is the public homepage. This is what normal visitors should open first.
 - `www.estara.co.zw` should also open the same public homepage, because many people type `www`.
 - `app.estara.co.zw` is the product app. This is where owners, admins and agency staff log in and use the workspace.
-- `sites.estara.co.zw` is the agency website area. Example: `prime-property.sites.estara.co.zw` can show Prime Property's public website.
+- `{agency}.estara.co.zw` is the agency website area. Example: `prime-property.estara.co.zw` can show Prime Property's public website.
 - `hello@estara.co.zw` is email. Set this up only after choosing the email provider.
 
 Recommended launch choice:
@@ -267,7 +267,7 @@ Recommended launch choice:
 1. Put the public homepage on `estara.co.zw`.
 2. Put the same public homepage on `www.estara.co.zw`.
 3. Put the login/workspace app on `app.estara.co.zw`.
-4. Use `sites.estara.co.zw` as the base for agency websites.
+4. Use `estara.co.zw` as the tenant website suffix, so agency websites sit at `{agency}.estara.co.zw`.
 5. Add email DNS records only after choosing Resend, Google Workspace or Zoho Mail.
 
 Very simple explanation of the words Cloudflare uses:
@@ -310,7 +310,7 @@ Where to go for each thing:
 | Public homepage at `estara.co.zw` | Cloudflare > Workers & Pages > ESTARA project > Settings > Domains & Routes | Add a Custom Domain for `estara.co.zw` | Cloudflare creates/manages the DNS record because the zone is active |
 | Public homepage at `www.estara.co.zw` | Cloudflare > Workers & Pages > ESTARA project > Settings > Domains & Routes | Add a Custom Domain for `www.estara.co.zw` | Cloudflare creates/manages the DNS record because the zone is active |
 | ESTARA app at `app.estara.co.zw` | Cloudflare > Workers & Pages > ESTARA project > Settings > Domains & Routes | Add a Custom Domain for `app.estara.co.zw` | Cloudflare creates/manages the DNS record because the zone is active |
-| Agency websites under `sites.estara.co.zw` | Cloudflare DNS and ESTARA platform settings | Use `sites.estara.co.zw` as the tenant website suffix | Add a wildcard DNS record only when wildcard routing is ready |
+| Agency websites under `{agency}.estara.co.zw` | Cloudflare DNS and ESTARA platform settings | Use `estara.co.zw` as the tenant website suffix | Add a wildcard DNS record only when wildcard routing is ready |
 | Sending emails | Resend > Domains | SPF, DKIM and DMARC TXT records | Registrar DNS or Cloudflare DNS |
 | Receiving emails | Google Workspace or Zoho Mail | MX records plus SPF/DKIM/DMARC records | Registrar DNS or Cloudflare DNS |
 | Proving ownership | Whatever provider asks you to verify the domain | A TXT record name and value | Registrar DNS or Cloudflare DNS |
@@ -444,7 +444,7 @@ The easiest version:
 3. Connect `estara.co.zw` to the ESTARA Worker app for the homepage.
 4. Connect `www.estara.co.zw` to the ESTARA Worker app for people who type `www`.
 5. Connect `app.estara.co.zw` to the ESTARA Worker app for login and workspace.
-6. Later, connect agency websites under `sites.estara.co.zw`.
+6. Later, connect agency websites under `{agency}.estara.co.zw`.
 
 What you need before starting:
 
@@ -512,8 +512,8 @@ What this does: allows agencies to use subdomains or custom domains for their pu
 
 Recommended first launch setup:
 
-- Use `sites.estara.co.zw` as the public website suffix.
-- Agency websites can then use addresses like `prime-property.sites.estara.co.zw`.
+- Use `estara.co.zw` as the public website suffix.
+- Agency websites can then use addresses like `prime-property.estara.co.zw`.
 - Do not use `app.estara.co.zw` for agency websites. Keep `app` only for the ESTARA product app.
 - Do not point `estara.co.zw` directly to one agency. Keep it as the ESTARA homepage.
 
@@ -528,11 +528,11 @@ Steps for the platform suffix:
 2. Open `estara.co.zw`.
 3. Open DNS > Records.
 4. Add a CNAME record.
-5. Add a proxied wildcard placeholder DNS record: Type `AAAA`, Name `*.sites`, Content `100::`, Proxy status Proxied.
-6. In Workers & Pages > ESTARA project > Settings > Domains & Routes, confirm the Worker route `*.sites.estara.co.zw/*` is attached to the ESTARA Worker. Do not use a wildcard Custom Domain for this; Cloudflare Worker Custom Domains only match exact hostnames, while ESTARA agency subdomains need wildcard routing.
+5. Add a proxied wildcard placeholder DNS record: Type `AAAA`, Name `*`, Content `100::`, Proxy status Proxied.
+6. In Workers & Pages > ESTARA project > Settings > Domains & Routes, confirm the Worker route `*.estara.co.zw/*` is attached to the ESTARA Worker. Do not use a wildcard Custom Domain for this; Cloudflare Worker Custom Domains only match exact hostnames, while ESTARA agency subdomains need wildcard routing.
 7. In the ESTARA super admin dashboard, open Platform settings.
 8. Set Platform domain to `estara.co.zw`.
-9. Set Tenant domain suffix to `sites.estara.co.zw`.
+9. Set Tenant domain suffix to `estara.co.zw`.
 10. Save platform settings.
 
 Steps for an agency custom domain:

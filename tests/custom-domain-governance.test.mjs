@@ -70,7 +70,7 @@ test("tenant subdomain proxy keeps agency website paths clean", async () => {
   const workspace = await readFile(new URL("../app/estara-app.tsx", import.meta.url), "utf8");
   const client = await readFile(new URL("../app/domains/domains-client.tsx", import.meta.url), "utf8");
   const seo = await readFile(new URL("../db/public-seo.ts", import.meta.url), "utf8");
-  assert.match(proxy, /PUBLIC_SITE_DOMAIN \|\| "sites\.estara\.co\.zw"/);
+  assert.match(proxy, /PUBLIC_SITE_DOMAIN \|\| ESTARA_TENANT_DOMAIN_SUFFIX/);
   assert.match(proxy, /export function proxy/);
   assert.match(proxy, /NextResponse\.rewrite/);
   assert.match(proxy, /NextResponse\.redirect\(url, 308\)/);
@@ -81,7 +81,7 @@ test("tenant subdomain proxy keeps agency website paths clean", async () => {
   assert.match(propertyPage, /pathMode = host\.replace/);
   assert.match(workspace, /publicWebsiteHref\(brand\)/);
   assert.match(client, /proxied wildcard DNS record/);
-  assert.match(client, /\*\.sites\.estara\.co\.zw\/\*/);
+  assert.match(client, /\*\.estara\.co\.zw\/\*/);
   assert.match(seo, /host\.startsWith\(`\$\{agency\.slug\.toLowerCase\(\)\}\.`\)/);
 });
 
@@ -90,14 +90,16 @@ test("tenant subdomain routing is single-label and slug-safe", async () => {
     import("../db/public-site.ts"),
     readFile(new URL("../db/public-site.ts", import.meta.url), "utf8"),
   ]);
-  assert.equal(tenantSlugFromHost("houselink.sites.estara.co.zw", "sites.estara.co.zw"), "houselink");
-  assert.equal(tenantSlugFromHost("houselink.sites.estara.co.zw:443", ".sites.estara.co.zw"), "houselink");
+  assert.equal(tenantSlugFromHost("houselink.estara.co.zw", "estara.co.zw"), "houselink");
+  assert.equal(tenantSlugFromHost("houselink.estara.co.zw:443", ".estara.co.zw"), "houselink");
   assert.equal(tenantSlugFromHost("prime.estara.co.zw", "estara.co.zw"), "prime");
   assert.equal(tenantSlugFromHost("prime.estara.co.zw:443", ".estara.co.zw"), "prime");
   assert.equal(tenantSlugFromHost("estara.co.zw", "estara.co.zw"), null);
+  assert.equal(tenantSlugFromHost("app.estara.co.zw", "estara.co.zw"), null);
+  assert.equal(tenantSlugFromHost("www.estara.co.zw", "estara.co.zw"), null);
   assert.equal(tenantSlugFromHost("a.b.estara.co.zw", "estara.co.zw"), null);
   assert.equal(tenantSlugFromHost("bad--slug.estara.co.zw", "estara.co.zw"), null);
-  assert.match(publicSite, /tenantDomainSuffix\|\|env\.PUBLIC_SITE_DOMAIN/);
+  assert.match(publicSite, /tenantDomainSuffix\|\|env\.PUBLIC_SITE_DOMAIN\|\|ESTARA_TENANT_DOMAIN_SUFFIX/);
 });
 
 test("default platform identity uses the production agency website suffix", async () => {
@@ -105,7 +107,19 @@ test("default platform identity uses the production agency website suffix", asyn
   const settings = await readFile(new URL("../db/platform-settings.ts", import.meta.url), "utf8");
   const proxy = await readFile(new URL("../proxy.ts", import.meta.url), "utf8");
   assert.match(defaults, /domain: "estara\.co\.zw"/);
-  assert.match(defaults, /tenantDomainSuffix: "sites\.estara\.co\.zw"/);
+  assert.match(defaults, /tenantDomainSuffix: "estara\.co\.zw"/);
   assert.match(settings, /tenantDomainSuffix: pick\(row\.tenantDomainSuffix, DEFAULT_PLATFORM_IDENTITY\.tenantDomainSuffix\)/);
-  assert.match(proxy, /PUBLIC_SITE_DOMAIN \|\| "sites\.estara\.co\.zw"/);
+  assert.match(proxy, /legacyTenantSlugFromHost/);
+  assert.match(proxy, /PUBLIC_SITE_DOMAIN \|\| ESTARA_TENANT_DOMAIN_SUFFIX/);
+});
+
+test("tenant domain source of truth reserves system subdomains", async () => {
+  const domain = await import("../db/domain.ts");
+  assert.equal(domain.hostedTenantHost("houselink"), "houselink.estara.co.zw");
+  assert.equal(domain.hostedTenantUrl("houselink", undefined, "/properties/prop-1"), "https://houselink.estara.co.zw/properties/prop-1");
+  for (const slug of ["app", "www", "api", "admin", "support", "mail", "status", "assets", "cdn"]) {
+    assert.equal(domain.isValidTenantSlug(slug), false);
+    assert.equal(domain.tenantSlugFromHost(`${slug}.estara.co.zw`, "estara.co.zw"), null);
+  }
+  assert.equal(domain.legacyTenantSlugFromHost("houselink.sites.estara.co.zw"), "houselink");
 });

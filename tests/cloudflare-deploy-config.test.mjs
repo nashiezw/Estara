@@ -38,8 +38,8 @@ test("agency wildcard hostnames are routed as Worker routes, not unsupported wil
 
   assert.match(deployScript, /pattern: `\*.\$\{publicSiteDomain\}\/\*`, zone_name: platformDomain/);
   assert.doesNotMatch(deployScript, /pattern: `\*.\$\{publicSiteDomain\}`,\s*custom_domain: true/);
-  assert.match(ownerGuide, /Type `AAAA`, Name `\*\.sites`, Content `100::`, Proxy status Proxied/);
-  assert.match(ownerGuide, /Worker route `\*\.sites\.estara\.co\.zw\/\*`/);
+  assert.match(ownerGuide, /Type `AAAA`, Name `\*`, Content `100::`, Proxy status Proxied/);
+  assert.match(ownerGuide, /Worker route `\*\.estara\.co\.zw\/\*`/);
 });
 
 test("Cloudflare deploy config does not depend on build-time dashboard variables", async () => {

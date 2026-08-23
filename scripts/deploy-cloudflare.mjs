@@ -25,7 +25,7 @@ export function prepareGeneratedWranglerConfig(configPath = GENERATED_WRANGLER_C
   const config = JSON.parse(readFileSync(configPath, "utf8"));
   const platformDomain = cleanHost(process.env.ESTARA_PLATFORM_DOMAIN || "estara.co.zw");
   const appHost = cleanHost(process.env.ESTARA_APP_HOST || (platformDomain ? `app.${platformDomain}` : ""));
-  const publicSiteDomain = cleanHost(process.env.PUBLIC_SITE_DOMAIN || "sites.estara.co.zw");
+  const publicSiteDomain = cleanHost(process.env.PUBLIC_SITE_DOMAIN || platformDomain || "estara.co.zw");
 
   config.d1_databases = (config.d1_databases ?? []).map((database) => {
     if (database.binding !== "DB" && database.database_name !== "site-creator-d1") {

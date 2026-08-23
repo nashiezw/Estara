@@ -3,6 +3,7 @@ import { getChatGPTUser } from "../../chatgpt-auth";
 import { requireWorkspace } from "../../../db/workspace";
 import { AuthorizationError, requirePermission, writeAudit } from "../../../db/authorization";
 import { PlanLimitError, requireEntitlement } from "../../../db/entitlements";
+import { ESTARA_TENANT_DOMAIN_SUFFIX, hostedTenantHost } from "../../../db/domain.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +22,7 @@ function normalizeDomain(value: unknown) {
 
 async function domainTarget(agencySlug: string) {
   const platform = await env.DB.prepare("SELECT domain,tenant_domain_suffix FROM platform_settings WHERE id='default'").first<{ domain?: string; tenant_domain_suffix?: string }>();
-  const suffix = clean(platform?.tenant_domain_suffix || platform?.domain || env.PUBLIC_SITE_DOMAIN || "");
-  return suffix ? `${agencySlug}.${suffix.replace(/^\*\./, "")}` : "";
+  return hostedTenantHost(agencySlug, clean(platform?.tenant_domain_suffix || platform?.domain || env.PUBLIC_SITE_DOMAIN || ESTARA_TENANT_DOMAIN_SUFFIX));
 }
 
 async function context(requireCustomDomains = true) {

@@ -337,7 +337,7 @@ function PlatformSettings({ settings, busy, send, onAssetUploaded }: { settings?
           <div className="platform-domain-guide">
             <span><strong>{form.domain || "estara.co.zw"}</strong><small>Public homepage and marketing website</small></span>
             <span><strong>{form.domain ? `app.${form.domain}` : "app.estara.co.zw"}</strong><small>Login, workspace and Super Admin</small></span>
-            <span><strong>{form.tenantDomainSuffix || "sites.estara.co.zw"}</strong><small>Default agency website subdomains</small></span>
+            <span><strong>{form.tenantDomainSuffix || "estara.co.zw"}</strong><small>Default agency website subdomains</small></span>
           </div>
         </fieldset>
       </div>

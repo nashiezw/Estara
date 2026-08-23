@@ -30,7 +30,7 @@ export const DEFAULT_PLATFORM_IDENTITY: PlatformIdentity = {
   defaultCurrency: "USD",
   timezone: "Africa/Harare",
   domain: "estara.co.zw",
-  tenantDomainSuffix: "sites.estara.co.zw",
+  tenantDomainSuffix: "estara.co.zw",
   poweredByWording: "Powered by ESTARA",
   logoUrl: "",
   iconUrl: "",

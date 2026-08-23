@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ESTARA_TENANT_DOMAIN_SUFFIX, hostedTenantUrl, legacyTenantSlugFromHost, tenantSlugFromHost } from "./db/domain.ts";
 
 const RESERVED = ["/api", "/_next", "/favicon", "/robots.txt", "/sitemap.xml", "/manifest", "/assets"];
 
-function normalizeHost(value: string) {
-  return value.toLowerCase().replace(/:\d+$/, "").replace(/\.$/, "");
-}
-
 function tenantSlugFromPublicHost(host: string) {
-  const suffix = normalizeHost(process.env.PUBLIC_SITE_DOMAIN || "sites.estara.co.zw").replace(/^\*\./, "");
-  const domain = normalizeHost(host);
-  if (!suffix || domain === suffix || !domain.endsWith(`.${suffix}`)) return "";
-  const slug = domain.slice(0, -suffix.length - 1);
-  return /^[a-z][a-z0-9-]{3,58}[a-z0-9]$/.test(slug) && !slug.includes("--") && !slug.includes(".") ? slug : "";
+  return tenantSlugFromHost(host, process.env.PUBLIC_SITE_DOMAIN || ESTARA_TENANT_DOMAIN_SUFFIX) || "";
 }
 
 export function proxy(request: NextRequest) {
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+  const legacySlug = legacyTenantSlugFromHost(host);
+  if (legacySlug) {
+    const target = hostedTenantUrl(legacySlug, ESTARA_TENANT_DOMAIN_SUFFIX, `${request.nextUrl.pathname}${request.nextUrl.search}`);
+    if (target) return NextResponse.redirect(target, 308);
+  }
+
   const slug = tenantSlugFromPublicHost(host);
   if (!slug) return NextResponse.next();
 
@@ -35,4 +34,3 @@ export function proxy(request: NextRequest) {
   url.pathname = `/site/${slug}${pathname === "/" ? "" : pathname}`;
   return NextResponse.rewrite(url);
 }
-

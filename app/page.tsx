@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPlatformIdentity } from "../db/platform-settings";
+import { isPlatformHost as isEstaraPlatformHost, normalizeHost } from "../db/domain.ts";
 import HomeMobileDrawer from "./home-mobile-drawer";
 
 const navLinks = [
@@ -29,10 +30,6 @@ const promises = [
 
 const firstRun = ["Create agency", "Add first property", "Upload photos", "Activate listing", "Publish website", "Create marketing", "Receive enquiry", "Book viewing", "Update seller"];
 
-function normalizeHost(host: string) {
-  return host.toLowerCase().replace(/:\d+$/, "").replace(/\.$/, "");
-}
-
 function appHref(path: string, platformDomain: string) {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const domain = normalizeHost(platformDomain);
@@ -52,13 +49,7 @@ function platformDomainFromHost(host: string, configuredDomain: string) {
 }
 
 export function isPlatformHost(host: string, platform: { domain: string; tenantDomainSuffix: string }) {
-  const domain = normalizeHost(host);
-  const platformDomain = normalizeHost(platform.domain);
-  const tenantSuffix = normalizeHost(platform.tenantDomainSuffix);
-  if (!domain || domain === "localhost" || domain === "127.0.0.1" || domain === "::1") return true;
-  if (domain.endsWith(".workers.dev") || domain.endsWith(".pages.dev")) return true;
-  if (!platformDomain && !tenantSuffix) return true;
-  return domain === platformDomain || domain === `www.${platformDomain}` || domain === `app.${platformDomain}` || domain === tenantSuffix;
+  return isEstaraPlatformHost(host, platform.domain, platform.tenantDomainSuffix);
 }
 
 export default async function Home() {
