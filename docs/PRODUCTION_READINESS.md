@@ -1,6 +1,6 @@
 # ESTARA Production Readiness
 
-Last updated: 2026-08-20
+Last updated: 2026-08-23
 
 Use this as the master human checklist. Existing evidence gates remain in `docs/PRODUCTION-READINESS-TODO.md`, `docs/PRODUCTION-LAUNCH-EVIDENCE.md` and `docs/DELIVERY-CHECKLIST.md`.
 
@@ -22,7 +22,7 @@ Status markers:
 - [x] Private marketing outputs and seller reports use authenticated access.
 - [x] Money fields use integer minor units in schema/policies reviewed.
 - [-] Production provider accounts, live secrets, webhooks and smoke tests are not complete.
-- [-] Custom-domain lifecycle exists, but provider attachment and TLS evidence are pending.
+- [-] First-level hosted tenant routing and custom-domain lifecycle exist, but provider wildcard route/custom-domain attachment and TLS evidence are pending.
 - [ ] Isolated D1 restore rehearsal and tenant attack retest remain pending.
 - [ ] Independent penetration testing remains pending.
 - [ ] Final product-owner public access approval remains pending.
@@ -51,6 +51,7 @@ Status markers:
 - [-] Add visual regression coverage for website templates and key public pages; automated template-structure guards now exist, screenshot/device QA remains pending.
 - [-] Improve empty states so every major blank page points to the next action; first-run onboarding, branches, backups, contacts and integrations now point to concrete next actions, broader screenshot/device QA remains pending.
 - [x] Owner-facing setup copy now explains how identity, colours, services, website style, public address and first-property capture shape the public site, enquiries and marketing flow.
+- [x] Hosted public agency addresses now use `{tenant}.estara.co.zw` with system subdomains reserved from agency registration.
 - [-] SEO metadata, OpenGraph, Twitter cards and JSON-LD structured data now exist on public agency/property pages; final production crawl/share QA remains pending.
 - [-] Accessibility foundations now include public-site skip links, labelled navigation and focus targets; manual keyboard, screen-reader, contrast and touch-target QA remains pending.
 - [-] Review performance/bundle weight for mobile and low-data conditions; automated compressed asset budgets now pass, hosted/mobile measurements remain pending.
@@ -79,7 +80,7 @@ Status markers:
 - Choose launch identity model.
 - Provide production provider accounts and non-secret configuration values.
 - Add secrets in the deployment secret store.
-- Verify production domain/DNS/TLS.
+- Verify production domain/DNS/TLS for root, www, app, wildcard hosted tenant routing and any approved custom agency domains.
 - Approve public access level and launch date.
 - Arrange penetration testing.
 - Complete real-device mobile audit.

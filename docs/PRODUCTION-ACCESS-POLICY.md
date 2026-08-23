@@ -13,9 +13,9 @@ This policy controls when ESTARA may move from private testing to public access.
 1. Source revision is committed, pushed and saved as a Sites version from the exact validated commit.
 2. Production deployment succeeds from that saved version.
 3. Production runtime environment variables satisfy the provider readiness contract without exposing secret values.
-4. App host, tenant subdomain host and approved custom domains are attached to the production provider with active TLS.
+4. App/root hosts, the `*.estara.co.zw/*` hosted-tenant Worker route, wildcard TLS for first-level tenant subdomains and approved custom domains are attached to the production provider with active TLS.
 5. Landing page, workspace, public agency website, public property page, enquiry intake, viewing request, seller portal and shortlist links are smoke-tested against the production URL.
-6. Public intake rate limits, tenant slug resolution and unknown-host fail-closed behavior are verified in production.
+6. Public intake rate limits, first-level tenant slug resolution (`{tenant}.estara.co.zw`), reserved system subdomains and unknown-host fail-closed behavior are verified in production.
 7. Low-data mode byte-reduction measurements are captured from hosted production assets.
 8. External error retention, alerting, email/push delivery, malware scanning and payment settlement smoke tests are complete.
 9. Independent external penetration testing has no unresolved launch-blocking finding.
@@ -25,7 +25,7 @@ This policy controls when ESTARA may move from private testing to public access.
 
 Record public-access approval in the release notes with:
 
-- Approved production URL and custom domains.
+- Approved production URL, hosted tenant URL pattern and custom domains.
 - Sites project ID, saved version ID, deployment ID and commit SHA.
 - Approval timestamp, approver name and rollback owner.
 - Links or references for provider smoke tests, mobile audit, low-data measurements, restore rehearsal and penetration-test closure.

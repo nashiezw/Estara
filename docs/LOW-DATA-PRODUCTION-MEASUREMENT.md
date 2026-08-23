@@ -18,7 +18,7 @@ Save the captured evidence as JSON with this shape:
 
 ```json
 {
-  "productionUrl": "https://example.estara.co.zw",
+  "productionUrl": "https://prime-property.estara.co.zw",
   "commitSha": "0123456789abcdef",
   "capturedAt": "2026-08-19T00:00:00.000Z",
   "measurements": [

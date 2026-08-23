@@ -1,6 +1,6 @@
 # ESTARA Project Status
 
-Last updated: 2026-08-20
+Last updated: 2026-08-23
 
 ## Overall Status
 
@@ -21,6 +21,7 @@ Why: the repository has many core MVP workflows and strong automated checks, but
 - Public standalone-auth mutations now leave durable audit evidence without exposing submitted emails or tokens in plain text.
 - Homepage has been redesigned around the ESTARA operating-system promise, Today's Business and Enter Once. Use Everywhere.
 - Guided owner onboarding now captures agency identity, brand colours, services, website template, public address and routes the owner into first-property capture.
+- Hosted tenant websites now use first-level subdomains under `estara.co.zw`, for example `prime-property.estara.co.zw`, while `app.estara.co.zw` and other system names remain reserved.
 - Public agency and property pages now include stronger SEO metadata, social preview metadata and JSON-LD structured data.
 - Public template visual-regression guards now check that templates keep distinct layouts, media-led hero structures and footer treatments.
 - Public websites now include keyboard skip links, labelled primary navigation and stable main-content focus targets.
@@ -31,7 +32,7 @@ Why: the repository has many core MVP workflows and strong automated checks, but
 - Latest verified checks:
   - `npm run build` passed on 2026-08-20 after public website and auth hardening work.
   - `npm run build` passed on 2026-08-20 after the Super Admin command-centre redesign.
-  - `node --test tests\*.test.mjs` passed on 2026-08-20 with 172/172 tests passing.
+  - `node --test tests\*.test.mjs` passed on 2026-08-23 with 200/200 tests passing after the first-level tenant-domain change.
   - `node --test tests\standalone-auth.test.mjs tests\website-templates.test.mjs tests\public-site-content.test.mjs` passed on 2026-08-20.
   - `node --test tests\rendered-html.test.mjs` passed on 2026-08-20 after the homepage redesign.
 
@@ -57,7 +58,7 @@ Why: the repository has many core MVP workflows and strong automated checks, but
 - Live email-provider secrets and smoke test for standalone auth emails.
 - Clean-agency onboarding and first-property acceptance test.
 - Production provider activation.
-- Domain/TLS activation.
+- Domain/TLS activation for `estara.co.zw`, `www.estara.co.zw`, `app.estara.co.zw`, the `*.estara.co.zw/*` hosted-tenant route and approved custom agency domains.
 - D1 restore rehearsal.
 - Penetration test and remediation.
 - Hosted low-data measurement.

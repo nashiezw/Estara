@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
+import { prepareGeneratedWranglerConfig } from "../scripts/deploy-cloudflare.mjs";
 
 function parseJsonc(source) {
   return JSON.parse(source.replace(/^\s*\/\/.*$/gm, ""));
@@ -19,7 +22,8 @@ test("Cloudflare deploy command uses the generated Vinext Worker config", async 
   assert.match(deployScript, /"deploy", "--config", GENERATED_WRANGLER_CONFIG/);
   assert.match(deployScript, /migrations_dir: "\.\.\/\.\.\/drizzle"/);
   assert.match(deployScript, /config\.d1_databases = \(config\.d1_databases \?\? \[\]\)\.map/);
-  assert.match(deployScript, /PUBLIC_SITE_DOMAIN: publicSiteDomain/);
+  assert.match(deployScript, /validatedProductionVars/);
+  assert.match(deployScript, /PRODUCTION_VARS_CONFIG = "config\/cloudflare-production-vars\.json"/);
   assert.match(deployScript, /\*.\$\{publicSiteDomain\}\/\*/);
   assert.match(deployScript, /custom_domain: true/);
   assert.match(deployScript, /zone_name: platformDomain/);
@@ -27,9 +31,41 @@ test("Cloudflare deploy command uses the generated Vinext Worker config", async 
   assert.match(deployScript, /prepareGeneratedWranglerConfig\(\)/);
   assert.equal(
     packageJson.scripts["deploy:dry-run"],
-    "npm run build && wrangler deploy --dry-run --outdir .wrangler-dry-run --config dist/server/wrangler.json",
+    "npm run build && node scripts/deploy-cloudflare.mjs --prepare-only && wrangler deploy --dry-run --outdir .wrangler-dry-run --config dist/server/wrangler.json",
   );
   assert.doesNotMatch(packageJson.scripts.deploy, /npx\s+wrangler\s+deploy/);
+});
+
+test("production deploy config owns non-secret vars and rejects secrets in vars", async () => {
+  const vars = JSON.parse(await readFile("config/cloudflare-production-vars.json", "utf8"));
+  assert.deepEqual(vars, {
+    PUBLIC_SITE_DOMAIN: "estara.co.zw",
+    MEDIA_BUCKET: "site-creator-r2",
+    BACKUP_BUCKET: "estara-backups",
+  });
+
+  const dir = await mkdtemp(join(tmpdir(), "estara-wrangler-"));
+  const configPath = join(dir, "wrangler.json");
+  try {
+    await writeFile(configPath, JSON.stringify({
+      vars: {},
+      routes: [],
+      d1_databases: [{ binding: "DB", database_name: "site-creator-d1" }],
+      r2_buckets: [{ binding: "MEDIA", bucket_name: "site-creator-r2" }],
+    }));
+    prepareGeneratedWranglerConfig(configPath);
+    const prepared = JSON.parse(await readFile(configPath, "utf8"));
+    assert.equal(prepared.vars.PUBLIC_SITE_DOMAIN, "estara.co.zw");
+    assert.equal(prepared.vars.MEDIA_BUCKET, "site-creator-r2");
+    assert.equal(prepared.vars.BACKUP_BUCKET, "estara-backups");
+    assert.equal(prepared.r2_buckets[0].binding, "MEDIA");
+    assert.equal(prepared.r2_buckets[0].bucket_name, "site-creator-r2");
+
+    await writeFile(configPath, JSON.stringify({ vars: { STRIPE_SECRET_KEY: "do-not-commit" }, d1_databases: [] }));
+    assert.throws(() => prepareGeneratedWranglerConfig(configPath), /Refusing to write secret-like names to Wrangler vars/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 test("agency wildcard hostnames are routed as Worker routes, not unsupported wildcard custom domains", async () => {

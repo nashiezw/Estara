@@ -3,6 +3,11 @@
 - **Agency** — A tenant that owns workspace data, branding, users and subscription state.
 - **Membership** — A user-to-agency relationship with one system or custom role.
 - **Platform operator** — A super-admin, support or finance user acting outside an agency boundary.
+- **Platform domain** — `estara.co.zw`, the ESTARA public/root website.
+- **App host** — `app.estara.co.zw`, the ESTARA SaaS dashboard and workspace host. It is reserved and cannot be used as an agency slug.
+- **Hosted tenant domain** — The default ESTARA-hosted public agency website hostname, generated as `{tenant}.estara.co.zw`.
+- **Custom agency domain** — An agency-owned hostname such as `www.houselink.co.zw` that maps to that agency's public website after ownership and DNS verification.
+- **Reserved tenant subdomain** — A system name such as `app`, `www`, `api`, `admin`, `support`, `mail`, `status`, `assets` or `cdn` that agencies cannot register as their tenant slug.
 - **Contact** — One canonical person record per agency, capable of multiple roles such as buyer, seller, landlord or tenant.
 - **Property** — An agency-owned real-estate record progressing through an explicit listing lifecycle.
 - **Mandate** — Time-bounded authority from an owner to market a property, with terms and commission.

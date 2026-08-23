@@ -16,8 +16,9 @@ export const PRODUCTION_PROVIDER_DECISIONS: readonly ProductionProviderDecision[
     requiredEnv: ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "MEDIA_BUCKET", "BACKUP_BUCKET"],
     activationEvidence: [
       "Worker deployed on the production account",
-      "Custom Domain attached for app and tenant hosts",
-      "Advanced certificates active",
+      "Custom Domains attached for app, root and www hosts",
+      "Wildcard Worker route active for *.estara.co.zw/* hosted tenant sites",
+      "TLS active for app/root/www hosts and first-level tenant subdomains",
       "D1 and R2 bindings point to production resources",
       "R2 object-create notifications feed the scan queue",
       "WAF malicious upload rules block failed scans",

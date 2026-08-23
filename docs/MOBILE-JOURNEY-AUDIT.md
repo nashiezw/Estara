@@ -30,7 +30,7 @@ This audit is the required manual proof for the remaining mobile launch gate. Au
    - Confirm mobile logo, bottom navigation and add-property floating action button are reachable.
 
 2. Agency onboarding
-   - Start with agency name, logo, phone number, colors, website template and subdomain.
+   - Start with agency name, logo, phone number, colors, website template and the hosted subdomain shown as `{tenant}.estara.co.zw`.
    - Confirm each step is readable, tappable and recoverable after validation errors.
    - Confirm completion hands off to first-property capture.
 

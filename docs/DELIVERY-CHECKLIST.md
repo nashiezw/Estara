@@ -47,8 +47,8 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Team invitation and membership acceptance
 - [x] Website template selection
 - [x] Website template picker previews each style as a realistic mini public website before selection
-- [x] Subdomain selection
-- [-] Own-domain onboarding implemented for DNS proof; hosting-provider attachment pending
+- [x] First-level hosted subdomain selection under `{tenant}.estara.co.zw`, with system names reserved
+- [-] Own-domain onboarding implemented for DNS proof; custom-domain hosting-provider attachment pending
 - [x] Completion screen and first-property handoff
 - [x] Agency-branded workspace screens
 - [x] Persisted agency logo, icon, colour and typography branding used across implemented workspace and public outputs
@@ -86,7 +86,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Public property detail page
 - [x] Call, WhatsApp, enquire, viewing and share actions
 - [x] Similar properties
-- [-] Tenant slug routing, preview URLs, clean default website links and host-based tenant-subdomain resolution implemented; hosting-provider tenant hostname attachment pending
+- [-] Tenant slug routing, preview URLs, clean default website links and host-based first-level tenant-subdomain resolution implemented for `{tenant}.estara.co.zw`; production wildcard DNS/Worker route evidence pending
 - [x] Custom-domain ownership token
 - [x] DNS verification lifecycle
 - [-] Automated TLS activation request tracked; provider certificate activation pending

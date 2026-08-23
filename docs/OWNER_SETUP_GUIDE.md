@@ -564,8 +564,8 @@ Steps:
 2. Verify the sender email/domain.
 3. Copy the API key.
 4. Add the API key to the deployment secret store as `RESEND_API_KEY`.
-5. Add the sender address as `RESEND_FROM_EMAIL`.
-6. Configure the webhook secret as `RESEND_WEBHOOK_SECRET`.
+5. Add the sender address as a normal Worker variable named `RESEND_FROM_EMAIL`.
+6. Configure the webhook secret as a Cloudflare secret named `RESEND_WEBHOOK_SECRET`.
 7. Send a test email from the production environment.
 
 What success looks like: the email arrives from the correct sender and the app records success/failure safely.
@@ -589,7 +589,7 @@ Steps:
 2. Create the launch plans/prices.
 3. Copy live secret key and webhook secret.
 4. Add secrets as `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
-5. Add price IDs as `STRIPE_PRICE_STARTER` and `STRIPE_PRICE_GROWTH`.
+5. Add price IDs as normal Worker variables named `STRIPE_PRICE_STARTER` and `STRIPE_PRICE_GROWTH`.
 6. Run live-mode test flows for invoice, payment, refund and failed payment.
 7. Save evidence for launch approval.
 
@@ -610,10 +610,11 @@ Steps:
 
 1. Create the monitoring project.
 2. Copy the DSN and auth details.
-3. Add `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT`.
-4. Configure alert recipients.
-5. Trigger a safe test error in a non-public environment.
-6. Confirm the alert arrives.
+3. Add `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT` and `SENTRY_RELEASE` as normal configuration values.
+4. Add `SENTRY_AUTH_TOKEN` as a secret.
+5. Configure alert recipients.
+6. Trigger a safe test error in a non-public environment.
+7. Confirm the alert arrives.
 
 What success looks like: errors appear in monitoring without exposing customer data.
 

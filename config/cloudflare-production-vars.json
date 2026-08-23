@@ -1,0 +1,5 @@
+{
+  "PUBLIC_SITE_DOMAIN": "estara.co.zw",
+  "MEDIA_BUCKET": "site-creator-r2",
+  "BACKUP_BUCKET": "estara-backups"
+}
