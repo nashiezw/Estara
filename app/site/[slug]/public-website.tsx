@@ -232,6 +232,11 @@ export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgen
   const services = agency.businessActivities.length
     ? agency.businessActivities.slice(0, 5)
     : ["Residential sales", "Residential rentals", "Property advice"];
+  const proof = [
+    ["Verified listings", "Current agency stock"],
+    ["Responsive follow-up", "Direct enquiry routes"],
+    ["Local guidance", "Market-ready advice"],
+  ];
   return (
     <footer className="public-footer" aria-label="Agency website footer">
       <section className="public-footer-brand">
@@ -246,17 +251,25 @@ export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgen
             <small>{agency.tagline || "Property specialists"}</small>
           </span>
         </a>
-        <h2>Ready for a clearer property move?</h2>
-        <p>{agency.tagline || `${agency.name} gives every client a direct path to verified property guidance and responsive follow-through.`}</p>
+        <h2>Your next property move, handled with care.</h2>
+        <p>{agency.tagline || `${agency.name} gives every client a direct path to verified property guidance, clear communication and responsive follow-through.`}</p>
         <div className="public-footer-actions">
-          <a href={publicPath(agency, "/properties", pathMode)}>Explore properties</a>
+          <a href={publicPath(agency, "/properties", pathMode)}>View listings</a>
           {whatsapp ? (
             <TrackedLink slug={agency.slug} eventType="whatsapp" href={`https://wa.me/${whatsapp}`}>
-              WhatsApp the agency
+              Speak to an agent
             </TrackedLink>
           ) : (
-            <a href={publicPath(agency, "/contact", pathMode)}>Contact the agency</a>
+            <a href={publicPath(agency, "/contact", pathMode)}>Speak to an agent</a>
           )}
+        </div>
+        <div className="public-footer-proof" aria-label="Agency service strengths">
+          {proof.map(([label, detail]) => (
+            <span key={label}>
+              <strong>{label}</strong>
+              <small>{detail}</small>
+            </span>
+          ))}
         </div>
       </section>
       <nav className="public-footer-nav" aria-label="Footer navigation">
@@ -276,6 +289,9 @@ export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgen
           {agency.email && <a href={`mailto:${agency.email}`}>{agency.email}</a>}
           {agency.website && <a href={agency.website}>{agency.website.replace(/^https?:\/\//, "")}</a>}
         </address>
+      </div>
+      <div className="public-footer-bottom">
+        <small>{agency.name}</small>
         {!agency.hideParentBrand && <small>{agency.poweredByWording}</small>}
       </div>
     </footer>
