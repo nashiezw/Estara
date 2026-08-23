@@ -210,9 +210,11 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
 
   const load = async () => {
     try {
-      const response = await fetch("/api/marketing", { cache: "no-store" }), body = await response.json();
+      const response = await fetch("/api/marketing", { cache: "no-store" }), body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "Marketing Studio could not be loaded.");
-      setData(body); setPropertyId((current) => current || body.properties[0]?.id || ""); setError("");
+      setData({ ...body, properties: body.properties || [], copies: body.copies || [], jobs: body.jobs || [], templates: body.templates || [] });
+      setPropertyId((current) => current || body.properties?.[0]?.id || "");
+      setError("");
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Marketing Studio could not be loaded."); }
   };
   useEffect(() => { void load(); }, []);
@@ -232,17 +234,18 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
   const uploadKey = `estara-marketing-uploads:${data?.agency?.id || "local"}`;
 
   useEffect(() => {
-    if (!data || !propertyId) return;
+    if (!data) return;
     try {
-      const saved = localStorage.getItem(`estara-marketing-document:${propertyId}`);
+      const storageKey = propertyId || "__no-property__";
+      const saved = localStorage.getItem(`estara-marketing-document:${storageKey}`);
       const parsed = saved ? JSON.parse(saved) : null;
-      const nextDoc = parsed?.editorVersion === 3 && parsed.propertyId === propertyId ? parsed : createDoc(property, data.agency);
+      const nextDoc = parsed?.editorVersion === 3 && parsed.propertyId === storageKey ? parsed : createDoc(property, data.agency);
       const image = property?.photoUrl || property?.media?.[0]?.url || "";
       setRenderFormat(nextDoc.format || presetSizes.find((item) => item.width === nextDoc.width && item.height === nextDoc.height)?.key || "whatsapp_card");
-      setDoc({ ...nextDoc, elements: nextDoc.elements.map((item) => item.binding === "{{property.image}}" && image ? { ...item, src: image } : item.binding ? { ...item, text: bindValue(item.binding, property, data.agency) } : item) });
+      setDoc({ ...nextDoc, propertyId: storageKey, elements: nextDoc.elements.map((item) => item.binding === "{{property.image}}" && image ? { ...item, src: image } : item.binding ? { ...item, text: bindValue(item.binding, property, data.agency) } : item) });
     } catch {
       const nextDoc = createDoc(property, data.agency);
-      setRenderFormat(nextDoc.format || "whatsapp_card"); setDoc(nextDoc);
+      setRenderFormat(nextDoc.format || "whatsapp_card"); setDoc({ ...nextDoc, propertyId: propertyId || "__no-property__" });
     }
   }, [data?.agency?.id, propertyId, property?.photoUrl]);
   useEffect(() => {
@@ -255,9 +258,10 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
 
   useEffect(() => { setCopy(activeCopy ? { headline: activeCopy.headline || "", listingDescription: activeCopy.listingDescription || "", socialCaption: activeCopy.socialCaption || "" } : defaultCopy); }, [activeCopy?.id, activeCopy?.headline, activeCopy?.listingDescription, activeCopy?.socialCaption]);
   useEffect(() => {
-    if (!doc || !propertyId) return;
+    if (!doc) return;
     setSaveState("Saving...");
-    const timer = window.setTimeout(() => { try { localStorage.setItem(`estara-marketing-document:${propertyId}`, JSON.stringify({ ...doc, updatedAt: new Date().toISOString() })); setSaveState("Saved"); } catch { setSaveState("Save failed"); } }, 600);
+    const storageKey = propertyId || "__no-property__";
+    const timer = window.setTimeout(() => { try { localStorage.setItem(`estara-marketing-document:${storageKey}`, JSON.stringify({ ...doc, propertyId: storageKey, updatedAt: new Date().toISOString() })); setSaveState("Saved"); } catch { setSaveState("Save failed"); } }, 600);
     return () => window.clearTimeout(timer);
   }, [doc, propertyId]);
 
@@ -405,9 +409,14 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
     } catch (reason) { setError(reason instanceof Error ? reason.message : "That marketing action could not be completed."); }
     finally { setBusy(false); }
   }
-  const createCopy = () => call("POST", { action: "create_copy", propertyId }, "A fact-bound draft is ready to edit.");
+  const requireProperty = () => {
+    if (propertyId) return true;
+    setError("Add or select a property before creating fact-bound marketing output.");
+    return false;
+  };
+  const createCopy = () => requireProperty() ? call("POST", { action: "create_copy", propertyId }, "A fact-bound draft is ready to edit.") : Promise.resolve();
   const saveCopy = () => activeCopy ? call("PATCH", { action: "update_copy", id: activeCopy.id, ...copy }, "Copy saved.") : Promise.resolve();
-  const renderOutputs = () => call("POST", { action: "render", propertyId, formats: [doc?.format || renderFormat], design: doc?.templateId || "signature", designSettings: { designDocument: doc, headlineScale: 100, brandPrimary: data?.agency?.primaryColor } }, "Selected marketing outputs were generated.");
+  const renderOutputs = () => requireProperty() ? call("POST", { action: "render", propertyId, formats: [doc?.format || renderFormat], design: doc?.templateId || "signature", designSettings: { designDocument: doc, headlineScale: 100, brandPrimary: data?.agency?.primaryColor } }, "Selected marketing outputs were generated.") : Promise.resolve();
   const refreshBindings = () => {
     const image = property?.photoUrl || property?.media?.[0]?.url || "";
     return doc && commit({ ...doc, elements: doc.elements.map((item) => item.binding === "{{property.image}}" && image ? { ...item, src: image } : item.binding ? { ...item, text: bindValue(item.binding, property, data?.agency) } : item) });
@@ -441,7 +450,8 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Preview export could not be completed."); }
   }
   async function saveExport() {
-    if (!doc || !propertyId) return;
+    if (!doc) return;
+    if (!requireProperty()) return;
     setBusy(true); setError(""); setMessage("");
     try {
       const blob = await exportBlob(doc, exportKind), dataUrl = await blobToDataUrl(blob);
@@ -458,14 +468,14 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
     catch { setError("Sharing was cancelled or unavailable."); }
   }
 
-  if (!data || !doc) return <main className="studio-empty"><h1>{error || "Opening Marketing Studio..."}</h1></main>;
+  if (!data || !doc) return <main className="studio-empty"><h1>{error || "Opening Marketing Studio..."}</h1>{error && <button onClick={load}>Retry</button>}</main>;
 
   const themeVars: StudioThemeVars = { "--studio-brand": platform.primaryColor || "#153b34", "--studio-accent": platform.accentColor || "#e6bd5f" };
 
   return <main className="studio-page" style={themeVars}>
     <header className="studio-topbar">
       <a href="/workspace">Workspace</a><input aria-label="Design name" value={doc.name} onChange={(e) => commit({ ...doc, name: e.target.value })} />
-      <select aria-label="Working property" value={propertyId} onChange={(e) => chooseProperty(e.target.value)}>{data.properties.map((item: Row) => <option value={item.id} key={item.id}>{item.reference} - {item.title}</option>)}</select>
+      <select aria-label="Working property" value={propertyId} onChange={(e) => chooseProperty(e.target.value)}>{!data.properties.length && <option value="">No properties yet</option>}{data.properties.map((item: Row) => <option value={item.id} key={item.id}>{item.reference} - {item.title}</option>)}</select>
       <span className={`studio-save ${saveState.replace(/\W/g, "").toLowerCase()}`}>{platform.shortName} · {saveState}</span>
       <button className="studio-icon-action" aria-label="Undo" onClick={undo} disabled={!history.length}>↶</button><button className="studio-icon-action" aria-label="Redo" onClick={redo} disabled={!future.length}>↷</button>
       <select aria-label="Resize design" value={doc.format || renderFormat} onChange={(e) => { const spec = presetSizes.find((item) => item.key === e.target.value); if (!spec) return; setRenderFormat(spec.key); commit({ ...doc, format: spec.key, width: spec.width, height: spec.height, elements: doc.elements.map((item) => ({ ...item, x: item.x * spec.width / doc.width, y: item.y * spec.height / doc.height, width: item.width * spec.width / doc.width, height: item.height * spec.height / doc.height })) }); }}>{presetSizes.map((item) => <option key={item.key} value={item.key}>{item.name}</option>)}</select>
@@ -484,7 +494,7 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
         {tool === "Animate" && selected && <><div className="studio-panel-title"><strong>Animate</strong><button aria-label="Close animate panel" onClick={() => setTool(selectedIsText ? "Text" : "Templates")}>×</button></div><div className="studio-panel-tabs"><button onClick={() => setMessage("Page animation controls are ready for the selected design.")}>Page</button><button className="active" onClick={() => setMessage("Element animation controls are active.")}>Text</button></div><div className="studio-panel-section"><header><strong>Presentation settings</strong></header><label className="studio-switch">Appear on click<input type="checkbox" /></label></div><button className="studio-animation-builder" onClick={() => patchElement(selected.id, { animation: "Custom" })}><b>✦</b><span><strong>Create an Animation</strong><small>Drag elements around the canvas to create your own animations.</small></span></button><div className="studio-panel-section"><header><strong>Suggested</strong></header><div className="studio-effect-grid animation-grid">{textAnimations.map((name) => <button className={selected.animation === name ? "active" : ""} key={name} onClick={() => patchElement(selected.id, { animation: name })}><b>ABC</b><span>{name}</span></button>)}</div></div></>}
         {tool === "Position" && selected && <><div className="studio-panel-title"><strong>Position</strong><button aria-label="Close position panel" onClick={() => setTool(selectedIsText ? "Text" : "Templates")}>×</button></div><div className="studio-panel-tabs"><button className="active" onClick={() => setMessage("Arrange controls are active.")}>Arrange</button><button onClick={() => setTool("Layers")}>Layers</button></div><div className="studio-arrange-grid"><button onClick={() => reorderLayer(selected.id, "up")}>⇧ Forward</button><button onClick={() => reorderLayer(selected.id, "down")}>⇩ Backward</button><button onClick={() => reorderLayer(selected.id, "front")}>⇱ To front</button><button onClick={() => reorderLayer(selected.id, "back")}>⇲ To back</button></div><div className="studio-panel-section"><header><strong>Align to page</strong></header><div className="studio-arrange-grid"><button onClick={() => alignElement("top")}>▔ Top</button><button onClick={() => alignElement("left")}>▏ Left</button><button onClick={() => alignElement("middle")}>─ Middle</button><button onClick={() => alignElement("center")}>┼ Center</button><button onClick={() => alignElement("bottom")}>▁ Bottom</button><button onClick={() => alignElement("right")}>▕ Right</button></div></div><div className="studio-panel-section"><header><strong>Advanced</strong></header><div className="studio-position-grid"><label>Width<input value={`${selected.width.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { width: Math.max(1, Number(e.target.value.replace(/[^\d.]/g, "")) || selected.width) })} /></label><label>Height<input value={`${selected.height.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { height: Math.max(1, Number(e.target.value.replace(/[^\d.]/g, "")) || selected.height) })} /></label><label>Ratio<button type="button">⌘</button></label><label>X<input value={`${selected.x.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { x: Number(e.target.value.replace(/[^\d.-]/g, "")) || 0 })} /></label><label>Y<input value={`${selected.y.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { y: Number(e.target.value.replace(/[^\d.-]/g, "")) || 0 })} /></label><label>Rotate<input value={`${selected.rotation}°`} onChange={(e) => patchElement(selected.id, { rotation: Number(e.target.value.replace(/[^\d.-]/g, "")) || 0 })} /></label></div></div></>}
         {tool === "Uploads" && <div className="studio-tool-panel"><div className="studio-command studio-search-command"><b>⌕</b><input placeholder="Search keywords, tags, color" value={search} onChange={(e) => setSearch(e.target.value)} /></div><div className="studio-upload-actions"><button onClick={() => imageInputRef.current?.click()}>Upload files</button><button aria-label="Clear studio uploads" onClick={clearUploads}>×</button></div><div className="studio-tabs"><button className="active" onClick={() => setMessage(`${galleryPhotos.length} images available.`)}>Images</button><button onClick={() => setMessage("Folders will appear when connected asset folders are available.")}>Folders</button></div><p className="studio-panel-note">Drag an image onto the canvas or click one to replace the selected image.</p><div className="studio-masonry">{galleryPhotos.map((photo: Row, index: number) => <button draggable onDragStart={(e) => dragStudioItem(e, { kind: "image", src: photo.url })} className={index % 3 === 0 ? "wide" : ""} key={photo.id} onClick={() => selected ? patchElement(selected.id, { src: photo.url, type: "image", binding: undefined }) : addElement("image", { src: photo.url, width: doc.width * .38, height: doc.height * .5 })}><img src={photo.url} alt="" /></button>)}</div></div>}
-        {tool === "Tools" && <div className="studio-tool-panel"><div className="studio-property-card"><small>Working property</small><select value={propertyId} onChange={(e) => chooseProperty(e.target.value)}>{data.properties.map((item: Row) => <option value={item.id} key={item.id}>{item.reference} - {item.title}</option>)}</select><button onClick={refreshBindings}>Refresh property data</button><p>Bound fields auto-fill from this property until you edit the element yourself.</p></div><div className="studio-panel-section"><header><strong>Property fields</strong></header><div className="studio-chip-grid">{["{{property.title}}", "{{property.price}}", "{{property.suburb}}", "{{property.bedrooms}}", "{{agent.phone}}"].map((binding) => <button key={binding} onClick={() => addElement("propertyField", { binding, text: bindValue(binding, property, data.agency), name: binding })}>{binding}</button>)}</div></div></div>}
+        {tool === "Tools" && <div className="studio-tool-panel"><div className="studio-property-card"><small>Working property</small><select value={propertyId} onChange={(e) => chooseProperty(e.target.value)}>{!data.properties.length && <option value="">No properties yet</option>}{data.properties.map((item: Row) => <option value={item.id} key={item.id}>{item.reference} - {item.title}</option>)}</select><button onClick={refreshBindings} disabled={!propertyId}>Refresh property data</button><p>{propertyId ? "Bound fields auto-fill from this property until you edit the element yourself." : "Add a property in the workspace to create fact-bound copy, renders and saved exports."}</p></div><div className="studio-panel-section"><header><strong>Property fields</strong></header><div className="studio-chip-grid">{["{{property.title}}", "{{property.price}}", "{{property.suburb}}", "{{property.bedrooms}}", "{{agent.phone}}"].map((binding) => <button key={binding} onClick={() => addElement("propertyField", { binding, text: bindValue(binding, property, data.agency), name: binding })}>{binding}</button>)}</div></div></div>}
         {tool === "Brand" && <div className="studio-tool-panel"><div className="studio-brand-card"><small>Brand kit</small><strong>{data.agency?.name || platform.shortName}</strong><p>{[data.agency?.phone, data.agency?.email].filter(Boolean).join(" · ")}</p></div><div className="studio-swatch-grid"><button onClick={() => selected && patchElement(selected.id, { fill: data.agency?.primaryColor, color: data.agency?.primaryColor })}><i style={{ background: data.agency?.primaryColor || platform.primaryColor }} />Apply primary</button><button onClick={() => selected && patchElement(selected.id, { fill: data.agency?.accentColor, color: data.agency?.accentColor })}><i style={{ background: data.agency?.accentColor || platform.accentColor }} />Apply accent</button></div><p className="studio-panel-note">Select a text, shape, or badge first, then apply a brand color.</p></div>}
         {tool === "Projects" && <div className="studio-panel-section"><header><strong>Recent designs</strong></header><div className="studio-project-card"><b>{doc.name}</b><small>{doc.width} x {doc.height} · saved locally</small></div></div>}
         {tool === "Apps" && <div className="studio-category-grid"><button onClick={sharePreview}><b>↗</b><span>Share kit</span></button><button onClick={() => { const spec = presetSizes.find((item) => item.key === "flyer"); if (spec) { setRenderFormat(spec.key); commit({ ...doc, format: spec.key, width: spec.width, height: spec.height, elements: doc.elements.map((item) => ({ ...item, x: item.x * spec.width / doc.width, y: item.y * spec.height / doc.height, width: item.width * spec.width / doc.width, height: item.height * spec.height / doc.height })) }); } }}><b>▤</b><span>Flyer</span></button><button onClick={createCopy}><b>◎</b><span>Campaign</span></button><button onClick={() => setTool("QR Code")}><b>▦</b><span>QR tools</span></button></div>}
