@@ -179,6 +179,10 @@
   .studio-mobile-export-panel button span{display:block!important;margin-top:3px!important;font-size:10px!important;font-weight:800!important;color:#66756f!important}
   .studio-mobile-export-panel button:nth-child(2){background:var(--studio-brand)!important;color:#fff!important;border-color:var(--studio-brand)!important}
   .studio-mobile-export-panel button:nth-child(2) span,.studio-mobile-export-panel button:nth-child(2):after{color:rgba(255,255,255,.76)!important}
+  .studio-topbar .studio-mobile-export-trigger{display:grid!important}
+  .studio-topbar button.studio-mobile-export-trigger{display:grid!important}
+  .studio-mobile-export-trigger{place-items:center!important;width:44px!important;min-width:44px!important;height:38px!important;min-height:38px!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:10px!important;background:#fff!important;color:var(--studio-brand)!important;padding:0!important}
+  .studio-mobile-export-trigger svg{width:19px!important;height:19px!important;fill:none!important;stroke:currentColor!important;stroke-width:2.2!important;stroke-linecap:round!important;stroke-linejoin:round!important}
   .studio-context-toolbar{display:none!important}
   .studio-workbar{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;align-items:start!important;overflow:visible!important}
   .studio-zoom-controls{display:grid!important;grid-template-columns:32px 62px 32px 42px!important;gap:0!important;max-width:none!important;overflow:hidden!important;border-radius:12px!important}
