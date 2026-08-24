@@ -32,6 +32,51 @@ async function event(context: PlatformContext, agencyId: string, subscriptionId:
     .bind(crypto.randomUUID(), agencyId, subscriptionId, invoiceId, eventType, JSON.stringify(detail), context.userId).run();
 }
 
+const agencyDeleteTables = [
+  "webhook_deliveries","webhook_subscriptions","credential_security_events","api_request_events","api_idempotency_keys","api_credentials",
+  "integration_sync_runs","integration_field_maps","integration_connections","ai_drafts","portal_document_shares","property_portal_updates",
+  "lease_renewals","inspection_reports","inspection_media_assets","property_inspections","maintenance_media_assets","maintenance_updates",
+  "maintenance_requests","contractors","property_portal_grants","landlord_statements","property_expenses","tenancy_deposits","rent_receipts",
+  "payment_allocations","rent_payments","rent_charges","leases","managed_properties","backup_snapshots","deal_commission_splits","deal_stage_events",
+  "deals","deal_stages","shortlist_items","shortlists","property_matches","property_requirements","seller_deliveries","seller_report_schedules",
+  "offers","document_permissions","document_access_tokens","documents","marketing_outputs","marketing_render_jobs","marketing_template_versions",
+  "marketing_copy_versions","notification_deliveries","notifications","automation_executions","automation_rule_versions","domain_events",
+  "property_status_events","property_activation_channels","property_verification_items","mandates","property_feature_definitions","billing_events",
+  "billing_invoices","agency_subscriptions","development_units","developments","enterprise_branding","seller_reports","seller_access_grants",
+  "media_assets","public_events","public_intake_attempts","viewings","contact_activities","agent_profiles","team_invitations","audit_logs",
+  "custom_domains","agency_settings","next_actions","enquiries","properties","contacts","branch_memberships","branches","agency_memberships",
+] as const;
+const tableNameOk = (name: string) => /^[a-z_]+$/.test(name);
+async function existingAgencyTables() {
+  const rows = await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table'").all<{ name: string }>();
+  return new Set(rows.results.map(row => row.name));
+}
+async function deleteTenantObjects(agencyId: string) {
+  const bucket = (env as any).MEDIA;
+  if (!bucket) throw new Error("Tenant media storage is unavailable.");
+  let cursor: string | undefined, objectsDeleted = 0;
+  do {
+    const listed = await bucket.list({ prefix: `tenants/${agencyId}/`, cursor, limit: 1000 });
+    const keys = (listed.objects || []).map((item: { key: string }) => item.key).filter(Boolean);
+    if (keys.length) {
+      await bucket.delete(keys);
+      objectsDeleted += keys.length;
+    }
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor);
+  return { objectsDeleted, storage: "cleared" };
+}
+async function hardDeleteAgency(agencyId: string) {
+  const existing = await existingAgencyTables(), statements = [];
+  if (existing.has("role_permissions") && existing.has("roles")) statements.push(env.DB.prepare("DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE agency_id=?)").bind(agencyId));
+  for (const table of agencyDeleteTables) if (tableNameOk(table) && existing.has(table)) statements.push(env.DB.prepare(`DELETE FROM ${table} WHERE agency_id=?`).bind(agencyId));
+  statements.push(env.DB.prepare("DELETE FROM agencies WHERE id=?").bind(agencyId));
+  await env.DB.batch(statements);
+  const remainingAgency = await env.DB.prepare("SELECT id FROM agencies WHERE id=?").bind(agencyId).first();
+  if (remainingAgency) throw new Error("Agency delete verification failed.");
+  return { tablesCleared: statements.length };
+}
+
 async function platformSettingsRow() {
   await ensurePlatformIdentity();
   return env.DB.prepare(`SELECT platform_name AS platformName,short_name AS shortName,parent_brand AS parentBrand,tagline,primary_color AS primaryColor,accent_color AS accentColor,
@@ -290,28 +335,10 @@ export async function DELETE(request: Request) {
     const agency = await env.DB.prepare("SELECT id,name,slug,status FROM agencies WHERE id=?").bind(agencyId).first<{ id: string; name: string; slug: string; status: string }>();
     if (!agency) return Response.json({ error: "Agency was not found." }, { status: 404 });
     if (confirmSlug !== agency.slug) return Response.json({ error: "Type or pass the agency slug before deleting." }, { status: 400 });
-    const counts = await env.DB.prepare(`SELECT
-      (SELECT COUNT(*) FROM properties WHERE agency_id=?) properties,
-      (SELECT COUNT(*) FROM enquiries WHERE agency_id=?) enquiries,
-      (SELECT COUNT(*) FROM viewings WHERE agency_id=?) viewings,
-      (SELECT COUNT(*) FROM contacts WHERE agency_id=?) contacts,
-      (SELECT COUNT(*) FROM media_assets WHERE agency_id=?) media,
-      (SELECT COUNT(*) FROM billing_invoices WHERE agency_id=?) invoices`).bind(agencyId, agencyId, agencyId, agencyId, agencyId, agencyId).first<any>();
-    const hasRecords = Object.values(counts || {}).some(value => Number(value) > 0);
-    if (hasRecords) {
-      await env.DB.prepare("UPDATE agencies SET status='archived',archived_at=CURRENT_TIMESTAMP WHERE id=?").bind(agencyId).run();
-      await writePlatformAudit(access.context, "agency.archived_for_retention", "agency", agencyId, { counts });
-      return Response.json({ deleted: false, archived: true, message: "Agency archived for evidence retention and removed from the command list." });
-    }
-    await env.DB.batch([
-      env.DB.prepare("DELETE FROM billing_events WHERE agency_id=?").bind(agencyId),
-      env.DB.prepare("DELETE FROM agency_subscriptions WHERE agency_id=?").bind(agencyId),
-      env.DB.prepare("DELETE FROM agency_settings WHERE agency_id=?").bind(agencyId),
-      env.DB.prepare("DELETE FROM agency_memberships WHERE agency_id=?").bind(agencyId),
-      env.DB.prepare("DELETE FROM agencies WHERE id=?").bind(agencyId),
-    ]);
-    await writePlatformAudit(access.context, "agency.deleted", "agency", agencyId, { name: agency.name, slug: agency.slug });
-    return Response.json({ deleted: true });
+    const storage = await deleteTenantObjects(agencyId);
+    const deletion = await hardDeleteAgency(agencyId);
+    await writePlatformAudit(access.context, "agency.hard_deleted", "agency", agencyId, { name: agency.name, slug: agency.slug, ...storage, ...deletion });
+    return Response.json({ deleted: true, message: "Agency and all tenant-owned records were permanently deleted.", ...storage, ...deletion });
   } catch (error) {
     return failure(error);
   }

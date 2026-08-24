@@ -77,10 +77,10 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
     try {
       const response = await fetch("/api/platform", { method, cache: "no-store", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), result = await response.json();
       if (!response.ok) throw new Error(result.error || "Operation failed.");
-      if (isAgencyDelete && (result.deleted || result.archived)) removeAgencyFromList();
-      setNotice(isAgencyDelete && (result.deleted || result.archived) ? result.message || "Agency removed from the command list and recorded in the platform audit trail." : "Saved and recorded in the platform audit trail.");
+      if (isAgencyDelete && result.deleted) removeAgencyFromList();
+      setNotice(isAgencyDelete && result.deleted ? result.message || "Agency permanently deleted and recorded in the platform audit trail." : "Saved and recorded in the platform audit trail.");
       if (result.settings) setData(current => ({ ...current, settings: normaliseSettings(result.settings), platform: { ...current.platform, ...normaliseSettings(result.settings) } }));
-      if (isAgencyDelete && (result.deleted || result.archived)) {
+      if (isAgencyDelete && result.deleted) {
         await load().catch(() => {});
         removeAgencyFromList();
       } else await load();

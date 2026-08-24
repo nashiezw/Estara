@@ -25,7 +25,8 @@ test("tenant lifecycle has schema, API, enforcement and admin controls", async (
   assert.match(route, /extend_trial/);
   assert.match(route, /update_agency_status/);
   assert.match(route, /export async function DELETE/);
-  assert.match(route, /agency\.archived_for_retention/);
+  assert.match(route, /hardDeleteAgency/);
+  assert.match(route, /agency\.hard_deleted/);
   assert.match(route, /subscription\.plan_changed/);
   assert.match(client, /Tenant command list/);
   assert.match(client, /platform-tenant-filters/);

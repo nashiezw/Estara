@@ -4,7 +4,7 @@ import test from"node:test";
 
 const read=file=>readFile(new URL(file,import.meta.url),"utf8");
 
-test("platform agency command page is card-based and delete hides archived tenants",async()=>{
+test("platform agency command page is card-based and delete hard-deletes tenants",async()=>{
  const[client,route,css]=await Promise.all([read("../app/admin/platform-admin-client.tsx"),read("../app/api/platform/route.ts"),read("../app/admin/platform-admin.css")]);
  assert.match(client,/platform-directory-hero/);
  assert.match(client,/platform-directory-toolbar/);
@@ -17,9 +17,12 @@ test("platform agency command page is card-based and delete hides archived tenan
  assert.match(client,/isAgencyDelete/);
  assert.match(client,/removeAgencyFromList/);
  assert.match(client,/agencies: current\.agencies\.filter/);
- assert.match(route,/WHERE a\.status<>'archived'/);
- assert.match(route,/agency\.archived_for_retention/);
- assert.match(route,/removed from the command list/);
+ assert.match(route,/deleteTenantObjects/);
+ assert.match(route,/hardDeleteAgency/);
+ assert.match(route,/agency\.hard_deleted/);
+ assert.match(route,/tenants\/\$\{agencyId\}\//);
+ assert.match(route,/SELECT id FROM agencies WHERE id=\?/);
+ assert.match(route,/permanently deleted/);
  assert.match(css,/platform-directory-hero/);
  assert.match(css,/platform-agency-grid/);
  assert.match(css,/platform-agency-card/);
