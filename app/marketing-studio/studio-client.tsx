@@ -27,6 +27,9 @@ const designOptions = [
   { key: "agent-feature", name: "Agent Feature", category: "Agent", palette: "personal", image: realPhoto("photo-1560518883-ce09059eeffa") },
   { key: "valuation-offer", name: "Valuation Offer", category: "Lead gen", palette: "service", image: realPhoto("photo-1560518883-89d2645de960") },
   { key: "price-improvement", name: "Price Improvement", category: "Price drop", palette: "offer", image: realPhoto("photo-1600573472592-401b489a3cdc") },
+  { key: "neighbourhood-guide", name: "Neighbourhood Guide", category: "Area guide", palette: "local", image: realPhoto("photo-1518005020951-eccb494ad742") },
+  { key: "mandate-announcement", name: "Mandate Announcement", category: "Exclusive", palette: "editorial", image: realPhoto("photo-1560184897-ae75f418493e") },
+  { key: "holiday-stay", name: "Holiday Stay", category: "Short stay", palette: "coastal", image: realPhoto("photo-1505693416388-ac5ce068fe85") },
 ];
 const rail = [
   { name: "Templates", icon: "▯" },
