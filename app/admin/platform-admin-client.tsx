@@ -46,13 +46,13 @@ const normaliseSettings = (settings?: any): Settings => ({
   darkIconUrl: settings?.darkIconUrl ?? settings?.dark_icon_url ?? defaultSettings.darkIconUrl,
 });
 const pageCopy: Record<string, { eyebrow: string; title: string; summary: string }> = {
-  overview: { eyebrow: "PLATFORM OPERATIONS", title: "Super admin command centre", summary: "Operate ESTARA across tenants, revenue, identity, support, domains and launch evidence." },
-  agencies: { eyebrow: "TENANT INTELLIGENCE", title: "Agency intelligence", summary: "Monitor tenant workspaces, subscriptions, usage, public activity and commercial risk." },
-  settings: { eyebrow: "GLOBAL CONFIGURATION", title: "Platform settings", summary: "Control the platform identity, support channels, production domain and agency website routing." },
-  plans: { eyebrow: "COMMERCIAL CONTROL", title: "Plans & entitlements", summary: "Version products, limits and entitlement packages before they reach agency workspaces." },
-  billing: { eyebrow: "REVENUE OPERATIONS", title: "Revenue desk", summary: "Issue invoices, record receipts and keep commercial evidence tied to every agency." },
-  team: { eyebrow: "PRIVILEGED ACCESS", title: "Operator access", summary: "Assign support, finance and super admin access with clear operational accountability." },
-  events: { eyebrow: "EVIDENCE LEDGER", title: "Evidence ledger", summary: "Review platform activity and control-plane audit patterns across the estate." },
+  overview: { eyebrow: "PLATFORM OPERATIONS", title: "Super admin command centre", summary: "Operate tenants, revenue, identity and evidence." },
+  agencies: { eyebrow: "TENANT INTELLIGENCE", title: "Agency intelligence", summary: "Monitor workspaces, subscriptions, usage and risk." },
+  settings: { eyebrow: "GLOBAL CONFIGURATION", title: "Platform settings", summary: "Control identity, support, domain and agency routing." },
+  plans: { eyebrow: "COMMERCIAL CONTROL", title: "Plans & entitlements", summary: "Version products, limits and agency access." },
+  billing: { eyebrow: "REVENUE OPERATIONS", title: "Revenue desk", summary: "Issue invoices and record receipts." },
+  team: { eyebrow: "PRIVILEGED ACCESS", title: "Operator access", summary: "Assign platform roles with accountability." },
+  events: { eyebrow: "EVIDENCE LEDGER", title: "Evidence ledger", summary: "Review platform activity and audits." },
 };
 
 export default function PlatformAdminClient({ displayName }: { displayName: string }) {
@@ -85,7 +85,7 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
     }
   };
   if (loading) return <main className="platform-admin-loading">
-    <div>{platform.iconUrl ? <img src={platform.iconUrl} alt="" /> : <i>{platform.shortName.slice(0, 1)}</i>}<span>CONTROL PLANE</span><h1>Opening control plane</h1><p>Preparing tenant, revenue and evidence intelligence.</p></div>
+    <div>{platform.iconUrl ? <img src={platform.iconUrl} alt="" /> : <i>{platform.shortName.slice(0, 1)}</i>}<span>CONTROL PLANE</span><h1>Opening control plane</h1><p>Preparing platform data.</p></div>
   </main>;
   if (error) return <main className="platform-denied"><span>CONTROL PLANE</span><h1>Platform access is restricted.</h1><p>{error}</p><p>Use the normal ESTARA login first. The first signed-in user becomes Super Admin only when no platform operator exists yet. After that, an existing Super Admin must add your user ID under Operator access.</p><a href="/login">Log in</a><a href="/workspace">Return to workspace</a></main>;
   const activePage = pageCopy[tab] || pageCopy.overview;
@@ -208,25 +208,24 @@ function Agencies({ rows, plans, busy, send }: any) {
   </>;
 }
 function AgencyRow({ agency, plans, busy, send }: any) {
-  const [plan, setPlan] = useState(agency.planVersionId || plans[0]?.id || ""), [open, setOpen] = useState(false), [confirm, setConfirm] = useState<any>(null), [choice, setChoice] = useState("activate");
+  const [plan, setPlan] = useState(agency.planVersionId || plans[0]?.id || ""), [open, setOpen] = useState(false), [confirm, setConfirm] = useState<any>(null);
   const act = (label: string, fn: () => void, danger = false) => danger ? setConfirm({ label, fn }) : fn();
   const transition = (state: string) => send("PATCH", { action: "transition_subscription", id: agency.subscriptionId, state, reason: "Platform operator update" });
   const setStatus = (status: string) => send("PATCH", { action: "update_agency_status", agencyId: agency.id, status, reason: "Platform operator update" });
   const statusInfo = agency.state === "trialing" ? `Ends ${dateShort(agency.trialEndsAt)}` : agency.state === "grace" ? `Grace ${dateShort(agency.graceEndsAt)}` : agency.state === "active" ? `Renews ${dateShort(agency.currentPeriodEndsAt)}` : agency.statusReason || "";
-  const actions: Record<string, [string, boolean, () => void]> = {
-    activate: ["Activate subscription", !agency.subscriptionId || agency.state === "active", () => transition("active")],
-    extend: ["Extend trial 7d", !agency.subscriptionId || !["trialing","expired"].includes(agency.state), () => send("POST", { action: "extend_trial", id: agency.subscriptionId, days: 7, reason: "Admin extension" })],
-    grace: ["Start grace", !agency.subscriptionId || agency.state === "grace", () => transition("grace")],
-    due: ["Mark past due", !agency.subscriptionId || agency.state === "past_due", () => transition("past_due")],
-    subSuspend: ["Suspend subscription", !agency.subscriptionId || agency.state === "suspended", () => act("suspend this subscription", () => transition("suspended"), true)],
-    subCancel: ["Cancel subscription", !agency.subscriptionId || agency.state === "canceled", () => act("cancel this subscription", () => transition("canceled"), true)],
-    restore: ["Restore agency", (agency.agencyStatus || "active") === "active", () => setStatus("active")],
-    tenantSuspend: ["Suspend agency", agency.agencyStatus === "suspended", () => act("suspend this agency", () => setStatus("suspended"), true)],
-    archive: ["Archive agency", agency.agencyStatus === "archived", () => act("archive this agency", () => setStatus("archived"), true)],
-    delete: ["Delete", false, () => act(`delete ${agency.slug}`, () => send("DELETE", { agencyId: agency.id, confirmSlug: agency.slug }), true)],
-  };
-  const selected = actions[choice] || actions.activate;
-  return <div className="platform-agency-row"><span><strong>{agency.name}</strong><small>{agency.slug} · created {dateShort(agency.createdAt)}</small></span><span><strong>{agency.properties} properties</strong><small>{agency.users} users · {agency.enquiries} enquiries · {agency.viewings || 0} viewings</small></span><span><select aria-label={`Plan for ${agency.name}`} value={plan} onChange={event => setPlan(event.target.value)}>{plans.map((item: any) => <option value={item.id} key={item.id}>{item.name} v{item.version}</option>)}</select><button disabled={busy || !plan} onClick={() => send("POST", { action: "assign_subscription", agencyId: agency.id, planVersionId: plan, state: agency.state === "active" ? "active" : "trialing" })}>{busy ? "Applying..." : agency.subscriptionId ? "Apply plan" : "Start trial"}</button></span><span className="platform-badge-stack"><em className={`state-${agency.state || "unassigned"}`}>{subLabel(agency.state)}</em><em className={`state-${agency.agencyStatus || "active"}`}>{tenantLabel(agency.agencyStatus || "active")}</em><small>{statusInfo}</small></span><span className="platform-row-actions"><button onClick={() => setOpen(value => !value)}>{open ? "Close" : "Manage"}</button>{open && <div className="platform-manage-panel"><a href={`/site/${agency.slug}`} target="_blank">View site</a><select aria-label={`Action for ${agency.name}`} value={choice} onChange={event => setChoice(event.target.value)}>{Object.entries(actions).map(([key, action]) => <option key={key} value={key}>{action[0]}</option>)}</select><button disabled={busy || selected[1]} onClick={selected[2]}>Run action</button>{confirm && <span className="platform-confirm"><small>Confirm {confirm.label}</small><button disabled={busy} onClick={() => { confirm.fn(); setConfirm(null); }}>Confirm</button><button onClick={() => setConfirm(null)}>Cancel</button></span>}</div>}</span></div>;
+  const actions = [
+    ["Activate subscription", !agency.subscriptionId || agency.state === "active", () => transition("active")],
+    ["Extend trial 7d", !agency.subscriptionId || !["trialing","expired"].includes(agency.state), () => send("POST", { action: "extend_trial", id: agency.subscriptionId, days: 7, reason: "Admin extension" })],
+    ["Start grace", !agency.subscriptionId || agency.state === "grace", () => transition("grace")],
+    ["Mark past due", !agency.subscriptionId || agency.state === "past_due", () => transition("past_due")],
+    ["Suspend subscription", !agency.subscriptionId || agency.state === "suspended", () => act("suspend this subscription", () => transition("suspended"), true)],
+    ["Cancel subscription", !agency.subscriptionId || agency.state === "canceled", () => act("cancel this subscription", () => transition("canceled"), true)],
+    ["Restore agency", (agency.agencyStatus || "active") === "active", () => setStatus("active")],
+    ["Suspend agency", agency.agencyStatus === "suspended", () => act("suspend this agency", () => setStatus("suspended"), true)],
+    ["Archive agency", agency.agencyStatus === "archived", () => act("archive this agency", () => setStatus("archived"), true)],
+    ["Delete", false, () => act(`delete ${agency.slug}`, () => send("DELETE", { agencyId: agency.id, confirmSlug: agency.slug }), true)],
+  ] as const;
+  return <div className="platform-agency-row"><span><strong>{agency.name}</strong><small>{agency.slug} · created {dateShort(agency.createdAt)}</small></span><span><strong>{agency.properties} properties</strong><small>{agency.users} users · {agency.enquiries} enquiries · {agency.viewings || 0} viewings</small></span><span><select aria-label={`Plan for ${agency.name}`} value={plan} onChange={event => setPlan(event.target.value)}>{plans.map((item: any) => <option value={item.id} key={item.id}>{item.name} v{item.version}</option>)}</select><button disabled={busy || !plan} onClick={() => send("POST", { action: "assign_subscription", agencyId: agency.id, planVersionId: plan, state: agency.state === "active" ? "active" : "trialing" })}>{busy ? "Applying..." : agency.subscriptionId ? "Apply plan" : "Start trial"}</button></span><span className="platform-badge-stack"><em className={`state-${agency.state || "unassigned"}`}>{subLabel(agency.state)}</em><em className={`state-${agency.agencyStatus || "active"}`}>{tenantLabel(agency.agencyStatus || "active")}</em><small>{statusInfo}</small></span><span className="platform-row-actions"><button onClick={() => setOpen(value => !value)}>{open ? "Close" : "Manage"}</button>{open && <div className="platform-manage-panel"><a href={`/site/${agency.slug}`} target="_blank">View site</a>{actions.map(([label, disabled, fn]) => <button key={label} disabled={busy || disabled} onClick={fn}>{label}</button>)}{confirm && <span className="platform-confirm"><small>Confirm {confirm.label}</small><button disabled={busy} onClick={() => { confirm.fn(); setConfirm(null); }}>Confirm</button><button onClick={() => setConfirm(null)}>Cancel</button></span>}</div>}</span></div>;
 }
 
 function PlatformSettings({ settings, busy, send, onAssetUploaded }: { settings?: Settings; busy: boolean; send: (method: string, body: any) => void; onAssetUploaded: (field: keyof Settings, url: string) => void }) {
