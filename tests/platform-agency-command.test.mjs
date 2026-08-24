@@ -10,6 +10,8 @@ test("platform agency command page is card-based and delete hides archived tenan
  assert.match(client,/platform-directory-toolbar/);
  assert.match(client,/platform-agency-grid/);
  assert.match(client,/platform-agency-card/);
+ assert.match(client,/platform-agency-command-strip/);
+ assert.match(client,/View public site/);
  assert.match(client,/Manage tenant/);
  assert.match(client,/Confirm/);
  assert.match(client,/isAgencyDelete/);
@@ -21,5 +23,6 @@ test("platform agency command page is card-based and delete hides archived tenan
  assert.match(css,/platform-directory-hero/);
  assert.match(css,/platform-agency-grid/);
  assert.match(css,/platform-agency-card/);
+ assert.match(css,/platform-agency-command-strip/);
  assert.match(css,/platform-manage-panel/);
 });
