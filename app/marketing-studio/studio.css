@@ -159,3 +159,15 @@
 .studio-ai-row button{height:40px!important;min-height:40px!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0 12px!important;line-height:1!important}
 .studio-ai-row button:first-child{border:1px solid var(--studio-border,#dfe7e1)!important;background:#fff!important;color:var(--studio-brand,#153b34)!important}
 .studio-ai-row button:last-child{border:0!important;background:var(--studio-brand,#153b34)!important;color:#fff!important}
+.studio-upload-tile{position:relative!important;width:100%!important;break-inside:avoid!important;margin:0 0 8px!important}
+.studio-upload-thumb{width:100%!important;display:block!important;border:0!important;border-radius:8px!important;overflow:hidden!important;padding:0!important;margin:0!important;background:#f3f4f6!important}
+.studio-upload-delete{position:absolute!important;right:6px!important;top:6px!important;z-index:2!important;width:auto!important;min-width:0!important;height:28px!important;min-height:28px!important;border:1px solid rgba(255,255,255,.72)!important;border-radius:999px!important;background:rgba(9,40,33,.9)!important;color:#fff!important;padding:0 9px!important;font-size:10px!important;line-height:1!important;box-shadow:0 8px 18px rgba(0,0,0,.18)!important}
+.studio-upload-delete:hover{background:#a33b2f!important;color:#fff!important}
+.studio-masonry .studio-upload-tile img{width:100%!important;height:auto!important;min-height:92px!important;display:block!important;object-fit:cover!important}
+@media(max-width:760px){
+  .studio-mobile-export-menu summary{background:#fff!important;color:var(--studio-brand)!important;padding:0 10px!important;text-align:center!important;line-height:1.05!important}
+  .studio-mobile-export-menu button:nth-child(2){background:var(--studio-brand)!important;color:#fff!important}
+  .studio-mobile-export-menu button:last-child{background:#fff!important;color:var(--studio-brand)!important}
+  .studio-mobile-tools-toggle{background:#fff!important;color:var(--studio-brand)!important;border-color:#dbe2dd!important}
+  .studio-zoom-controls select{width:60px!important}
+}
