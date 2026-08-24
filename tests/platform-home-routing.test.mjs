@@ -44,6 +44,7 @@ test("homepage mobile navigation uses a side drawer and preserves hero hierarchy
   assert.match(styles, /transform:translateX\(102%\)/);
   assert.match(styles, /transition:transform 300ms ease-out/);
   assert.match(styles, /clamp\(32px,8vw,40px\)/);
+  assert.match(styles, /\.home-actions\{display:grid!important;grid-template-columns:1fr!important;width:100%;max-width:none\}/);
   assert.match(styles, /\.home-actions a:nth-child\(n\+3\)\{display:none!important\}/);
 });
 
