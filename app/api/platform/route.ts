@@ -43,13 +43,21 @@ const agencyDeleteTables = [
   "marketing_copy_versions","notification_deliveries","notifications","automation_executions","automation_rule_versions","domain_events",
   "property_status_events","property_activation_channels","property_verification_items","mandates","property_feature_definitions","billing_events",
   "billing_invoices","agency_subscriptions","development_units","developments","enterprise_branding","seller_reports","seller_access_grants",
-  "media_assets","public_events","public_intake_attempts","viewings","contact_activities","agent_profiles","team_invitations","audit_logs",
+  "media_assets","public_events","public_intake_attempts","viewings","contact_activities","agent_profiles","team_invitations","roles","audit_logs",
   "custom_domains","agency_settings","next_actions","enquiries","properties","contacts","branch_memberships","branches","agency_memberships",
 ] as const;
 const tableNameOk = (name: string) => /^[a-z_]+$/.test(name);
-async function existingAgencyTables() {
+async function agencyTablesInDeleteOrder() {
   const rows = await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table'").all<{ name: string }>();
-  return new Set(rows.results.map(row => row.name));
+  const existing = new Set(rows.results.map(row => row.name)), tables = new Set<string>();
+  for (const row of rows.results) {
+    if (!tableNameOk(row.name)) continue;
+    const columns = await env.DB.prepare(`PRAGMA table_info(${row.name})`).all<{ name: string }>();
+    if (columns.results.some(column => column.name === "agency_id")) tables.add(row.name);
+  }
+  const ordered = agencyDeleteTables.filter(table => existing.has(table) && tables.has(table));
+  const extra = [...tables].filter(table => !agencyDeleteTables.includes(table as any)).sort();
+  return { existing, ordered: [...extra, ...ordered] };
 }
 async function deleteTenantObjects(agencyId: string) {
   const bucket = (env as any).MEDIA;
@@ -67,9 +75,9 @@ async function deleteTenantObjects(agencyId: string) {
   return { objectsDeleted, storage: "cleared" };
 }
 async function hardDeleteAgency(agencyId: string) {
-  const existing = await existingAgencyTables(), statements = [];
+  const { existing, ordered } = await agencyTablesInDeleteOrder(), statements = [];
   if (existing.has("role_permissions") && existing.has("roles")) statements.push(env.DB.prepare("DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE agency_id=?)").bind(agencyId));
-  for (const table of agencyDeleteTables) if (tableNameOk(table) && existing.has(table)) statements.push(env.DB.prepare(`DELETE FROM ${table} WHERE agency_id=?`).bind(agencyId));
+  for (const table of ordered) if (tableNameOk(table)) statements.push(env.DB.prepare(`DELETE FROM ${table} WHERE agency_id=?`).bind(agencyId));
   statements.push(env.DB.prepare("DELETE FROM agencies WHERE id=?").bind(agencyId));
   await env.DB.batch(statements);
   const remainingAgency = await env.DB.prepare("SELECT id FROM agencies WHERE id=?").bind(agencyId).first();
@@ -340,6 +348,7 @@ export async function DELETE(request: Request) {
     await writePlatformAudit(access.context, "agency.hard_deleted", "agency", agencyId, { name: agency.name, slug: agency.slug, ...storage, ...deletion });
     return Response.json({ deleted: true, message: "Agency and all tenant-owned records were permanently deleted.", ...storage, ...deletion });
   } catch (error) {
-    return failure(error);
+    if (error instanceof PlatformAuthorizationError) return Response.json({ error: error.message }, { status: 403 });
+    return Response.json({ error: error instanceof Error ? `Agency delete failed: ${error.message}` : "Agency delete failed." }, { status: 500 });
   }
 }

@@ -17,8 +17,11 @@ test("platform agency command page is card-based and delete hard-deletes tenants
  assert.match(client,/isAgencyDelete/);
  assert.match(client,/removeAgencyFromList/);
  assert.match(client,/agencies: current\.agencies\.filter/);
+ assert.match(client,/platform-confirm[\s\S]+actions\.map/);
  assert.match(route,/deleteTenantObjects/);
  assert.match(route,/hardDeleteAgency/);
+ assert.match(route,/agencyTablesInDeleteOrder/);
+ assert.match(route,/"roles"/);
  assert.match(route,/agency\.hard_deleted/);
  assert.match(route,/tenants\/\$\{agencyId\}\//);
  assert.match(route,/SELECT id FROM agencies WHERE id=\?/);
