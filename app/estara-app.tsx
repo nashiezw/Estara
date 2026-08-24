@@ -2,6 +2,7 @@
 import {FormEvent,useEffect,useState} from "react";
 import SellerOperations from "./seller-operations";
 import UserMenu from "./components/UserMenu";
+import MarketingLaunch from "./workspace-marketing-launch";
 import { WEBSITE_TEMPLATES } from "../db/website-templates";
 type View="today"|"properties"|"enquiries"|"marketing"|"seller"|"settings"|"team"|"actions"|"viewings";
 type MediaAsset={id:string;propertyId?:string|null;kind:string;sortOrder?:number;url:string;thumbnailUrl?:string};
@@ -44,7 +45,7 @@ export default function EstaraApp(){
  {view==="today"&&<Today properties={properties} leads={leads} actions={nextActions} viewings={viewings} go={setView} pick={(p:Property)=>{setSelected(p);setView("properties")}} add={()=>setCapture(true)} completeAction={completeAction}/>}
  {view==="properties"&&<><Properties rows={properties} selected={selected} pick={setSelected} add={()=>setCapture(true)} activate={activate} notify={notify} reload={loadWorkspace} lowData={lowData}/><ModuleLinks links={[...(typeof selected.id==="string"?[{href:`/properties/${selected.id}`,label:"Open full property record"}]:[]),{href:"/developments",label:"Development inventory"}]}/></>}
  {view==="enquiries"&&<Enquiries rows={leads} contact={contact} transition={transition} record={()=>setEnquiryOpen(true)}/>}
- {view==="marketing"&&<><Marketing property={selected} notify={notify} brand={brand}/><ModuleLinks links={[{href:"/marketing-studio",label:"Open production studio"}]}/></>}
+ {view==="marketing"&&<><MarketingLaunch property={selected} notify={notify} brand={brand}/><ModuleLinks links={[{href:"/marketing-studio",label:"Open production studio"}]}/></>}
  {view==="seller"&&<SellerOperations properties={properties} notify={notify}/>}
  {view==="settings"&&<><Settings brand={brand} setBrand={setBrand} notify={notify}/><ModuleLinks links={[{href:"/domains",label:"Custom domains & DNS verification"},{href:"/subscription",label:"Plan, limits, invoices and receipts"},{href:"/developer",label:"Developer API & credentials"},{href:"/integrations",label:"Governed integrations"},{href:"/ai-studio",label:"Governed AI Studio"},{href:"/ask-estara",label:`Ask ${brand.platformName} securely`}]}/></>}
  {view==="team"&&<><Team notify={notify} brand={brand}/><ModuleLinks links={[{href:"/roles",label:"Create custom roles"},{href:"/enterprise",label:"Enterprise identity & permissions"}]}/></>}
