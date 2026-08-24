@@ -170,4 +170,13 @@
   .studio-mobile-export-menu button:last-child{background:#fff!important;color:var(--studio-brand)!important}
   .studio-mobile-tools-toggle{background:#fff!important;color:var(--studio-brand)!important;border-color:#dbe2dd!important}
   .studio-zoom-controls select{width:60px!important}
+  .studio-mobile-export-menu{display:block!important;position:relative!important;grid-column:3/4!important;grid-row:1!important}
+  .studio-mobile-export-trigger{display:grid!important;place-items:center!important;width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:9px!important;background:#fff!important;color:var(--studio-brand)!important;padding:0 10px!important;font-size:11px!important;font-weight:950!important;line-height:1.05!important;text-align:center!important}
+  .studio-mobile-export-panel{position:fixed!important;left:12px!important;right:12px!important;top:154px!important;z-index:120!important;display:grid!important;gap:8px!important;padding:10px!important;border:1px solid #dbe4de!important;border-radius:14px!important;background:#fff!important;box-shadow:0 18px 46px rgba(9,40,33,.24)!important}
+  .studio-mobile-export-panel button{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;width:100%!important;height:auto!important;min-height:52px!important;border:1px solid #e1e8e3!important;border-radius:12px!important;background:#fff!important;color:var(--studio-brand)!important;padding:9px 12px!important;text-align:left!important}
+  .studio-mobile-export-panel button:after{content:"›";font-size:20px;font-weight:700;color:#94a39d}
+  .studio-mobile-export-panel button strong{font-size:13px!important;line-height:1.1!important}
+  .studio-mobile-export-panel button span{display:block!important;margin-top:3px!important;font-size:10px!important;font-weight:800!important;color:#66756f!important}
+  .studio-mobile-export-panel button:nth-child(2){background:var(--studio-brand)!important;color:#fff!important;border-color:var(--studio-brand)!important}
+  .studio-mobile-export-panel button:nth-child(2) span,.studio-mobile-export-panel button:nth-child(2):after{color:rgba(255,255,255,.76)!important}
 }
