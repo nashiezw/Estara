@@ -82,21 +82,45 @@ export default function MarketingLaunch({ property, notify, brand }: MarketingLa
     <div className="page">
       <section className="money">
         <div className="section-head">
-          <div>
+          <div style={{ minWidth: 0 }}>
             <span className="eyebrow">MARKET FASTER</span>
             <h1>Marketing studio</h1>
-            <p>Launch branded, channel-ready assets from saved property facts, then finish precision edits in the full production studio.</p>
+            <p style={{ maxWidth: 760 }}>Launch branded, channel-ready assets from saved property facts, then finish precision edits in the full production studio.</p>
           </div>
           <span className="live"><i />{current.sizeLabel}</span>
         </div>
         <div className="actions">
           <a className="primary" href="/marketing-studio">Open full editor</a>
-          <button className="outline" onClick={download}>{format === "Social caption" ? "Copy current" : "Download current"}</button>
-          <button className="outline" onClick={share}>Share</button>
+          <button className="outline" style={{ color: "var(--ink)" }} onClick={download}>{format === "Social caption" ? "Copy current" : "Download current"}</button>
+          <button className="outline" style={{ color: "var(--ink)" }} onClick={share}>Share</button>
         </div>
       </section>
 
       <div className="market">
+        <aside>
+          <section className="panel formats">
+            <div className="panel-head compact">
+              <div>
+                <h2>Choose output</h2>
+                <p>Each option inherits the current brand kit.</p>
+              </div>
+            </div>
+            {formatSpecs.map((spec) => <button className={format === spec.name ? "active" : ""} onClick={() => setFormat(spec.name)} key={spec.name}><i>✦</i>{spec.name}<b>{spec.sizeLabel}</b></button>)}
+          </section>
+
+          <section className="panel attention">
+            <div className="panel-head compact">
+              <div>
+                <h2>Ready in this workspace</h2>
+                <p>Everything starts from the selected property.</p>
+              </div>
+            </div>
+            <button><i className="blue">1</i><span><strong>Property facts</strong><p>{safeProperty.location}</p></span></button>
+            <button><i className="amber">2</i><span><strong>Brand system</strong><p>{brand.name}</p></span></button>
+            <button><i className="blue">3</i><span><strong>Studio editor</strong><p>Templates, uploads, layers, export</p></span></button>
+          </section>
+        </aside>
+
         <section className="creative">
           {format === "Social caption" ? (
             <div className="caption-preview">
@@ -127,30 +151,6 @@ export default function MarketingLaunch({ property, notify, brand }: MarketingLa
             <button className="primary" onClick={share}>Share</button>
           </footer>
         </section>
-
-        <aside>
-          <section className="panel formats">
-            <div className="panel-head compact">
-              <div>
-                <h2>Choose output</h2>
-                <p>Each option inherits the current brand kit.</p>
-              </div>
-            </div>
-            {formatSpecs.map((spec) => <button className={format === spec.name ? "active" : ""} onClick={() => setFormat(spec.name)} key={spec.name}><i>✦</i>{spec.name}<b>{spec.sizeLabel}</b></button>)}
-          </section>
-
-          <section className="panel attention">
-            <div className="panel-head compact">
-              <div>
-                <h2>Ready in this workspace</h2>
-                <p>Everything starts from the selected property.</p>
-              </div>
-            </div>
-            <button><i className="blue">1</i><span><strong>Property facts</strong><p>{safeProperty.location}</p></span></button>
-            <button><i className="amber">2</i><span><strong>Brand system</strong><p>{brand.name}</p></span></button>
-            <button><i className="blue">3</i><span><strong>Studio editor</strong><p>Templates, uploads, layers, export</p></span></button>
-          </section>
-        </aside>
       </div>
     </div>
   );
