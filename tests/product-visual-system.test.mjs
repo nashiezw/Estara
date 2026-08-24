@@ -30,3 +30,16 @@ test("homepage, auth, guided onboarding and workspace share the product visual s
   assert.match(workspace, /className=\{`shell typography-\$\{brand\.typography\}/);
   assert.match(readiness, /visual system foundation now unifies homepage, auth, guided onboarding and workspace shell/);
 });
+
+test("shared action buttons keep readable padding and copy spacing", async () => {
+  const [css, managementCss] = await Promise.all([
+    read("../app/globals.css"),
+    read("../app/management/management.css"),
+  ]);
+
+  assert.match(css, /padding-block:max\(10px,\s*\.72em\)/);
+  assert.match(css, /overflow-wrap:anywhere/);
+  assert.match(css, />:where\(p,small,span,div\)\+:where\(button,a\.pm-primary,a\.pm-secondary/);
+  assert.match(managementCss, /\.pm-panel>p\{margin:0 0 16px/);
+  assert.match(managementCss, /\.pm-panel>\.pm-primary,\.pm-panel>\.pm-secondary\{width:max-content/);
+});
