@@ -85,7 +85,7 @@ export async function GET() {
         (SELECT COUNT(*) FROM enquiries q WHERE q.agency_id=a.id) AS enquiries,
         (SELECT COUNT(*) FROM viewings v WHERE v.agency_id=a.id) AS viewings,
         (SELECT COUNT(*) FROM public_events e WHERE e.agency_id=a.id AND e.created_at>datetime('now','-24 hours')) AS publicEvents24h
-        FROM agencies a LEFT JOIN agency_subscriptions s ON s.agency_id=a.id LEFT JOIN plan_versions p ON p.id=s.plan_version_id LEFT JOIN plan_versions prev ON prev.id=s.previous_plan_version_id ORDER BY a.created_at DESC`).all(),
+        FROM agencies a LEFT JOIN agency_subscriptions s ON s.agency_id=a.id LEFT JOIN plan_versions p ON p.id=s.plan_version_id LEFT JOIN plan_versions prev ON prev.id=s.previous_plan_version_id WHERE a.status<>'archived' ORDER BY a.created_at DESC`).all(),
       env.DB.prepare("SELECT i.id,i.agency_id AS agencyId,a.name AS agency,i.subscription_id AS subscriptionId,i.invoice_number AS invoiceNumber,i.status,i.currency,i.subtotal_minor AS subtotalMinor,i.discount_minor AS discountMinor,i.total_minor AS totalMinor,i.due_at AS dueAt,i.issued_at AS issuedAt,i.paid_at AS paidAt,i.payment_method AS paymentMethod,i.provider_reference AS providerReference FROM billing_invoices i JOIN agencies a ON a.id=i.agency_id ORDER BY i.issued_at DESC LIMIT 100").all(),
       env.DB.prepare("SELECT code,kind,amount,active,valid_until AS validUntil,max_redemptions AS maxRedemptions,redemptions FROM billing_coupons ORDER BY created_at DESC").all(),
       env.DB.prepare("SELECT b.id,b.agency_id AS agencyId,a.name AS agency,b.event_type AS eventType,b.detail,b.created_at AS createdAt FROM billing_events b JOIN agencies a ON a.id=b.agency_id ORDER BY b.created_at DESC LIMIT 100").all(),
