@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { PlatformBrand } from "../components/PlatformToolHeader";
 
-type Credential = { id: string; name: string; keyPrefix: string; scopes: string[]; expiresAt?: string | null; lastUsedAt?: string | null; revokedAt?: string | null; createdAt: string };
+type Credential = { id: string; name: string; keyPrefix: string; scopes: string[]; ipAllowlist?: string[]; rotationDueAt?: string | null; expiresAt?: string | null; lastUsedAt?: string | null; revokedAt?: string | null; createdAt: string };
 type Hook = { id: string; name: string; url: string; events: string[]; status: string; createdAt: string };
 type Delivery = { id: string; subscriptionId: string; eventType: string; status: string; responseStatus?: number | null; attempts: number; nextAttemptAt?: string | null; createdAt: string; deliveredAt?: string | null };
 
@@ -47,6 +47,7 @@ export default function DeveloperClient({ platform }: { platform: PlatformBrand 
     try {
       const r = await fetch(path, init), b = await r.json();
       if (!r.ok) throw new Error(b.error || ok);
+      if (b.signingSecret) setSecret(b.signingSecret);
       setMessage(ok);
       await load();
     } catch (e) {
@@ -59,9 +60,9 @@ export default function DeveloperClient({ platform }: { platform: PlatformBrand 
   const createCredential = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true); setError(""); setMessage(""); setToken("");
-    const f = new FormData(e.currentTarget), scopes = f.getAll("scopes");
+    const f = new FormData(e.currentTarget), scopes = f.getAll("scopes"), ipAllowlist = String(f.get("ipAllowlist") || "").split(/[\s,]+/).filter(Boolean);
     try {
-      const r = await fetch("/api/api-credentials", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: f.get("name"), expiresAt: f.get("expiresAt") || null, scopes }) });
+      const r = await fetch("/api/api-credentials", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: f.get("name"), expiresAt: f.get("expiresAt") || null, scopes, ipAllowlist }) });
       const b = await r.json();
       if (!r.ok) throw new Error(b.error || "Credential could not be created.");
       setToken(b.token);
@@ -113,7 +114,7 @@ export default function DeveloperClient({ platform }: { platform: PlatformBrand 
     <section className="pm-grid">
       <article className="pm-panel">
         <p className="pm-kicker">NEW CONNECTION</p><h2>Create scoped credential</h2>
-        <form onSubmit={createCredential}><label>Connection name<input name="name" required maxLength={100} placeholder="WordPress website" /></label><label>Expiry<input name="expiresAt" type="date" /></label><fieldset className="dev-scopes"><legend>Permitted operations</legend>{data.allowedScopes.map((scope: string) => <label key={scope}><input name="scopes" type="checkbox" value={scope} /><span>{scope}</span></label>)}</fieldset><button className="pm-primary" disabled={busy}>{busy ? "Saving..." : "Create credential"}</button></form>
+        <form onSubmit={createCredential}><label>Connection name<input name="name" required maxLength={100} placeholder="WordPress website" /></label><label>Allowed IPs<textarea name="ipAllowlist" rows={2} placeholder="Optional. One IP or prefix per line" /></label><label>Expiry<input name="expiresAt" type="date" /></label><fieldset className="dev-scopes"><legend>Permitted operations</legend>{data.allowedScopes.map((scope: string) => <label key={scope}><input name="scopes" type="checkbox" value={scope} /><span>{scope}</span></label>)}</fieldset><button className="pm-primary" disabled={busy}>{busy ? "Saving..." : "Create credential"}</button></form>
       </article>
       <article className="pm-panel">
         <p className="pm-kicker">SIGNED EVENTS</p><h2>Create webhook</h2>
@@ -121,13 +122,13 @@ export default function DeveloperClient({ platform }: { platform: PlatformBrand 
       </article>
       <article className="pm-panel pm-wide">
         <div className="pm-heading"><div><p className="pm-kicker">ACTIVE & HISTORIC</p><h2>Credentials</h2></div><span>{activeCredentials} active</span></div>
-        {data.credentials.length ? data.credentials.map((x: Credential) => <div className="pm-row" key={x.id}><div><strong>{x.name}</strong><small>{x.keyPrefix}**** · {x.scopes.join(", ")}</small><small>{x.lastUsedAt ? `Last used ${new Date(x.lastUsedAt).toLocaleString()}` : "Never used"} · created {new Date(x.createdAt).toLocaleDateString()}</small>{pendingRevoke?.id === x.id && <div className="credential-revoke-review"><strong>Revoke {x.name}?</strong><small>Connected software will immediately lose access.</small><button className="pm-secondary" disabled={busy} onClick={() => mutate(`/api/api-credentials?id=${encodeURIComponent(x.id)}`, { method: "DELETE" }, "Credential revoked.")}>Revoke credential</button><button className="pm-secondary" disabled={busy} onClick={() => setPendingRevoke(null)}>Cancel</button></div>}</div><div>{x.revokedAt ? <b>Revoked</b> : <button className="pm-secondary" disabled={busy} onClick={() => setPendingRevoke(x)}>Review revoke</button>}</div></div>) : <div className="pm-empty"><strong>No credentials yet.</strong><span>Create one for each website, CRM or connector.</span></div>}
+        {data.credentials.length ? data.credentials.map((x: Credential) => <div className="pm-row" key={x.id}><div><strong>{x.name}</strong><small>{x.keyPrefix}**** · {x.scopes.join(", ")}</small><small>{x.ipAllowlist?.length ? `IPs ${x.ipAllowlist.join(", ")}` : "Any IP"} · rotate by {x.rotationDueAt ? new Date(x.rotationDueAt).toLocaleDateString() : "not set"}</small><small>{x.lastUsedAt ? `Last used ${new Date(x.lastUsedAt).toLocaleString()}` : "Never used"} · created {new Date(x.createdAt).toLocaleDateString()}</small>{pendingRevoke?.id === x.id && <div className="credential-revoke-review"><strong>Revoke {x.name}?</strong><small>Connected software will immediately lose access.</small><button className="pm-secondary" disabled={busy} onClick={() => mutate(`/api/api-credentials?id=${encodeURIComponent(x.id)}`, { method: "DELETE" }, "Credential revoked.")}>Revoke credential</button><button className="pm-secondary" disabled={busy} onClick={() => setPendingRevoke(null)}>Cancel</button></div>}</div><div>{x.revokedAt ? <b>Revoked</b> : <button className="pm-secondary" disabled={busy} onClick={() => setPendingRevoke(x)}>Review revoke</button>}</div></div>) : <div className="pm-empty"><strong>No credentials yet.</strong><span>Create one for each website, CRM or connector.</span></div>}
       </article>
       <article className="pm-panel pm-wide">
         <div className="pm-heading"><div><p className="pm-kicker">WEBHOOKS</p><h2>Delivery control</h2></div><button className="pm-secondary" disabled={busy} onClick={() => mutate("/api/webhooks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "retry" }) }, "Due webhook retries processed.")}>Retry due</button></div>
-        {hooks.subscriptions.length ? hooks.subscriptions.map(x => <div className="pm-row" key={x.id}><div><strong>{x.name}</strong><small>{x.url}</small><small>{x.events.join(", ")} · {x.status}</small></div><div className="dev-actions"><button className="pm-secondary" disabled={busy || x.status !== "active"} onClick={() => mutate("/api/webhooks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "test", id: x.id }) }, "Test webhook sent.")}>Send test</button><button className="pm-secondary" disabled={busy || x.status !== "active"} onClick={() => mutate(`/api/webhooks?id=${encodeURIComponent(x.id)}`, { method: "DELETE" }, "Webhook disabled.")}>Disable</button></div></div>) : <div className="pm-empty"><strong>No webhooks yet.</strong><span>Add an endpoint to receive property, enquiry and viewing events.</span></div>}
+        {hooks.subscriptions.length ? hooks.subscriptions.map(x => <div className="pm-row" key={x.id}><div><strong>{x.name}</strong><small>{x.url}</small><small>{x.events.join(", ")} · {x.status}</small></div><div className="dev-actions"><button className="pm-secondary" disabled={busy || x.status !== "active"} onClick={() => mutate("/api/webhooks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "test", id: x.id }) }, "Test webhook sent.")}>Send test</button><button className="pm-secondary" disabled={busy || x.status !== "active"} onClick={() => mutate("/api/webhooks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "rotate_secret", id: x.id }) }, "Webhook secret rotated. Copy the new secret.")}>Rotate secret</button><button className="pm-secondary" disabled={busy || x.status !== "active"} onClick={() => mutate(`/api/webhooks?id=${encodeURIComponent(x.id)}`, { method: "DELETE" }, "Webhook disabled.")}>Disable</button></div></div>) : <div className="pm-empty"><strong>No webhooks yet.</strong><span>Add an endpoint to receive property, enquiry and viewing events.</span></div>}
       </article>
-      <article className="pm-panel"><p className="pm-kicker">RECENT DELIVERIES</p><h2>Webhook evidence</h2>{hooks.deliveries.length ? hooks.deliveries.slice(0, 8).map(x => <div className="pm-row" key={x.id}><div><strong>{x.eventType} · {x.status}</strong><small>{x.responseStatus || "no response"} · attempt {x.attempts} · {new Date(x.createdAt).toLocaleString()}</small>{x.nextAttemptAt && <small>Next retry {new Date(x.nextAttemptAt).toLocaleString()}</small>}</div></div>) : <div className="pm-empty"><strong>No deliveries yet.</strong><span>Send a test event after creating a webhook.</span></div>}</article>
+      <article className="pm-panel"><p className="pm-kicker">DELIVERIES</p><h2>Webhooks</h2>{hooks.deliveries.length ? hooks.deliveries.slice(0, 8).map(x => <div className="pm-row" key={x.id}><div><strong>{x.eventType} · {x.status}</strong><small>{x.responseStatus || "no response"} · attempt {x.attempts}</small></div><button className="pm-secondary" disabled={busy} onClick={() => mutate("/api/webhooks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "replay", deliveryId: x.id }) }, "Webhook delivery replayed.")}>Replay</button></div>) : <div className="pm-empty"><strong>No deliveries yet.</strong><span>Send a test event after creating a webhook.</span></div>}</article>
     </section>
   </>;
 }

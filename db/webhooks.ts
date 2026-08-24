@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 
-export const ALLOWED_WEBHOOK_EVENTS = ["property.created", "property.updated", "property.status.changed", "property.media.created", "enquiry.created", "viewing.requested", "viewing.confirmed", "viewing.completed", "viewing.cancelled", "viewing.no_show"] as const;
+export const ALLOWED_WEBHOOK_EVENTS = ["property.created", "property.updated", "property.status.changed", "property.media.created", "enquiry.created", "contact.created", "contact.updated", "viewing.requested", "viewing.confirmed", "viewing.completed", "viewing.cancelled", "viewing.no_show"] as const;
 const encoder = new TextEncoder();
 const retryMinutes = [1, 5, 30, 120];
 
@@ -51,6 +51,34 @@ export async function retryDueWebhooks(agencyId: string, limit = 20) {
     if (await deliver(row, { id: row.eventId, eventType: row.eventType, aggregateType: body.aggregate?.type || "unknown", aggregateId: body.aggregate?.id || "", payload: body.data || {}, createdAt: body.createdAt }, row)) delivered++;
   }
   return { processed: rows.results.length, delivered };
+}
+
+export async function retryAllDueWebhooks(limit = 100) {
+  const rows = await env.DB.prepare("SELECT DISTINCT agency_id agencyId FROM webhook_deliveries WHERE status='failed' AND next_attempt_at<=CURRENT_TIMESTAMP ORDER BY next_attempt_at LIMIT ?").bind(Math.min(500, Math.max(1, limit))).all<any>();
+  let processed = 0, delivered = 0;
+  for (const row of rows.results) {
+    const result = await retryDueWebhooks(row.agencyId, 25);
+    processed += result.processed;
+    delivered += result.delivered;
+  }
+  return { agencies: rows.results.length, processed, delivered };
+}
+
+export async function replayWebhookDelivery(agencyId: string, deliveryId: string) {
+  const row = await env.DB.prepare("SELECT d.id,d.agency_id agencyId,d.subscription_id subscriptionId,d.event_id eventId,d.event_type eventType,d.request_body requestBody,d.signature,d.attempts,s.id,s.url,s.signing_secret signingSecret FROM webhook_deliveries d JOIN webhook_subscriptions s ON s.id=d.subscription_id AND s.agency_id=d.agency_id WHERE d.id=? AND d.agency_id=? AND s.status='active'").bind(deliveryId, agencyId).first<any>();
+  if (!row) throw new Error("Replayable delivery was not found.");
+  const body = JSON.parse(row.requestBody || "{}");
+  const replay = { id: crypto.randomUUID(), agencyId, subscriptionId: row.subscriptionId, eventId: row.eventId, eventType: row.eventType, url: row.url, requestBody: row.requestBody, signature: row.signature, attempts: 0 };
+  await env.DB.prepare("INSERT INTO webhook_deliveries(id,agency_id,subscription_id,event_id,event_type,url,status,request_body,signature,attempts) VALUES(?,?,?,?,?,?, 'pending',?,?,0)").bind(replay.id, agencyId, row.subscriptionId, row.eventId, row.eventType, row.url, row.requestBody, row.signature).run();
+  await deliver(row, { id: row.eventId, eventType: row.eventType, aggregateType: body.aggregate?.type || "unknown", aggregateId: body.aggregate?.id || "", payload: body.data || {}, createdAt: body.createdAt }, replay);
+  return replay.id;
+}
+
+export async function rotateWebhookSecret(agencyId: string, subscriptionId: string) {
+  const secret = `whsec_${crypto.randomUUID().replaceAll("-", "")}${crypto.randomUUID().replaceAll("-", "")}`;
+  const result = await env.DB.prepare("UPDATE webhook_subscriptions SET signing_secret=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status='active'").bind(secret, subscriptionId, agencyId).run();
+  if (!result.meta.changes) throw new Error("Active webhook was not found.");
+  return secret;
 }
 
 export async function sendTestWebhook(agencyId: string, subscriptionId: string) {

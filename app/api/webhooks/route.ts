@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { AuthorizationError, requirePermission, writeAudit } from "../../../db/authorization";
 import { requireWorkspace } from "../../../db/workspace";
-import { ALLOWED_WEBHOOK_EVENTS, retryDueWebhooks, sendTestWebhook } from "../../../db/webhooks";
+import { ALLOWED_WEBHOOK_EVENTS, replayWebhookDelivery, retryDueWebhooks, rotateWebhookSecret, sendTestWebhook } from "../../../db/webhooks";
 
 const clean = (v: unknown, n = 500) => typeof v === "string" ? v.trim().slice(0, n) : "";
 const fail = (e: unknown) => Response.json({ error: e instanceof Error ? e.message : "Webhook operation failed." }, { status: e instanceof AuthorizationError ? 403 : 400 });
@@ -32,6 +32,12 @@ export async function POST(request: Request) {
     const { user, workspace } = await ctx();
     const b = await request.json(), action = clean(b.action, 30);
     if (action === "retry") return Response.json(await retryDueWebhooks(workspace.agencyId));
+    if (action === "replay") return Response.json({ deliveryId: await replayWebhookDelivery(workspace.agencyId, clean(b.deliveryId, 100)) });
+    if (action === "rotate_secret") {
+      const id = clean(b.id, 100), signingSecret = await rotateWebhookSecret(workspace.agencyId, id);
+      await writeAudit(workspace, "webhook.secret_rotated", "webhook_subscription", id);
+      return Response.json({ signingSecret, warning: "Copy this signing secret now. The previous secret no longer verifies new deliveries." });
+    }
     if (action === "test") return Response.json({ eventId: await sendTestWebhook(workspace.agencyId, clean(b.id, 100)) });
     const name = clean(b.name, 100), url = clean(b.url, 500), events = Array.isArray(b.events) ? [...new Set(b.events.map(String).filter(x => (ALLOWED_WEBHOOK_EVENTS as readonly string[]).includes(x)))] : [];
     if (!name || !validUrl(url) || !events.length) throw new Error("Webhook name, HTTPS URL and at least one supported event are required.");
