@@ -180,7 +180,7 @@ async function GET() {
     const [agency, properties, photos, templates, jobs, copies] = await Promise.all([
       env.DB.prepare("SELECT a.id,a.name,a.slug,s.primary_color AS primaryColor,s.accent_color AS accentColor,s.typography,s.phone,s.whatsapp,s.email,s.website FROM agencies a JOIN agency_settings s ON s.agency_id=a.id WHERE a.id=?").bind(c.workspace.agencyId).first(),
       env.DB.prepare(`SELECT p.id,p.reference,p.title,p.location,p.status,p.price_label AS price,p.price_minor AS priceMinor,p.currency,p.transaction_type AS transactionType,p.property_type AS propertyType,p.bedrooms,p.bathrooms,p.land_size AS landSize,p.building_size AS buildingSize,p.city,p.suburb,p.address,p.description,p.features,p.photo_count AS photos,(SELECT m.id FROM media_assets m WHERE m.agency_id=p.agency_id AND m.property_id=p.id AND m.kind='property_photo' ORDER BY m.sort_order,m.created_at LIMIT 1) AS heroMediaId FROM properties p WHERE p.agency_id=? ORDER BY p.updated_at DESC`).bind(c.workspace.agencyId).all<any>(),
-      env.DB.prepare("SELECT id,property_id AS propertyId,sort_order AS sortOrder FROM media_assets WHERE agency_id=? AND kind='property_photo' ORDER BY property_id,sort_order,created_at LIMIT 300").bind(c.workspace.agencyId).all<any>(),
+      env.DB.prepare("SELECT id,property_id AS propertyId,sort_order AS sortOrder,thumbnail_object_key AS thumbnailObjectKey FROM media_assets WHERE agency_id=? AND kind='property_photo' ORDER BY property_id,sort_order,created_at LIMIT 300").bind(c.workspace.agencyId).all<any>(),
       env.DB.prepare("SELECT id,template_key AS templateKey,version,name,format,width,height FROM marketing_template_versions WHERE agency_id=? AND status='published' ORDER BY format").bind(c.workspace.agencyId).all(),
       env.DB.prepare("SELECT j.id,j.property_id AS propertyId,j.format,j.status,j.attempts,j.review_status AS reviewStatus,j.last_error AS lastError,j.created_at AS createdAt,p.title,o.id AS outputId,o.kind,o.content_type AS contentType,o.byte_size AS byteSize FROM marketing_render_jobs j JOIN properties p ON p.id=j.property_id AND p.agency_id=j.agency_id LEFT JOIN marketing_outputs o ON o.job_id=j.id AND o.agency_id=j.agency_id WHERE j.agency_id=? ORDER BY j.created_at DESC LIMIT 80").bind(c.workspace.agencyId).all<any>(),
       env.DB.prepare("SELECT id,property_id AS propertyId,version,headline,listing_description AS listingDescription,social_caption AS socialCaption,status,created_at AS createdAt FROM marketing_copy_versions WHERE agency_id=? ORDER BY created_at DESC LIMIT 50").bind(c.workspace.agencyId).all<any>(),
@@ -191,7 +191,7 @@ async function GET() {
     for (const photo of photos.results) {
       if (scope && !scope.has(photo.propertyId)) continue;
       const list = photosByProperty.get(photo.propertyId) || [];
-      if (list.length < 8) list.push({ id: photo.id, url: `/api/media?id=${encodeURIComponent(photo.id)}`, label: `Photo ${list.length + 1}` });
+      if (list.length < 8) list.push({ id: photo.id, url: `/api/media?id=${encodeURIComponent(photo.id)}`, thumbnailUrl: `/api/media?id=${encodeURIComponent(photo.id)}&variant=thumb`, label: `Photo ${list.length + 1}` });
       photosByProperty.set(photo.propertyId, list);
     }
     return Response.json({

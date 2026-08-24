@@ -85,14 +85,14 @@ const fallbackImages = [
   "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1900&q=86",
 ];
 type ImageSlot = "homeHeroImageId" | "featuredImageId" | "propertiesHeroImageId" | "saleHeroImageId" | "rentHeroImageId" | "agentsHeroImageId" | "servicesHeroImageId" | "aboutHeroImageId" | "contactHeroImageId";
-const mediaUrl = (agency: PublicAgency, id: string) => `/api/public/${agency.slug}/media?id=${encodeURIComponent(id)}`;
-const propertyImage = (agency: PublicAgency, property?: PublicProperty, index = 0, slot?: ImageSlot) => {
+const mediaUrl = (agency: PublicAgency, id: string, variant: "main" | "thumb" = "main") => `/api/public/${agency.slug}/media?id=${encodeURIComponent(id)}${variant === "thumb" ? "&variant=thumb" : ""}`;
+const propertyImage = (agency: PublicAgency, property?: PublicProperty, index = 0, slot?: ImageSlot, variant: "main" | "thumb" = "main") => {
   const customMediaId = slot ? agency.publicContent?.[slot] : "";
   const mediaId = customMediaId || property?.heroMediaId || "";
   const fallback = fallbackImages[Math.abs(index) % fallbackImages.length];
   const layers = [
     "linear-gradient(115deg,rgba(8,30,26,.72),rgba(8,30,26,.18))",
-    mediaId ? `url("${mediaUrl(agency, mediaId)}")` : "",
+    mediaId ? `url("${mediaUrl(agency, mediaId, variant)}")` : "",
     `url("${fallback}")`,
   ].filter(Boolean).join(",");
   return { backgroundImage: layers };
@@ -106,8 +106,8 @@ const publicPath = (agency: PublicAgency, path = "", mode: PublicPathMode = "sit
 
 export function PublicHeader({ agency, pathMode = "site" }: { agency: PublicAgency; pathMode?: PublicPathMode }) {
   const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
-  const logo = agency.logoId ? mediaUrl(agency, agency.logoId) : "";
-  const icon = agency.iconId ? mediaUrl(agency, agency.iconId) : "";
+  const logo = agency.logoId ? mediaUrl(agency, agency.logoId, "thumb") : "";
+  const icon = agency.iconId ? mediaUrl(agency, agency.iconId, "thumb") : "";
   const nav = [
     ["Home", publicPath(agency, "", pathMode)],
     ["Properties", publicPath(agency, "/properties", pathMode)],
@@ -167,7 +167,7 @@ export function PropertyGrid({ agency, properties, pathMode = "site" }: { agency
         <a href={publicPath(agency, `/properties/${property.id}`, pathMode)} className="public-card" key={property.id}>
           <div
             className={`public-photo photo-${index % 3}`}
-            style={propertyImage(agency, property, index)}
+            style={propertyImage(agency, property, index, undefined, "thumb")}
           >
             <span>{property.transactionType}</span>
             <b>{property.photos || 1} photos</b>
@@ -197,7 +197,7 @@ function AgentGrid({ agency, agents }: { agency: PublicAgency; agents: PublicAge
         <article key={agent.userId}>
           <div
             className="public-agent-photo"
-            style={agent.photoMediaId ? { backgroundImage: `url(/api/public/${agency.slug}/media?id=${encodeURIComponent(agent.photoMediaId)})` } : undefined}
+            style={agent.photoMediaId ? { backgroundImage: `url(${mediaUrl(agency, agent.photoMediaId, "thumb")})` } : undefined}
           >
             {!agent.photoMediaId && <b>{initials(agent.name)}</b>}
           </div>

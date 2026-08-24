@@ -41,7 +41,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
     headers: {
       "content-type": asset.mimeType,
       "content-length": String(size),
-      "cache-control": "public, max-age=3600, stale-while-revalidate=86400",
+      "cache-control": "public, max-age=31536000, immutable",
       "x-content-type-options": "nosniff",
     },
   });

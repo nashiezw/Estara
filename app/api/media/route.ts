@@ -7,7 +7,7 @@ import { PHOTO_CATEGORIES, optimizedMediaObjectKey, safeDownloadName, validateMe
 import { invalidatePublicSite } from "../../../db/public-cache";
 
 const dynamic = "force-dynamic";
-const headers = { "cache-control": "private, no-store", "x-content-type-options": "nosniff" };
+const headers = { "cache-control": "private, max-age=3600, stale-while-revalidate=86400", "x-content-type-options": "nosniff" };
 
 const bucket = () => {
   const value = env.MEDIA;

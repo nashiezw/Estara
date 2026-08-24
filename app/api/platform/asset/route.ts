@@ -13,7 +13,7 @@ const assetColumns: Record<string, string> = {
   "dark-logo": "dark_logo_url",
   "dark-icon": "dark_icon_url",
 };
-const headers = { "cache-control": "public, max-age=86400", "x-content-type-options": "nosniff" };
+const headers = { "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" };
 
 const bucket = () => {
   const value = env.MEDIA;
