@@ -88,3 +88,15 @@ test("entitlements remain data-driven through immutable plan versions", async ()
   assert.match(entitlements, /resolveAgencyPlan/);
   assert.doesNotMatch(entitlements, /if\(entitlement===/);
 });
+
+test("enterprise shortcut buttons use a scoped spacing fix", async () => {
+  const [client, css, globals] = await Promise.all([
+    read("../app/enterprise/enterprise-client.tsx"),
+    read("../app/management/management.css"),
+    read("../app/globals.css"),
+  ]);
+
+  assert.match(client, /enterprise-panel-action/);
+  assert.match(css, /\.enterprise-panel-action\{margin-top:14px;padding-inline:24px\}/);
+  assert.doesNotMatch(globals, /padding-block:max\(10px,\s*\.72em\)/);
+});
