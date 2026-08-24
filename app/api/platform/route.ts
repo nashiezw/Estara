@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { ensurePlanCatalog } from "../../../db/entitlements";
 import { PlatformAuthorizationError, requirePlatformUser, writePlatformAudit, type PlatformContext, type PlatformRole } from "../../../db/platform-auth";
-import { calculateInvoiceDiscount, canTransitionSubscription, invoiceTotal } from "../../../db/billing-policy";
+import { calculateInvoiceDiscount, canSetAgencyStatus, canTransitionSubscription, invoiceTotal } from "../../../db/billing-policy";
 import { ensurePlatformIdentity, getPlatformIdentity } from "../../../db/platform-settings";
 
 export const dynamic = "force-dynamic";
@@ -79,13 +79,13 @@ export async function GET() {
       platformSettingsRow(),
       env.DB.prepare("SELECT user_id AS userId,email,role,active,created_at AS createdAt FROM platform_users ORDER BY created_at").all(),
       env.DB.prepare("SELECT id,plan_key AS planKey,version,name,currency,price_minor AS priceMinor,billing_period AS billingPeriod,entitlements,limits,status,published_at AS publishedAt FROM plan_versions ORDER BY plan_key,version DESC").all(),
-      env.DB.prepare(`SELECT a.id,a.name,a.slug,a.created_at AS createdAt,s.id AS subscriptionId,s.state,s.trial_ends_at AS trialEndsAt,s.grace_ends_at AS graceEndsAt,s.current_period_ends_at AS currentPeriodEndsAt,p.id AS planVersionId,p.name AS planName,
+      env.DB.prepare(`SELECT a.id,a.name,a.slug,a.status AS agencyStatus,a.disabled_at AS disabledAt,a.archived_at AS archivedAt,a.created_at AS createdAt,s.id AS subscriptionId,s.state,s.trial_ends_at AS trialEndsAt,s.grace_ends_at AS graceEndsAt,s.current_period_ends_at AS currentPeriodEndsAt,s.expired_at AS expiredAt,s.status_reason AS statusReason,s.previous_plan_version_id AS previousPlanVersionId,s.plan_changed_at AS planChangedAt,p.id AS planVersionId,p.name AS planName,prev.name AS previousPlanName,
         (SELECT COUNT(*) FROM agency_memberships m WHERE m.agency_id=a.id) AS users,
         (SELECT COUNT(*) FROM properties x WHERE x.agency_id=a.id) AS properties,
         (SELECT COUNT(*) FROM enquiries q WHERE q.agency_id=a.id) AS enquiries,
         (SELECT COUNT(*) FROM viewings v WHERE v.agency_id=a.id) AS viewings,
         (SELECT COUNT(*) FROM public_events e WHERE e.agency_id=a.id AND e.created_at>datetime('now','-24 hours')) AS publicEvents24h
-        FROM agencies a LEFT JOIN agency_subscriptions s ON s.agency_id=a.id LEFT JOIN plan_versions p ON p.id=s.plan_version_id ORDER BY a.created_at DESC`).all(),
+        FROM agencies a LEFT JOIN agency_subscriptions s ON s.agency_id=a.id LEFT JOIN plan_versions p ON p.id=s.plan_version_id LEFT JOIN plan_versions prev ON prev.id=s.previous_plan_version_id ORDER BY a.created_at DESC`).all(),
       env.DB.prepare("SELECT i.id,i.agency_id AS agencyId,a.name AS agency,i.subscription_id AS subscriptionId,i.invoice_number AS invoiceNumber,i.status,i.currency,i.subtotal_minor AS subtotalMinor,i.discount_minor AS discountMinor,i.total_minor AS totalMinor,i.due_at AS dueAt,i.issued_at AS issuedAt,i.paid_at AS paidAt,i.payment_method AS paymentMethod,i.provider_reference AS providerReference FROM billing_invoices i JOIN agencies a ON a.id=i.agency_id ORDER BY i.issued_at DESC LIMIT 100").all(),
       env.DB.prepare("SELECT code,kind,amount,active,valid_until AS validUntil,max_redemptions AS maxRedemptions,redemptions FROM billing_coupons ORDER BY created_at DESC").all(),
       env.DB.prepare("SELECT b.id,b.agency_id AS agencyId,a.name AS agency,b.event_type AS eventType,b.detail,b.created_at AS createdAt FROM billing_events b JOIN agencies a ON a.id=b.agency_id ORDER BY b.created_at DESC LIMIT 100").all(),
@@ -141,12 +141,25 @@ export async function POST(request: Request) {
       if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
       const agencyId = clean(body.agencyId), planVersionId = clean(body.planVersionId), state = body.state === "active" ? "active" : "trialing", plan = await env.DB.prepare("SELECT id FROM plan_versions WHERE id=? AND status='published'").bind(planVersionId).first();
       if (!plan || !await env.DB.prepare("SELECT id FROM agencies WHERE id=?").bind(agencyId).first()) return Response.json({ error: "Agency or published plan was not found." }, { status: 404 });
-      const now = new Date(), end = new Date(now.getTime() + (state === "trialing" ? 14 : 30) * 86400000), existing = await env.DB.prepare("SELECT id FROM agency_subscriptions WHERE agency_id=?").bind(agencyId).first<{ id: string }>(), subscriptionId = existing?.id || crypto.randomUUID();
-      await env.DB.prepare(`INSERT INTO agency_subscriptions (id,agency_id,plan_version_id,state,trial_starts_at,trial_ends_at,current_period_starts_at,current_period_ends_at,updated_by) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(agency_id) DO UPDATE SET plan_version_id=excluded.plan_version_id,state=excluded.state,trial_starts_at=excluded.trial_starts_at,trial_ends_at=excluded.trial_ends_at,current_period_starts_at=excluded.current_period_starts_at,current_period_ends_at=excluded.current_period_ends_at,grace_ends_at=NULL,suspended_at=NULL,canceled_at=NULL,updated_by=excluded.updated_by,updated_at=CURRENT_TIMESTAMP`)
-        .bind(subscriptionId, agencyId, planVersionId, state, state === "trialing" ? now.toISOString() : null, state === "trialing" ? end.toISOString() : null, now.toISOString(), end.toISOString(), access.context.userId).run();
-      await event(access.context, agencyId, subscriptionId, null, "subscription.assigned", { planVersionId, state });
-      await writePlatformAudit(access.context, "subscription.assigned", "agency_subscription", subscriptionId, { agencyId, planVersionId, state });
+      const now = new Date(), end = new Date(now.getTime() + (state === "trialing" ? 14 : 30) * 86400000), existing = await env.DB.prepare("SELECT id,plan_version_id AS planVersionId,state FROM agency_subscriptions WHERE agency_id=?").bind(agencyId).first<{ id: string; planVersionId: string; state: string }>(), subscriptionId = existing?.id || crypto.randomUUID(), changed = existing && existing.planVersionId !== planVersionId;
+      await env.DB.prepare(`INSERT INTO agency_subscriptions (id,agency_id,plan_version_id,state,trial_starts_at,trial_ends_at,current_period_starts_at,current_period_ends_at,updated_by,previous_plan_version_id,plan_changed_at,plan_changed_by,status_reason) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(agency_id) DO UPDATE SET plan_version_id=excluded.plan_version_id,state=excluded.state,trial_starts_at=excluded.trial_starts_at,trial_ends_at=excluded.trial_ends_at,current_period_starts_at=excluded.current_period_starts_at,current_period_ends_at=excluded.current_period_ends_at,grace_ends_at=NULL,suspended_at=NULL,canceled_at=NULL,expired_at=NULL,updated_by=excluded.updated_by,previous_plan_version_id=excluded.previous_plan_version_id,plan_changed_at=excluded.plan_changed_at,plan_changed_by=excluded.plan_changed_by,status_reason='',updated_at=CURRENT_TIMESTAMP`)
+        .bind(subscriptionId, agencyId, planVersionId, state, state === "trialing" ? now.toISOString() : null, state === "trialing" ? end.toISOString() : null, now.toISOString(), end.toISOString(), access.context.userId, changed ? existing.planVersionId : null, changed ? now.toISOString() : null, changed ? access.context.userId : null, "").run();
+      await event(access.context, agencyId, subscriptionId, null, changed ? "subscription.plan_changed" : "subscription.assigned", { fromPlanVersionId: existing?.planVersionId || null, planVersionId, state });
+      await writePlatformAudit(access.context, changed ? "subscription.plan.changed" : "subscription.assigned", "agency_subscription", subscriptionId, { agencyId, fromPlanVersionId: existing?.planVersionId || null, planVersionId, state });
       return Response.json({ subscriptionId, state }, { status: 201 });
+    }
+
+    if (action === "extend_trial") {
+      const access = await actor(["super_admin","finance"]);
+      if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
+      const id = clean(body.id), days = Math.min(60, Math.max(1, Math.round(Number(body.days || 7)))), reason = clean(body.reason, 240);
+      const subscription = await env.DB.prepare("SELECT id,agency_id AS agencyId,state,trial_ends_at AS trialEndsAt FROM agency_subscriptions WHERE id=?").bind(id).first<{ id: string; agencyId: string; state: string; trialEndsAt: string | null }>();
+      if (!subscription || !["trialing","expired"].includes(subscription.state)) return Response.json({ error: "Only trial or expired subscriptions can be extended." }, { status: 409 });
+      const base = subscription.trialEndsAt && Date.parse(subscription.trialEndsAt) > Date.now() ? Date.parse(subscription.trialEndsAt) : Date.now(), trialEndsAt = new Date(base + days * 86400000).toISOString();
+      await env.DB.prepare("UPDATE agency_subscriptions SET state='trialing',trial_ends_at=?,current_period_ends_at=?,expired_at=NULL,status_reason=?,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(trialEndsAt, trialEndsAt, reason, access.context.userId, id).run();
+      await event(access.context, subscription.agencyId, id, null, "subscription.trial_extended", { days, trialEndsAt, reason });
+      await writePlatformAudit(access.context, "subscription.trial.extended", "agency_subscription", id, { days, trialEndsAt, reason });
+      return Response.json({ state: "trialing", trialEndsAt });
     }
 
     if (action === "create_coupon") {
@@ -225,14 +238,26 @@ export async function PATCH(request: Request) {
     if (action === "transition_subscription") {
       const access = await actor(["super_admin","finance","support"]);
       if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
-      const id = clean(body.id), next = clean(body.state), subscription = await env.DB.prepare("SELECT id,agency_id AS agencyId,state FROM agency_subscriptions WHERE id=?").bind(id).first<{ id: string; agencyId: string; state: string }>();
+      const id = clean(body.id), next = clean(body.state), reason = clean(body.reason, 240), subscription = await env.DB.prepare("SELECT id,agency_id AS agencyId,state FROM agency_subscriptions WHERE id=?").bind(id).first<{ id: string; agencyId: string; state: string }>();
       if (!subscription) return Response.json({ error: "Subscription was not found." }, { status: 404 });
       if (!canTransitionSubscription(subscription.state, next)) return Response.json({ error: `Cannot move a subscription from ${subscription.state} to ${next}.` }, { status: 409 });
-      const graceEnds = next === "grace" ? new Date(Date.now() + 7 * 86400000).toISOString() : null, suspendedAt = next === "suspended" ? new Date().toISOString() : null, canceledAt = next === "canceled" ? new Date().toISOString() : null;
-      await env.DB.prepare("UPDATE agency_subscriptions SET state=?,grace_ends_at=?,suspended_at=?,canceled_at=?,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(next, graceEnds, suspendedAt, canceledAt, access.context.userId, id).run();
-      await event(access.context, subscription.agencyId, id, null, "subscription.state_changed", { from: subscription.state, to: next });
-      await writePlatformAudit(access.context, "subscription.state.changed", "agency_subscription", id, { from: subscription.state, to: next });
+      const graceEnds = next === "grace" ? new Date(Date.now() + 7 * 86400000).toISOString() : null, suspendedAt = next === "suspended" ? new Date().toISOString() : null, canceledAt = next === "canceled" ? new Date().toISOString() : null, expiredAt = next === "expired" ? new Date().toISOString() : null;
+      await env.DB.prepare("UPDATE agency_subscriptions SET state=?,grace_ends_at=?,suspended_at=?,canceled_at=?,expired_at=?,status_reason=?,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(next, graceEnds, suspendedAt, canceledAt, expiredAt, next === "active" ? "" : reason, access.context.userId, id).run();
+      await event(access.context, subscription.agencyId, id, null, "subscription.state_changed", { from: subscription.state, to: next, reason });
+      await writePlatformAudit(access.context, "subscription.state.changed", "agency_subscription", id, { from: subscription.state, to: next, reason });
       return Response.json({ state: next });
+    }
+
+    if (action === "update_agency_status") {
+      const access = await actor(["super_admin","support"]);
+      if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
+      const agencyId = clean(body.agencyId), status = clean(body.status), reason = clean(body.reason, 240);
+      if (!canSetAgencyStatus(status)) return Response.json({ error: "Choose a valid agency status." }, { status: 400 });
+      const agency = await env.DB.prepare("SELECT id,status FROM agencies WHERE id=?").bind(agencyId).first<{ id: string; status: string }>();
+      if (!agency) return Response.json({ error: "Agency was not found." }, { status: 404 });
+      await env.DB.prepare("UPDATE agencies SET status=?,disabled_at=CASE WHEN ? IN ('disabled','suspended') THEN CURRENT_TIMESTAMP ELSE NULL END,archived_at=CASE WHEN ?='archived' THEN CURRENT_TIMESTAMP ELSE NULL END WHERE id=?").bind(status, status, status, agencyId).run();
+      await writePlatformAudit(access.context, "agency.status.changed", "agency", agencyId, { from: agency.status, to: status, reason });
+      return Response.json({ status });
     }
 
     if (action === "mark_invoice_paid") {
@@ -244,7 +269,7 @@ export async function PATCH(request: Request) {
       if (!invoice) return Response.json({ error: "Open invoice was not found." }, { status: 404 });
       await env.DB.batch([
         env.DB.prepare("UPDATE billing_invoices SET status='paid',paid_at=CURRENT_TIMESTAMP,payment_method=?,provider_reference=? WHERE id=? AND status='open'").bind(method, reference, id),
-        env.DB.prepare("UPDATE agency_subscriptions SET state='active',grace_ends_at=NULL,suspended_at=NULL,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND state<>'canceled'").bind(access.context.userId, invoice.subscriptionId),
+        env.DB.prepare("UPDATE agency_subscriptions SET state='active',grace_ends_at=NULL,suspended_at=NULL,expired_at=NULL,status_reason='',updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND state<>'canceled'").bind(access.context.userId, invoice.subscriptionId),
       ]);
       await event(access.context, invoice.agencyId, invoice.subscriptionId, id, "invoice.paid", { method, reference });
       await writePlatformAudit(access.context, "billing.invoice.paid", "billing_invoice", id, { method, reference });
@@ -252,6 +277,41 @@ export async function PATCH(request: Request) {
     }
 
     return Response.json({ error: "Unsupported platform action." }, { status: 400 });
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const access = await actor(["super_admin"]);
+    if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
+    const body = await request.json() as Record<string, unknown>, agencyId = clean(body.agencyId), confirmSlug = clean(body.confirmSlug, 120);
+    const agency = await env.DB.prepare("SELECT id,name,slug,status FROM agencies WHERE id=?").bind(agencyId).first<{ id: string; name: string; slug: string; status: string }>();
+    if (!agency) return Response.json({ error: "Agency was not found." }, { status: 404 });
+    if (confirmSlug !== agency.slug) return Response.json({ error: "Type or pass the agency slug before deleting." }, { status: 400 });
+    const counts = await env.DB.prepare(`SELECT
+      (SELECT COUNT(*) FROM properties WHERE agency_id=?) properties,
+      (SELECT COUNT(*) FROM enquiries WHERE agency_id=?) enquiries,
+      (SELECT COUNT(*) FROM viewings WHERE agency_id=?) viewings,
+      (SELECT COUNT(*) FROM contacts WHERE agency_id=?) contacts,
+      (SELECT COUNT(*) FROM media_assets WHERE agency_id=?) media,
+      (SELECT COUNT(*) FROM billing_invoices WHERE agency_id=?) invoices`).bind(agencyId, agencyId, agencyId, agencyId, agencyId, agencyId).first<any>();
+    const hasRecords = Object.values(counts || {}).some(value => Number(value) > 0);
+    if (hasRecords) {
+      await env.DB.prepare("UPDATE agencies SET status='archived',archived_at=CURRENT_TIMESTAMP WHERE id=?").bind(agencyId).run();
+      await writePlatformAudit(access.context, "agency.archived_for_retention", "agency", agencyId, { counts });
+      return Response.json({ deleted: false, archived: true, message: "Agency has records, so it was archived for evidence retention." });
+    }
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM billing_events WHERE agency_id=?").bind(agencyId),
+      env.DB.prepare("DELETE FROM agency_subscriptions WHERE agency_id=?").bind(agencyId),
+      env.DB.prepare("DELETE FROM agency_settings WHERE agency_id=?").bind(agencyId),
+      env.DB.prepare("DELETE FROM agency_memberships WHERE agency_id=?").bind(agencyId),
+      env.DB.prepare("DELETE FROM agencies WHERE id=?").bind(agencyId),
+    ]);
+    await writePlatformAudit(access.context, "agency.deleted", "agency", agencyId, { name: agency.name, slug: agency.slug });
+    return Response.json({ deleted: true });
   } catch (error) {
     return failure(error);
   }

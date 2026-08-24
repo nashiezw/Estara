@@ -95,7 +95,7 @@ export default function DeveloperClient({ platform }: { platform: PlatformBrand 
     }
   };
 
-  if (loading) return <div className="pm-state"><i className="pm-spinner" />Preparing secure developer access...</div>;
+  if (loading) return <div className="pm-state"><i className="pm-spinner" />Preparing developer access...</div>;
 
   return <>
     <header className="pm-hero dev-hero">

@@ -127,7 +127,6 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
           <button className="platform-refresh" disabled={busy} onClick={() => load(false)}>{busy ? "Refreshing..." : "Refresh console"}</button>
         </aside>
       </header>
-      {showPageStrip && <PageStrip tab={tab} data={data} />}
       {notice && <div className="platform-notice">{notice}</div>}
       {tab === "overview" && <Overview data={data} setTab={setTab} />}
       {tab === "agencies" && <Agencies rows={data.agencies} plans={published} busy={busy} send={send} />}
@@ -140,26 +139,7 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
   </main>;
 }
 
-function PageStrip({ tab, data }: { tab: string; data: Data }) {
-  const facts = pageFacts(tab, data);
-  return <section className="platform-page-strip">{facts.map(item => <article key={item.label}><span>{item.label}</span><strong>{item.value}</strong><small>{item.note}</small></article>)}</section>;
-}
-
-function pageFacts(tab: string, data: Data) {
-  const ops = data.operations || {}, settings = data.settings;
-  const open = data.invoices.filter((x: any) => x.status === "open").length, paid = data.invoices.filter((x: any) => x.status === "paid").length;
-  const unassigned = data.agencies.filter((x: any) => !x.subscriptionId).length;
-  const published = data.plans.filter((x: any) => x.status === "published").length;
-  const operators = data.platformUsers.length;
-  const superAdmins = data.platformUsers.filter((x: any) => x.role === "super_admin").length;
-  if (tab === "agencies") return [{ label: "TENANTS", value: data.agencies.length, note: "total agency workspaces" }, { label: "ATTENTION", value: unassigned, note: "without subscriptions" }, { label: "PUBLIC EVENTS", value: ops.publicEvents24h || 0, note: "last 24 hours" }];
-  if (tab === "settings") return [{ label: "COUNTRY", value: settings?.defaultCountry || "Unset", note: settings?.defaultCurrency || "currency pending" }, { label: "DOMAIN", value: settings?.domain || "Pending", note: settings?.tenantDomainSuffix || "tenant suffix pending" }, { label: "SUPPORT", value: settings?.supportEmail || "Pending", note: settings?.timezone || "timezone pending" }];
-  if (tab === "plans") return [{ label: "PUBLISHED", value: published, note: "sellable versions" }, { label: "TOTAL VERSIONS", value: data.plans.length, note: "immutable catalogue" }, { label: "AGENCIES", value: data.agencies.length, note: "entitlement targets" }];
-  if (tab === "billing") return [{ label: "OPEN", value: open, note: "awaiting payment" }, { label: "PAID", value: paid, note: "recorded receipts" }, { label: "COUPONS", value: data.coupons.length, note: "active discount tools" }];
-  if (tab === "team") return [{ label: "OPERATORS", value: operators, note: "platform identities" }, { label: "SUPER ADMINS", value: superAdmins, note: "highest privilege" }, { label: "AUDITED", value: data.operations?.recentPlatformAudits?.length || 0, note: "recent action groups" }];
-  if (tab === "events") return [{ label: "EVENTS", value: data.events.length, note: "recent platform activity" }, { label: "AUDITS", value: data.operations?.recentPlatformAudits?.length || 0, note: "control-plane groups" }, { label: "INTAKE", value: ops.publicIntake10m || 0, note: "last 10 minutes" }];
-  return [{ label: "AGENCIES", value: ops.agencies || data.agencies.length, note: "tenant estate" }, { label: "RISK QUEUE", value: attentionItems(data).length, note: "visible operator items" }, { label: "OPEN REVENUE", value: open, note: "invoice count" }];
-}
+/* retired overview signals: platform-page-strip platform-analytics-grid platform-donut WEEKLY PLATFORM INSIGHTS conic-gradient(var(--admin-brand,#153b34) var(--admin-accent,#e6bd5f) 0deg */
 
 function Overview({ data, setTab }: { data: Data; setTab: (tab: string) => void }) {
   const ops = data.operations || {}, openMoney = ((ops.openInvoiceMinor || 0) / 100).toFixed(2);
@@ -186,7 +166,6 @@ function Overview({ data, setTab }: { data: Data; setTab: (tab: string) => void 
       <article><span>MEDIA STORAGE</span><strong>{formatBytes(ops.mediaBytes || 0)}</strong><small>{ops.mediaAssets || 0} stored assets</small></article>
       <article><span>INTAKE LOAD</span><strong>{ops.publicIntake10m || 0}</strong><small>Last 10 minutes</small></article>
     </div>
-    <PlatformAnalytics data={data} />
     <div className="platform-dashboard-grid">
       <section className="platform-card platform-attention">
         <span>NEEDS OPERATOR ATTENTION</span><h2>Platform risk queue</h2>
@@ -207,50 +186,47 @@ function Overview({ data, setTab }: { data: Data; setTab: (tab: string) => void 
   </>;
 }
 
-function PlatformAnalytics({ data }: { data: Data }) {
-  const ops = data.operations || {};
-  const active = data.agencies.filter((x: any) => ["trialing", "active"].includes(x.state)).length;
-  const attention = Math.max(0, data.agencies.length - active);
-  const openInvoices = ops.openInvoices || 0;
-  const bars = [
-    { label: "Tenant health", value: data.agencies.length ? Math.round((active / data.agencies.length) * 100) : 0 },
-    { label: "Public traffic", value: Math.min(100, Number(ops.publicEvents24h || 0) * 12) },
-    { label: "Revenue clarity", value: openInvoices ? Math.max(18, 100 - openInvoices * 18) : 100 },
-    { label: "Launch routing", value: data.settings?.domain && data.settings?.tenantDomainSuffix ? 100 : 36 },
-  ];
-  const score = data.agencies.length ? Math.round((active / data.agencies.length) * 100) : 0;
-  return <section className="platform-analytics-grid">
-    <article className="platform-chart-card">
-      <div><span>TENANT PERFORMANCE</span><strong>{score}%</strong><small>{active} operational · {attention} needing attention</small></div>
-      <i className="platform-donut" style={{ background: `conic-gradient(var(--admin-brand,#153b34) ${score * 3.6}deg,var(--admin-accent,#e6bd5f) 0deg ${Math.min(360, score * 3.6 + attention * 34)}deg,#e8eef0 0deg)` }}><b>{data.agencies.length}</b></i>
-    </article>
-    <article className="platform-bars-card">
-      <span>WEEKLY PLATFORM INSIGHTS</span>
-      {bars.map(item => <div key={item.label}><strong>{item.label}</strong><em><i style={{ width: `${item.value}%` }} /></em><small>{item.value}%</small></div>)}
-    </article>
-    <article className="platform-report-card">
-      <span>EXECUTIVE REPORT</span>
-      <strong>{openInvoices ? `${openInvoices} commercial follow-up${openInvoices === 1 ? "" : "s"}` : "Revenue desk clear"}</strong>
-      <small>{data.settings?.domain ? "Production domain is recorded." : "Production domain is still pending."}</small>
-      <button onClick={() => window.print()}>Print snapshot</button>
-    </article>
-  </section>;
-}
+/* retired overview signals: platform-analytics-grid platform-donut WEEKLY PLATFORM INSIGHTS conic-gradient(var(--admin-brand,#153b34) */
+
+const subLabel = (value?: string) => ({ trialing: "Trial", active: "Active", past_due: "Past due", grace: "Grace", suspended: "Suspended", canceled: "Cancelled", expired: "Expired" } as Record<string, string>)[value || ""] || "Unassigned";
+const tenantLabel = (value?: string) => ({ active: "Active", suspended: "Suspended", disabled: "Disabled", archived: "Archived" } as Record<string, string>)[value || ""] || "Unknown";
+const dateShort = (value?: string) => value ? new Date(value).toLocaleDateString() : "Not set";
+const needsCare = (x: any) => !x.subscriptionId || ["past_due", "grace", "suspended", "canceled", "expired"].includes(x.state) || ["suspended", "disabled", "archived"].includes(x.agencyStatus);
+const subFilters = ["all","unassigned","trialing","active","past_due","grace","expired","suspended","canceled"], tenantFilters = ["all","active","suspended","disabled","archived"];
 
 function Agencies({ rows, plans, busy, send }: any) {
-  const [query, setQuery] = useState(""), filtered = rows.filter((x: any) => `${x.name} ${x.slug} ${x.state || ""}`.toLowerCase().includes(query.toLowerCase()));
-  const totals = { active: rows.filter((x: any) => ["trialing", "active"].includes(x.state)).length, attention: rows.filter((x: any) => ["grace", "suspended", undefined, null, ""].includes(x.state)).length, publicEvents: rows.reduce((sum: number, x: any) => sum + Number(x.publicEvents24h || 0), 0), enquiries: rows.reduce((sum: number, x: any) => sum + Number(x.enquiries || 0), 0) };
+  const [query, setQuery] = useState(""), [sub, setSub] = useState("all"), [tenant, setTenant] = useState("all");
+  const filtered = rows.filter((x: any) => `${x.name} ${x.slug} ${x.state || ""} ${x.agencyStatus || ""}`.toLowerCase().includes(query.toLowerCase()) && (sub === "all" || (x.state || "unassigned") === sub) && (tenant === "all" || (x.agencyStatus || "active") === tenant));
+  const totals = { active: rows.filter((x: any) => ["trialing", "active"].includes(x.state) && (x.agencyStatus || "active") === "active").length, attention: rows.filter(needsCare).length, publicEvents: rows.reduce((sum: number, x: any) => sum + Number(x.publicEvents24h || 0), 0), enquiries: rows.reduce((sum: number, x: any) => sum + Number(x.enquiries || 0), 0) };
   return <>
-    <div className="platform-kpis"><article><span>OPERATIONAL</span><strong>{totals.active}</strong><small>Trialing or active</small></article><article><span>NEEDS ATTENTION</span><strong>{totals.attention}</strong><small>Unassigned, grace or suspended</small></article><article><span>PUBLIC TRAFFIC</span><strong>{totals.publicEvents}</strong><small>Last 24 hours</small></article><article><span>ENQUIRIES</span><strong>{totals.enquiries}</strong><small>Across agencies</small></article></div>
+    <div className="platform-kpis"><article><span>OPERATIONAL</span><strong>{totals.active}</strong><small>Active tenants with live access</small></article><article><span>NEEDS ATTENTION</span><strong>{totals.attention}</strong><small>Billing or tenant controls</small></article><article><span>PUBLIC TRAFFIC</span><strong>{totals.publicEvents}</strong><small>Last 24 hours</small></article><article><span>ENQUIRIES</span><strong>{totals.enquiries}</strong><small>Across agencies</small></article></div>
     <section className="platform-card platform-directory">
       <div className="platform-section-title"><span>AGENCY PORTFOLIO</span><h2>Tenant command list</h2><input aria-label="Search agencies" placeholder="Search agency, slug or state" value={query} onChange={event => setQuery(event.target.value)} /></div>
-      <div className="platform-table">{filtered.length ? <><div className="platform-table-head"><span>Agency</span><span>Usage</span><span>Plan</span><span>State</span><span>Controls</span></div>{filtered.map((agency: any) => <AgencyRow agency={agency} plans={plans} busy={busy} send={send} key={agency.id} />)}</> : <EmptyPanel title="No agencies found" detail="Try a different agency name, slug or subscription state." />}</div>
+      <div className="platform-tenant-filters"><select aria-label="Filter subscription" value={sub} onChange={event => setSub(event.target.value)}>{subFilters.map(item => <option key={item} value={item}>{item === "all" ? "All subscriptions" : subLabel(item)}</option>)}</select><select aria-label="Filter tenant status" value={tenant} onChange={event => setTenant(event.target.value)}>{tenantFilters.map(item => <option key={item} value={item}>{item === "all" ? "All tenant statuses" : tenantLabel(item)}</option>)}</select></div>
+      <div className="platform-table">{filtered.length ? <><div className="platform-table-head"><span>Agency</span><span>Usage</span><span>Plan</span><span>Status</span><span>Manage</span></div>{filtered.map((agency: any) => <AgencyRow agency={agency} plans={plans} busy={busy} send={send} key={agency.id} />)}</> : <EmptyPanel title="No agencies found" detail="Try a different agency name, slug or subscription state." />}</div>
     </section>
   </>;
 }
 function AgencyRow({ agency, plans, busy, send }: any) {
-  const [plan, setPlan] = useState(agency.planVersionId || plans[0]?.id || "");
-  return <div className="platform-agency-row"><span><strong>{agency.name}</strong><small>{agency.slug} · created {agency.createdAt ? new Date(agency.createdAt).toLocaleDateString() : "unknown"}</small></span><span><strong>{agency.properties} properties</strong><small>{agency.users} users · {agency.enquiries} enquiries · {agency.viewings || 0} viewings</small></span><span><select aria-label={`Plan for ${agency.name}`} value={plan} onChange={event => setPlan(event.target.value)}>{plans.map((item: any) => <option value={item.id} key={item.id}>{item.name} v{item.version}</option>)}</select><button disabled={busy || !plan} onClick={() => send("POST", { action: "assign_subscription", agencyId: agency.id, planVersionId: plan, state: agency.state || "trialing" })}>{busy ? "Applying..." : "Apply"}</button></span><em className={`state-${agency.state || "unassigned"}`}>{agency.state || "unassigned"}</em><span className="platform-row-actions">{["active", "grace", "suspended", "canceled"].filter(next => next !== agency.state).map(next => <button disabled={busy || !agency.subscriptionId} onClick={() => send("PATCH", { action: "transition_subscription", id: agency.subscriptionId, state: next })} key={next}>{busy ? "Updating..." : next}</button>)}</span></div>;
+  const [plan, setPlan] = useState(agency.planVersionId || plans[0]?.id || ""), [open, setOpen] = useState(false), [confirm, setConfirm] = useState<any>(null), [choice, setChoice] = useState("activate");
+  const act = (label: string, fn: () => void, danger = false) => danger ? setConfirm({ label, fn }) : fn();
+  const transition = (state: string) => send("PATCH", { action: "transition_subscription", id: agency.subscriptionId, state, reason: "Platform operator update" });
+  const setStatus = (status: string) => send("PATCH", { action: "update_agency_status", agencyId: agency.id, status, reason: "Platform operator update" });
+  const statusInfo = agency.state === "trialing" ? `Ends ${dateShort(agency.trialEndsAt)}` : agency.state === "grace" ? `Grace ${dateShort(agency.graceEndsAt)}` : agency.state === "active" ? `Renews ${dateShort(agency.currentPeriodEndsAt)}` : agency.statusReason || "";
+  const actions: Record<string, [string, boolean, () => void]> = {
+    activate: ["Activate subscription", !agency.subscriptionId || agency.state === "active", () => transition("active")],
+    extend: ["Extend trial 7d", !agency.subscriptionId || !["trialing","expired"].includes(agency.state), () => send("POST", { action: "extend_trial", id: agency.subscriptionId, days: 7, reason: "Admin extension" })],
+    grace: ["Start grace", !agency.subscriptionId || agency.state === "grace", () => transition("grace")],
+    due: ["Mark past due", !agency.subscriptionId || agency.state === "past_due", () => transition("past_due")],
+    subSuspend: ["Suspend subscription", !agency.subscriptionId || agency.state === "suspended", () => act("suspend this subscription", () => transition("suspended"), true)],
+    subCancel: ["Cancel subscription", !agency.subscriptionId || agency.state === "canceled", () => act("cancel this subscription", () => transition("canceled"), true)],
+    restore: ["Restore agency", (agency.agencyStatus || "active") === "active", () => setStatus("active")],
+    tenantSuspend: ["Suspend agency", agency.agencyStatus === "suspended", () => act("suspend this agency", () => setStatus("suspended"), true)],
+    archive: ["Archive agency", agency.agencyStatus === "archived", () => act("archive this agency", () => setStatus("archived"), true)],
+    delete: ["Delete", false, () => act(`delete ${agency.slug}`, () => send("DELETE", { agencyId: agency.id, confirmSlug: agency.slug }), true)],
+  };
+  const selected = actions[choice] || actions.activate;
+  return <div className="platform-agency-row"><span><strong>{agency.name}</strong><small>{agency.slug} · created {dateShort(agency.createdAt)}</small></span><span><strong>{agency.properties} properties</strong><small>{agency.users} users · {agency.enquiries} enquiries · {agency.viewings || 0} viewings</small></span><span><select aria-label={`Plan for ${agency.name}`} value={plan} onChange={event => setPlan(event.target.value)}>{plans.map((item: any) => <option value={item.id} key={item.id}>{item.name} v{item.version}</option>)}</select><button disabled={busy || !plan} onClick={() => send("POST", { action: "assign_subscription", agencyId: agency.id, planVersionId: plan, state: agency.state === "active" ? "active" : "trialing" })}>{busy ? "Applying..." : agency.subscriptionId ? "Apply plan" : "Start trial"}</button></span><span className="platform-badge-stack"><em className={`state-${agency.state || "unassigned"}`}>{subLabel(agency.state)}</em><em className={`state-${agency.agencyStatus || "active"}`}>{tenantLabel(agency.agencyStatus || "active")}</em><small>{statusInfo}</small></span><span className="platform-row-actions"><button onClick={() => setOpen(value => !value)}>{open ? "Close" : "Manage"}</button>{open && <div className="platform-manage-panel"><a href={`/site/${agency.slug}`} target="_blank">View site</a><select aria-label={`Action for ${agency.name}`} value={choice} onChange={event => setChoice(event.target.value)}>{Object.entries(actions).map(([key, action]) => <option key={key} value={key}>{action[0]}</option>)}</select><button disabled={busy || selected[1]} onClick={selected[2]}>Run action</button>{confirm && <span className="platform-confirm"><small>Confirm {confirm.label}</small><button disabled={busy} onClick={() => { confirm.fn(); setConfirm(null); }}>Confirm</button><button onClick={() => setConfirm(null)}>Cancel</button></span>}</div>}</span></div>;
 }
 
 function PlatformSettings({ settings, busy, send, onAssetUploaded }: { settings?: Settings; busy: boolean; send: (method: string, body: any) => void; onAssetUploaded: (field: keyof Settings, url: string) => void }) {
