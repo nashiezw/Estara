@@ -128,3 +128,19 @@ export async function PATCH(request: Request) {
     return fail(error);
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const c = await context();
+    if (!c) return Response.json({ error: "Sign in is required." }, { status: 401 });
+    const id = clean(new URL(request.url).searchParams.get("id"), 100);
+    const row = await env.DB.prepare("SELECT id,domain,status FROM custom_domains WHERE id=? AND agency_id=?").bind(id, c.workspace.agencyId).first<any>();
+    if (!row) return Response.json({ error: "Domain was not found." }, { status: 404 });
+    if (row.status === "active") return Response.json({ error: "Disable the active domain before deleting it." }, { status: 409 });
+    await env.DB.prepare("DELETE FROM custom_domains WHERE id=? AND agency_id=?").bind(id, c.workspace.agencyId).run();
+    await writeAudit(c.workspace, "domain.deleted", "custom_domain", id, { domain: row.domain });
+    return Response.json({ deleted: true });
+  } catch (error) {
+    return fail(error);
+  }
+}

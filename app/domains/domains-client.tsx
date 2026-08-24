@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
+import type { PlatformBrand } from "../components/PlatformToolHeader";
 
 type DomainRecord = { id: string; domain: string; ownershipToken: string; expectedCname: string; txtName: string; txtValue: string; status: string; failureReason?: string | null };
 type DomainPayload = { domains: DomainRecord[]; customDomainsEligible: boolean; defaultSiteUrl: string; defaultSiteHost: string };
@@ -384,51 +385,6 @@ const styles = `
       background: linear-gradient(180deg, #f8fbf8 0%, #eef6f2 100%);
     }
 
-    .domain-topbar {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-      min-height: 3.6rem;
-      margin: -0.25rem -0.1rem 1rem;
-      padding-bottom: 0.8rem;
-      border-bottom: 1px solid #dfe9e4;
-    }
-
-    .domain-menu-dot {
-      display: grid;
-      place-items: center;
-      width: 2.35rem;
-      height: 2.35rem;
-      border: 1px solid #dfe9e4;
-      border-radius: 0.75rem;
-      background: #ffffff;
-      color: #123d35;
-      font-weight: 900;
-      text-decoration: none;
-    }
-
-    .domain-app-mark {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      color: #123d35;
-      font-size: 0.82rem;
-      font-weight: 950;
-      letter-spacing: 0.16em;
-      text-decoration: none;
-    }
-
-    .domain-app-mark i {
-      width: 1.75rem;
-      height: 1.75rem;
-      display: grid;
-      place-items: center;
-      border-radius: 0.45rem;
-      background: #174b41;
-      color: #e6bd5f;
-      font-style: normal;
-    }
-
     .domain-breadcrumbs {
       display: flex;
       align-items: center;
@@ -596,7 +552,6 @@ const styles = `
   }
 
   @media (min-width: 641px) {
-    .domain-topbar,
     .domain-breadcrumbs,
     .domain-help-card {
       display: none;
@@ -604,7 +559,7 @@ const styles = `
   }
 `;
 
-export default function DomainClient() {
+export default function DomainClient({ platform }: { platform: PlatformBrand }) {
   const [domains, setDomains] = useState<DomainRecord[]>([]);
   const [customDomainsEligible, setCustomDomainsEligible] = useState(true);
   const [defaultSiteUrl, setDefaultSiteUrl] = useState("");
@@ -642,6 +597,21 @@ export default function DomainClient() {
       setBusy(false);
     }
   }
+  async function remove(id: string) {
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const response = await fetch(`/api/domains?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Domain could not be deleted.");
+      setMessage("Custom domain deleted.");
+      setExpandedDomain(null);
+      await load();
+    } catch (err: any) {
+      setError(err.message || "Domain could not be deleted.");
+    } finally {
+      setBusy(false);
+    }
+  }
   
   function add(event: FormEvent) {
     event.preventDefault();
@@ -655,11 +625,7 @@ export default function DomainClient() {
     return () => styleEl.remove();
   }, []);
 
-  return <main className="tool-page domain-page">
-    <header className="domain-topbar" aria-label="Workspace navigation">
-      <a className="domain-menu-dot" href="/workspace" aria-label="Return to workspace">‹</a>
-      <a className="domain-app-mark" href="/workspace"><i>E</i><span>ESTARA</span></a>
-    </header>
+  return <>
     <nav className="domain-breadcrumbs" aria-label="Breadcrumbs"><span>Home</span><span>/</span><span>Workspace</span><span>/</span><strong>Agency Website</strong><span>/</span><strong>Domains</strong></nav>
     <a className="back" href="/workspace">Return to workspace</a>
     <section className="tool-hero"><span>Agency website</span><h1>Domains & Website</h1><p>Manage how customers access your agency website.</p></section>
@@ -673,7 +639,7 @@ export default function DomainClient() {
         <div>
           <span>Included website</span>
           <h2>{defaultSiteHost || "Public website address not configured"}</h2>
-          <p>Your ESTARA website is live and ready to share. Use this address to attract visitors and get leads.</p>
+          <p>Your {platform.shortName} website is live and ready to share. Use this address to attract visitors and get leads.</p>
           <p className="sr-only">In Cloudflare, keep app.estara.co.zw explicit, add a proxied wildcard DNS record for *.estara.co.zw, and attach the Worker route *.estara.co.zw/* so every agency slug resolves here.</p>
           <div className="domain-card-actions">
             {defaultSiteUrl ? <a className="primary" href={defaultSiteUrl} target="_blank" rel="noreferrer">Open website</a> : <a className="outline" href="/admin">Configure suffix</a>}
@@ -787,6 +753,13 @@ export default function DomainClient() {
                 >
                   Activate
                 </button>
+                <button
+                  disabled={busy || item.status === "active"}
+                  onClick={() => remove(item.id)}
+                  className="action-button"
+                >
+                  Delete
+                </button>
               </footer>
             </article>
           );
@@ -799,7 +772,7 @@ export default function DomainClient() {
         </article>
       )}
     </section>
-  </main>;
+  </>;
 }
 
 function DomainCheck({ id, busy, call }: { id: string; busy: boolean; call: (method: string, body: Record<string, unknown>) => void }) {
