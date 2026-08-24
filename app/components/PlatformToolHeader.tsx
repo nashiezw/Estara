@@ -5,6 +5,8 @@ export type PlatformBrand = {
   platformName?: string;
   logoUrl?: string;
   iconUrl?: string;
+  darkLogoUrl?: string;
+  darkIconUrl?: string;
   primaryColor?: string;
   accentColor?: string;
 };

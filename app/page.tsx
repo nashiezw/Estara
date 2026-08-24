@@ -68,6 +68,8 @@ export default async function Home() {
   const initial = platform.shortName.slice(0, 1);
   const platformIcon = platform.iconUrl || platform.darkIconUrl;
   const platformLogo = platform.logoUrl || platform.darkLogoUrl;
+  const platformDarkIcon = platform.darkIconUrl || platform.iconUrl;
+  const platformDarkLogo = platform.darkLogoUrl || platform.logoUrl;
   const parent = platform.parentBrand ? `A ${platform.parentBrand} product` : platform.descriptor;
   const publicDomain = platformDomainFromHost(host, platform.domain);
   const loginHref = appHref("/login", publicDomain);
@@ -177,7 +179,7 @@ export default async function Home() {
       </section>
 
       <footer className="home-footer">
-        <a href="/" className="home-logo">{platformIcon ? <img className="brand-icon" src={platformIcon} alt="" /> : <i>{initial}</i>}<span>{platformLogo ? <img className="brand-logo" src={platformLogo} alt={`${platform.shortName} logo`} /> : platform.shortName}<small>{parent}</small></span></a>
+        <a href="/" className="home-logo">{platformDarkIcon ? <img className="brand-icon" src={platformDarkIcon} alt="" style={platform.darkIconUrl ? { background: "transparent" } : undefined} /> : <i>{initial}</i>}<span>{platformDarkLogo ? <img className="brand-logo" src={platformDarkLogo} alt={`${platform.shortName} logo`} style={platform.darkLogoUrl ? { background: "transparent" } : undefined} /> : platform.shortName}<small>{parent}</small></span></a>
         <nav>
           <a href={contactsHref}>Contacts</a>
           <a href={propertiesHref}>Properties</a>

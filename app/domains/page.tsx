@@ -9,6 +9,6 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   await requireChatGPTUser("/domains");
   const platform = await getPlatformIdentity();
-  const brand = { shortName: platform.shortName, platformName: platform.platformName, logoUrl: platform.logoUrl, iconUrl: platform.iconUrl, primaryColor: platform.primaryColor, accentColor: platform.accentColor };
+  const brand = { shortName: platform.shortName, platformName: platform.platformName, logoUrl: platform.logoUrl, iconUrl: platform.iconUrl, darkLogoUrl: platform.darkLogoUrl, darkIconUrl: platform.darkIconUrl, primaryColor: platform.primaryColor, accentColor: platform.accentColor };
   return <main className="tool-page domain-page"><PlatformToolHeader platform={brand} section="Agency website" /><DomainClient platform={brand} /></main>;
 }
