@@ -183,4 +183,8 @@
   .studio-topbar button.studio-mobile-export-trigger{display:grid!important}
   .studio-mobile-export-trigger{place-items:center!important;width:44px!important;min-width:44px!important;height:38px!important;min-height:38px!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:10px!important;background:#fff!important;color:var(--studio-brand)!important;padding:0!important}
   .studio-mobile-export-trigger svg{width:19px!important;height:19px!important;fill:none!important;stroke:currentColor!important;stroke-width:2.2!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+  .studio-workbar{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;align-items:start!important;overflow:visible!important}
+  .studio-zoom-controls{justify-self:end!important;max-width:min(100%,calc(100vw - 132px))!important}
+  .studio-context-toolbar{position:absolute!important;left:0!important;right:0!important;top:44px!important;z-index:74!important;width:auto!important;max-width:none!important;display:flex!important;overflow-x:auto!important;overflow-y:hidden!important;border-radius:12px!important;background:#fff!important;box-shadow:0 14px 34px rgba(9,40,33,.18)!important}
+  .studio-context-toolbar.text-toolbar,.studio-context-toolbar.asset-toolbar{width:auto!important;max-width:none!important;justify-self:auto!important;margin:0!important}
 }
