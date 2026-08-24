@@ -4,12 +4,14 @@ import "./auth.css";
 
 export default async function AuthShell({ children }: { children: React.ReactNode }) {
   const platform = await getPlatformIdentity();
+  const icon = platform.darkIconUrl || platform.iconUrl;
+  const logo = platform.darkLogoUrl || platform.logoUrl;
   return (
     <main className="auth-shell">
       <section className="auth-brand">
         <Link href="/" className="auth-mark">
-          {platform.iconUrl || platform.logoUrl ? <img src={platform.iconUrl || platform.logoUrl} alt="" /> : <i>{platform.shortName.slice(0, 1)}</i>}
-          <span>{platform.shortName}<small>{platform.descriptor}</small></span>
+          {icon ? <img className="auth-mark-icon" src={icon} alt="" /> : <i>{platform.shortName.slice(0, 1)}</i>}
+          <span>{logo ? <img className="auth-mark-logo" src={logo} alt={`${platform.shortName} logo`} /> : platform.shortName}<small>{platform.descriptor}</small></span>
         </Link>
         <div>
           <h1>Run your agency from one secure account.</h1>
