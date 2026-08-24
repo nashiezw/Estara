@@ -47,6 +47,16 @@ test("homepage mobile navigation uses a side drawer and preserves hero hierarchy
   assert.match(styles, /\.home-actions a:nth-child\(n\+3\)\{display:none!important\}/);
 });
 
+test("homepage sections keep heading, copy and action spacing scoped to the landing page", async () => {
+  const styles = await readFile("app/globals.css", "utf8");
+
+  assert.match(styles, /\.estara-home :is\(\.home-hero-copy,\.home-today>div:first-child/);
+  assert.match(styles, /gap:clamp\(14px,2vw,24px\)/);
+  assert.match(styles, /\.estara-home :is\(\.home-hero-copy,\.home-today,\.home-reuse,\.home-workflow,\.home-websites\) :is\(\.home-kicker,h1,h2,p\)\{margin:0\}/);
+  assert.match(styles, /\.estara-home \.home-workflow li\{min-height:126px;padding:22px;align-content:start;gap:34px\}/);
+  assert.doesNotMatch(styles, /:where\(\.estara-home/);
+});
+
 test("public pages expose mobile menus and demo app links use the app host", async () => {
   const [publicWebsite, demo, demoClient, styles] = await Promise.all([
     readFile("app/site/[slug]/public-website.tsx", "utf8"),
