@@ -13,7 +13,7 @@ export default async function AuthShell({ children }: { children: React.ReactNod
         </Link>
         <div>
           <h1>Run your agency from one secure account.</h1>
-          <p>Properties, enquiries, viewings, seller reports and daily next actions all start behind a verified ESTARA login.</p>
+          <p>Properties, enquiries, viewings, seller reports and daily next actions all start behind a verified {platform.shortName} login.</p>
         </div>
         <div className="auth-proof">
           <span>Email verification</span>

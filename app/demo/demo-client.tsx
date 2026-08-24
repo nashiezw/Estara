@@ -54,14 +54,14 @@ export default function DemoExperience({ platform, loginHref, registerHref }: { 
         </nav>
         <section>
           <span>Safe sample data only</span>
-          <p>This demo lets visitors experience the ESTARA operating flow before signing in. Nothing here opens private records or saves changes.</p>
+          <p>This demo lets visitors experience the {platform.shortName} operating flow before signing in. Nothing here opens private records or saves changes.</p>
         </section>
       </aside>
       <section className="demo-workspace-main">
         <header>
           <div>
             <span>Interactive demo</span>
-            <h1>Explore the ESTARA workspace before creating an account.</h1>
+            <h1>Explore the {platform.shortName} workspace before creating an account.</h1>
             <p>Click through properties, enquiries, marketing and seller updates with realistic sample records.</p>
           </div>
           <nav>
@@ -70,7 +70,7 @@ export default function DemoExperience({ platform, loginHref, registerHref }: { 
           </nav>
         </header>
 
-        {module === "today" && <TodayDemo choose={setModule} />}
+        {module === "today" && <TodayDemo platformName={platform.shortName} choose={setModule} />}
         {module === "properties" && <PropertiesDemo selected={selected} setSelected={setSelected} />}
         {module === "enquiries" && <EnquiryDemo selected={selected} setModule={setModule} />}
         {module === "marketing" && <MarketingDemo selected={selected} marketingCopy={marketingCopy} copied={copied} copyMarketing={copyMarketing} />}
@@ -80,12 +80,12 @@ export default function DemoExperience({ platform, loginHref, registerHref }: { 
   );
 }
 
-function TodayDemo({ choose }: { choose: (id: (typeof modules)[number]["id"]) => void }) {
+function TodayDemo({ platformName, choose }: { platformName: string; choose: (id: (typeof modules)[number]["id"]) => void }) {
   return <div className="demo-panel-grid">
     {activity.map(([value, label, text]) => <article className="demo-metric" key={label}><strong>{value}</strong><span>{label}</span><p>{text}</p></article>)}
     <section className="demo-feature-panel">
       <span>Today&apos;s command brief</span>
-      <h2>ESTARA shows the work that protects revenue.</h2>
+      <h2>{platformName} shows the work that protects revenue.</h2>
       <p>From one screen, an agency can see new leads, live viewings, listings needing attention and seller updates that are ready to send.</p>
       <div><button onClick={() => choose("properties")}>Inspect properties</button><button onClick={() => choose("enquiries")}>Review enquiries</button></div>
     </section>

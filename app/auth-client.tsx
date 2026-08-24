@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 
 type Mode = "login" | "register" | "forgot" | "reset" | "verify";
 
-export default function AuthClient({ mode, token = "" }: { mode: Mode; token?: string }) {
+export default function AuthClient({ mode, token = "", platformName = "ESTARA" }: { mode: Mode; token?: string; platformName?: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -46,8 +46,8 @@ export default function AuthClient({ mode, token = "" }: { mode: Mode; token?: s
   return (
     <div className="auth-card">
       <span>{mode === "login" ? "Secure login" : mode === "register" ? "Create account" : mode === "forgot" ? "Account recovery" : mode === "reset" ? "New password" : "Email verification"}</span>
-      <h2>{title(mode)}</h2>
-      <p>{copy(mode)}</p>
+      <h2>{title(mode, platformName)}</h2>
+      <p>{copy(mode, platformName)}</p>
       {message && <div className="auth-message success">{message}</div>}
       {error && <div className="auth-message error">{error}</div>}
       {mode === "verify" && !token && <div className="auth-message error">This verification link is missing its token.</div>}
@@ -69,17 +69,17 @@ export default function AuthClient({ mode, token = "" }: { mode: Mode; token?: s
   );
 }
 
-function title(mode: Mode) {
-  if (mode === "register") return "Start your ESTARA workspace.";
+function title(mode: Mode, platformName: string) {
+  if (mode === "register") return `Start your ${platformName} workspace.`;
   if (mode === "forgot") return "Reset access safely.";
   if (mode === "reset") return "Choose a new password.";
   if (mode === "verify") return "Verifying your email.";
   return "Welcome back.";
 }
 
-function copy(mode: Mode) {
+function copy(mode: Mode, platformName: string) {
   if (mode === "register") return "Create your owner account. You will verify your email before entering the workspace.";
-  if (mode === "forgot") return "Enter your email and ESTARA will prepare a reset link if the account exists.";
+  if (mode === "forgot") return `Enter your email and ${platformName} will prepare a reset link if the account exists.`;
   if (mode === "reset") return "Use at least 10 characters with letters and numbers.";
   if (mode === "verify") return "We are checking your secure verification link and will open the workspace when it succeeds.";
   return "Log in with the email and password connected to your agency.";

@@ -627,7 +627,6 @@ export default function DomainClient({ platform }: { platform: PlatformBrand }) 
 
   return <>
     <nav className="domain-breadcrumbs" aria-label="Breadcrumbs"><span>Home</span><span>/</span><span>Workspace</span><span>/</span><strong>Agency Website</strong><span>/</span><strong>Domains</strong></nav>
-    <a className="back" href="/workspace">Return to workspace</a>
     <section className="tool-hero"><span>Agency website</span><h1>Domains & Website</h1><p>Manage how customers access your agency website.</p></section>
     
     {error && <div className="notice" role="alert">{error}</div>}

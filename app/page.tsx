@@ -103,7 +103,7 @@ export default async function Home() {
           </div>
         </div>
 
-        <aside className="home-command" aria-label="ESTARA product preview">
+        <aside className="home-command" aria-label={`${platform.shortName} product preview`}>
           <header><span>Today&apos;s Business</span><strong>Demo workspace preview</strong></header>
           <div className="home-command-grid">
             <article><small>New enquiries</small><b>11</b><span>Response timer active</span></article>
@@ -121,7 +121,7 @@ export default async function Home() {
       <section className="home-today" id="today">
         <div>
           <p className="home-kicker">Today&apos;s Business</p>
-          <h2>ESTARA should tell the team where attention is needed.</h2>
+          <h2>{platform.shortName} should tell the team where attention is needed.</h2>
           <p>The dashboard is not meant to be a pile of charts. It is the agency&apos;s daily operating room: what protects revenue, what needs follow-up and what moves next.</p>
         </div>
         <div className="home-today-list">
@@ -133,7 +133,7 @@ export default async function Home() {
         <div>
           <p className="home-kicker">Enter once. Use everywhere.</p>
           <h2>One property record becomes the whole sales machine.</h2>
-          <p>A listing should not be retyped for every channel. ESTARA turns verified property data into the public website, marketing assets, enquiries, viewings and seller evidence.</p>
+          <p>A listing should not be retyped for every channel. {platform.shortName} turns verified property data into the public website, marketing assets, enquiries, viewings and seller evidence.</p>
         </div>
         <div className="home-reuse-map">
           <strong>Property record</strong>
@@ -149,7 +149,7 @@ export default async function Home() {
         <div>
           <p className="home-kicker">First success moment</p>
           <h2>From empty account to live agency presence.</h2>
-          <p>The first sellable ESTARA experience should take a new agency from setup to a live property, share-ready marketing, incoming enquiry, viewing and seller update.</p>
+          <p>The first sellable {platform.shortName} experience should take a new agency from setup to a live property, share-ready marketing, incoming enquiry, viewing and seller update.</p>
           <a href={registerHref}>Create account</a>
         </div>
         <ol>{firstRun.map((item, index) => <li key={item}><span>{String(index + 1).padStart(2, "0")}</span><strong>{item}</strong></li>)}</ol>
@@ -172,7 +172,7 @@ export default async function Home() {
 
       <section className="home-final">
         <p className="home-kicker">Zimbabwe-first. World-class standard.</p>
-        <h2>When a property enters your agency, it should enter ESTARA.</h2>
+        <h2>When a property enters your agency, it should enter {platform.shortName}.</h2>
         <div><a href={registerHref}>Start setup</a><a href={loginHref}>Log in</a></div>
       </section>
 
