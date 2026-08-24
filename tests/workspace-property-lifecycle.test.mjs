@@ -22,7 +22,13 @@ test("workspace properties can be edited, deleted and activated with exact readi
  assert.match(ui,/Monthly rent \(USD\)/);
  assert.match(ui,/Seller phone/);
  assert.match(ui,/Landlord phone/);
- assert.match(actions,/Complete before activation:/);
+ assert.match(ui,/Publish listing/);
+ assert.match(ui,/Published-ready\. Improve later/);
+ assert.doesNotMatch(ui,/required minLength=\{40\}/);
+ assert.doesNotMatch(ui,/Street address<input required/);
+ assert.match(ui,/mandateExpiresAt:source\.mandateId\?"":""/);
+ assert.match(actions,/Add before publishing:/);
+ assert.match(actions,/propertyPublishReadiness/);
  assert.match(actions,/propertyPhotoRequirement/);
  assert.match(actions,/autoVerified/);
 });
