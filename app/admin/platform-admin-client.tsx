@@ -72,12 +72,18 @@ export default function PlatformAdminClient({ displayName }: { displayName: stri
   useEffect(() => { load(true).catch(reason => { setError(reason.message); setLoading(false); }); }, []);
   const send = async (method: string, body: any) => {
     setBusy(true); setNotice("");
+    const isAgencyDelete = method === "DELETE" && Boolean(body?.agencyId);
+    const removeAgencyFromList = () => setData(current => ({ ...current, agencies: current.agencies.filter((agency: any) => agency.id !== body.agencyId) }));
     try {
       const response = await fetch("/api/platform", { method, cache: "no-store", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), result = await response.json();
       if (!response.ok) throw new Error(result.error || "Operation failed.");
-      setNotice("Saved and recorded in the platform audit trail.");
+      if (isAgencyDelete && (result.deleted || result.archived)) removeAgencyFromList();
+      setNotice(isAgencyDelete && (result.deleted || result.archived) ? result.message || "Agency removed from the command list and recorded in the platform audit trail." : "Saved and recorded in the platform audit trail.");
       if (result.settings) setData(current => ({ ...current, settings: normaliseSettings(result.settings), platform: { ...current.platform, ...normaliseSettings(result.settings) } }));
-      await load();
+      if (isAgencyDelete && (result.deleted || result.archived)) {
+        await load().catch(() => {});
+        removeAgencyFromList();
+      } else await load();
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : "Operation failed.");
     } finally {

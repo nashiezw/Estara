@@ -301,7 +301,7 @@ export async function DELETE(request: Request) {
     if (hasRecords) {
       await env.DB.prepare("UPDATE agencies SET status='archived',archived_at=CURRENT_TIMESTAMP WHERE id=?").bind(agencyId).run();
       await writePlatformAudit(access.context, "agency.archived_for_retention", "agency", agencyId, { counts });
-      return Response.json({ deleted: false, archived: true, message: "Agency has records, so it was archived for evidence retention." });
+      return Response.json({ deleted: false, archived: true, message: "Agency archived for evidence retention and removed from the command list." });
     }
     await env.DB.batch([
       env.DB.prepare("DELETE FROM billing_events WHERE agency_id=?").bind(agencyId),

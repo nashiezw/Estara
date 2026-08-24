@@ -12,8 +12,12 @@ test("platform agency command page is card-based and delete hides archived tenan
  assert.match(client,/platform-agency-card/);
  assert.match(client,/Manage tenant/);
  assert.match(client,/Confirm/);
+ assert.match(client,/isAgencyDelete/);
+ assert.match(client,/removeAgencyFromList/);
+ assert.match(client,/agencies: current\.agencies\.filter/);
  assert.match(route,/WHERE a\.status<>'archived'/);
  assert.match(route,/agency\.archived_for_retention/);
+ assert.match(route,/removed from the command list/);
  assert.match(css,/platform-directory-hero/);
  assert.match(css,/platform-agency-grid/);
  assert.match(css,/platform-agency-card/);
