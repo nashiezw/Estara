@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { getPublicAgency, listPublicAgents, listPublicProperties } from "../../../../db/public-site";
+import { getPublicAgency, listPublicAgents, listPublicBranches, listPublicProperties } from "../../../../db/public-site";
 import { publicIconUrl, publicMediaUrl, publicOrigin, publicUrl, sectionDescription, sectionTitle } from "../../../../db/public-seo";
 import { PublicSection } from "../public-website";
 
@@ -42,9 +42,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string;
   const host = (requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "").toLowerCase();
   const pathMode = host.replace(/:\d+$/, "").startsWith(`${slug.toLowerCase()}.`) ? "clean" : "site";
   const type = section === "sale" ? "Sale" : section === "rent" ? "Rent" : undefined;
-  const [properties, agents] = await Promise.all([
+  const [properties, agents, branches] = await Promise.all([
     listPublicProperties(agency.id, type),
     section === "agents" ? listPublicAgents(agency.id) : Promise.resolve([]),
+    ["about", "contact"].includes(section) ? listPublicBranches(agency.id) : Promise.resolve([]),
   ]);
-  return <PublicSection agency={agency} properties={properties} section={section} agents={agents} pathMode={pathMode} />;
+  return <PublicSection agency={agency} properties={properties} section={section} agents={agents} branches={branches} pathMode={pathMode} />;
 }

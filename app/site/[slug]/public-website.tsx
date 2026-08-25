@@ -56,6 +56,19 @@ type PublicAgent = {
   languages: string[];
   photoMediaId: string | null;
 };
+type PublicBranch = {
+  id: string;
+  name: string;
+  location: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  address: string;
+  description: string;
+  openingHours: string;
+  managerName: string;
+  liveListings: number;
+};
 type PublicProperty = {
   id: string;
   ref: string;
@@ -68,6 +81,8 @@ type PublicProperty = {
   size: string;
   transactionType: string;
   heroMediaId: string | null;
+  branchName?: string;
+  branchLocation?: string;
 };
 
 const initials = (value: string) =>
@@ -298,6 +313,30 @@ export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgen
   );
 }
 
+function BranchGrid({ branches }: { branches: PublicBranch[] }) {
+  return (
+    <div className="public-branch-grid">
+      {branches.map((branch) => (
+        <article key={branch.id}>
+          <span>{branch.location || "Local office"}</span>
+          <h3>{branch.name}</h3>
+          <p>{branch.description || branch.address || "A local office for listings, enquiries and client follow-through."}</p>
+          <dl>
+            {branch.managerName && <><dt>Manager</dt><dd>{branch.managerName}</dd></>}
+            {branch.openingHours && <><dt>Hours</dt><dd>{branch.openingHours}</dd></>}
+            <dt>Listings</dt><dd>{branch.liveListings}</dd>
+          </dl>
+          <footer>
+            {branch.phone && <a href={`tel:${branch.phone}`}>Call</a>}
+            {branch.whatsapp && <a href={`https://wa.me/${branch.whatsapp.replace(/\D/g, "")}`}>WhatsApp</a>}
+            {branch.email && <a href={`mailto:${branch.email}`}>Email</a>}
+          </footer>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function ServiceCards({ agency }: { agency: PublicAgency }) {
   const items = agency.businessActivities.length
     ? agency.businessActivities
@@ -334,7 +373,7 @@ function TrustStrip({ agency, properties }: { agency: PublicAgency; properties: 
   );
 }
 
-export function PublicHome({ agency, properties, pathMode = "site" }: { agency: PublicAgency; properties: PublicProperty[]; pathMode?: PublicPathMode }) {
+export function PublicHome({ agency, properties, branches = [], pathMode = "site" }: { agency: PublicAgency; properties: PublicProperty[]; branches?: PublicBranch[]; pathMode?: PublicPathMode }) {
   const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
   const featured = properties[0];
   return (
@@ -395,6 +434,19 @@ export function PublicHome({ agency, properties, pathMode = "site" }: { agency: 
           <ServiceCards agency={agency} />
         </section>
 
+        {branches.length > 0 && (
+          <section className="public-offices">
+            <div className="public-section-head">
+              <div>
+                <span>LOCAL OFFICES</span>
+                <h2>Find the right branch.</h2>
+              </div>
+              <a href={publicPath(agency, "/contact", pathMode)}>Contact us</a>
+            </div>
+            <BranchGrid branches={branches.slice(0, 3)} />
+          </section>
+        )}
+
         <section className="public-about">
           <div>
             <span>LOCAL KNOWLEDGE</span>
@@ -419,12 +471,14 @@ export function PublicSection({
   properties,
   section,
   agents = [],
+  branches = [],
   pathMode = "site",
 }: {
   agency: PublicAgency;
   properties: PublicProperty[];
   section: string;
   agents?: PublicAgent[];
+  branches?: PublicBranch[];
   pathMode?: PublicPathMode;
 }) {
   const titles: Record<string, [string, string]> = {
@@ -479,6 +533,7 @@ export function PublicSection({
               {agency.email && <a href={`mailto:${agency.email}`}>{agency.email}</a>}
             </article>
             <PublicEnquiryForm slug={agency.slug} allowViewing={false} />
+            {branches.length > 0 && <BranchGrid branches={branches} />}
           </section>
         ) : (
           <div className={`public-copy public-copy-${section}`}>
@@ -502,6 +557,7 @@ export function PublicSection({
                   <article><span>STANDARD</span><h3>Premium presentation</h3><p>Every public page uses the agency brand, selected visual style and live property data.</p></article>
                   <article><span>SERVICE</span><h3>Responsive by design</h3><p>Enquiries route into the operating workspace so the team can respond and follow through.</p></article>
                 </section>
+                {branches.length > 0 && <section className="public-offices"><div className="public-section-head"><div><span>OUR OFFICES</span><h2>Local teams, one standard.</h2></div></div><BranchGrid branches={branches} /></section>}
                 <TrustStrip agency={agency} properties={properties} />
               </>
             )}

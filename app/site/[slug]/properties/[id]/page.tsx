@@ -38,7 +38,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string;
   const property = await getPublicProperty(agency.id, id);
   if (!property) notFound();
   const similar = (await listPublicProperties(agency.id, property.transactionType)).filter(item => item.id !== property.id).slice(0, 3);
-  const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
+  const contactPhone = property.branchPhone || agency.phone, contactWhatsapp = property.branchWhatsapp || agency.whatsapp || contactPhone, contactEmail = property.branchEmail || agency.email;
+  const whatsapp = contactWhatsapp.replace(/\D/g, "");
   const photoStyle = property.heroMediaId ? { backgroundImage: `url(/api/public/${slug}/media?id=${encodeURIComponent(property.heroMediaId)})` } : undefined;
   const requestHeaders = await headers();
   const origin = publicOrigin(requestHeaders);
@@ -57,7 +58,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string;
         <div className="public-property-photo" style={photoStyle}><span>{property.transactionType}</span></div>
         <aside><small>{property.ref}</small><h1>{property.title}</h1><p>{property.location}</p><strong>{property.price}</strong>
           <div className="public-facts"><span>{property.beds}<small>Bedrooms</small></span><span>{property.baths}<small>Bathrooms</small></span><span>{property.size || "Ask"}<small>Land size</small></span></div>
-          <div className="public-actions">{agency.phone && <TrackedLink slug={slug} propertyId={id} eventType="call" href={`tel:${agency.phone}`}>Call agency</TrackedLink>}{whatsapp && <TrackedLink slug={slug} propertyId={id} eventType="whatsapp" href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`I'm interested in ${property.title} (${property.ref})`)}`}>WhatsApp</TrackedLink>}<ShareButton title={property.title}/></div>
+          {property.branchName && <div className="public-property-branch"><span>Handled by</span><strong>{property.branchName}</strong><small>{property.branchLocation || property.branchAddress || property.branchOpeningHours}</small></div>}
+          <div className="public-actions">{contactPhone && <TrackedLink slug={slug} propertyId={id} eventType="call" href={`tel:${contactPhone}`}>Call office</TrackedLink>}{whatsapp && <TrackedLink slug={slug} propertyId={id} eventType="whatsapp" href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`I'm interested in ${property.title} (${property.ref})`)}`}>WhatsApp</TrackedLink>}{contactEmail && <a href={`mailto:${contactEmail}`}>Email</a>}<ShareButton title={property.title}/></div>
         </aside>
       </section>
       <section className="public-property-body">
