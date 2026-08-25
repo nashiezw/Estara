@@ -24,6 +24,12 @@ test("public footer is a premium agency conversion footer, not a plain contact s
   assert.match(publicSite, /public-footer-bottom/);
   assert.match(publicSite, /agency\.businessActivities\.slice\(0, 5\)/);
   assert.match(publicSite, /agency\.poweredByWording/);
+  assert.match(publicSite, /footerLogoId/);
+  assert.match(publicSite, /footerIconId/);
+  assert.match(publicSite, /footerLogo \|\| \(agency\.logoId \? mediaUrl\(agency, agency\.logoId\) : ""\)/);
+  assert.match(publicSite, /footerIcon \|\| \(agency\.iconId \? mediaUrl\(agency, agency\.iconId\) : ""\)/);
+  assert.match(publicSite, /public-brand-dark-asset/);
+  assert.match(publicSite, /public-brand-light-fallback/);
 
   assert.match(css, /\.public-footer\{position:relative/);
   assert.match(css, /\.public-footer-brand/);
@@ -43,6 +49,8 @@ test("public footer is a premium agency conversion footer, not a plain contact s
   assert.match(css, /\.public-footer-mark\{padding:0!important;border:0!important;background:transparent!important/);
   assert.match(css, /\.public-footer-mark \.public-brand-icon\{width:58px!important;height:58px!important;padding:0!important;border-radius:0!important;background:transparent!important/);
   assert.match(css, /\.public-footer-mark \.public-brand-logo\{height:38px!important;max-width:250px!important;padding:0!important/);
+  assert.match(css, /\.public-footer-mark \.public-brand-dark-asset\{background:transparent!important/);
+  assert.match(css, /\.public-footer-mark \.public-brand-light-fallback\{background:#fff!important;border-radius:8px!important;padding:6px!important/);
   assert.match(css, /\.public-footer\{grid-template-columns:minmax\(300px,1\.02fr\)/);
   assert.match(css, /\.public-footer h2\{max-width:520px!important;margin:24px 0 12px!important;font:clamp\(30px,3\.4vw,48px\)\/1\.02 Georgia,serif!important/);
   assert.match(css, /\.public-footer-nav a,\.public-footer-services span,\.public-footer-contact a\{min-height:43px!important/);

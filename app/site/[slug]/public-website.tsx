@@ -19,6 +19,8 @@ type PublicAgency = {
   responseSlaMinutes: number;
   logoId: string | null;
   iconId?: string | null;
+  footerLogoId?: string | null;
+  footerIconId?: string | null;
   portalName: string;
   hideParentBrand: boolean;
   poweredByWording: string;
@@ -234,8 +236,10 @@ function AgentGrid({ agency, agents }: { agency: PublicAgency; agents: PublicAge
 
 export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgency; pathMode?: PublicPathMode }) {
   const whatsapp = (agency.whatsapp || agency.phone).replace(/\D/g, "");
-  const logo = agency.logoId ? mediaUrl(agency, agency.logoId) : "";
-  const icon = agency.iconId ? mediaUrl(agency, agency.iconId) : "";
+  const footerLogo = agency.footerLogoId ? mediaUrl(agency, agency.footerLogoId) : "";
+  const footerIcon = agency.footerIconId ? mediaUrl(agency, agency.footerIconId) : "";
+  const logo = footerLogo || (agency.logoId ? mediaUrl(agency, agency.logoId) : "");
+  const icon = footerIcon || (agency.iconId ? mediaUrl(agency, agency.iconId) : "");
   const nav = [
     ["Properties", publicPath(agency, "/properties", pathMode)],
     ["For sale", publicPath(agency, "/sale", pathMode)],
@@ -257,12 +261,12 @@ export function PublicFooter({ agency, pathMode = "site" }: { agency: PublicAgen
       <section className="public-footer-brand">
         <a href={publicPath(agency, "", pathMode)} className="public-footer-mark">
           {icon ? (
-            <img className="public-brand-icon" src={icon} alt="" />
+            <img className={`public-brand-icon ${footerIcon ? "public-brand-dark-asset" : "public-brand-light-fallback"}`} src={icon} alt="" />
           ) : (
             <b>{initials(agency.name)}</b>
           )}
           <span>
-            {logo ? <img className="public-brand-logo" src={logo} alt={`${agency.name} logo`} /> : agency.portalName || agency.name}
+            {logo ? <img className={`public-brand-logo ${footerLogo ? "public-brand-dark-asset" : "public-brand-light-fallback"}`} src={logo} alt={`${agency.name} logo`} /> : agency.portalName || agency.name}
             <small>{agency.tagline || "Property specialists"}</small>
           </span>
         </a>

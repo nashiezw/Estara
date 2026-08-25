@@ -30,7 +30,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
     JOIN agency_settings s ON s.agency_id=a.id
     LEFT JOIN properties p ON p.id=m.property_id AND p.agency_id=m.agency_id
     ${agentProfileJoin}
-    WHERE a.slug=? AND s.onboarding_complete=1 AND m.id=? AND (m.kind='agency_logo' OR m.kind='agency_icon' OR m.kind='website_image' OR (m.kind='property_photo' AND p.status='Available')${agentPhotoCondition})
+    WHERE a.slug=? AND s.onboarding_complete=1 AND m.id=? AND (m.kind='agency_logo' OR m.kind='agency_icon' OR m.kind='agency_footer_logo' OR m.kind='agency_footer_icon' OR m.kind='website_image' OR (m.kind='property_photo' AND p.status='Available')${agentPhotoCondition})
     LIMIT 1`).bind(slug, id).first<Asset>();
   if (!asset) return Response.json({ error: "Media was not found." }, { status: 404 });
   const key = variant === "thumb" && asset.thumbnailObjectKey ? asset.thumbnailObjectKey : asset.objectKey;

@@ -58,7 +58,7 @@ export default function AgencySettings({ brand, setBrand, notify }: AgencySettin
     }
   };
 
-  const upload = async (kind: "agency_logo" | "agency_icon" | "website_image", key: string, file?: File) => {
+  const upload = async (kind: "agency_logo" | "agency_icon" | "agency_footer_logo" | "agency_footer_icon" | "website_image", key: string, file?: File) => {
     if (!file) return;
     setUploading(key);
     try {
@@ -70,6 +70,8 @@ export default function AgencySettings({ brand, setBrand, notify }: AgencySettin
       if (!response.ok) throw new Error(data.error || "Upload failed.");
       if (kind === "agency_logo") updateBrand({ logoId: data.asset.id });
       else if (kind === "agency_icon") updateBrand({ iconId: data.asset.id });
+      else if (kind === "agency_footer_logo") updateBrand({ footerLogoId: data.asset.id });
+      else if (kind === "agency_footer_icon") updateBrand({ footerIconId: data.asset.id });
       else updatePublicContent(key, data.asset.id);
       notify(kind === "website_image" ? "Website image uploaded. Save settings to publish it." : "Brand asset uploaded. Save settings to publish changes.");
     } catch (error: any) {
@@ -98,6 +100,8 @@ export default function AgencySettings({ brand, setBrand, notify }: AgencySettin
           <div className="wide agency-brand-uploads">
             <AssetUpload label="Agency logo" assetId={brand.logoId} alt={`${brand.name} logo`} busy={busy || Boolean(uploading)} uploading={uploading === "agency_logo"} onFile={(file) => upload("agency_logo", "agency_logo", file)} />
             <AssetUpload label="Agency icon" assetId={brand.iconId} alt={`${brand.name} icon`} busy={busy || Boolean(uploading)} uploading={uploading === "agency_icon"} onFile={(file) => upload("agency_icon", "agency_icon", file)} />
+            <AssetUpload label="Footer logo" assetId={brand.footerLogoId} alt={`${brand.name} footer logo`} busy={busy || Boolean(uploading)} uploading={uploading === "agency_footer_logo"} onFile={(file) => upload("agency_footer_logo", "agency_footer_logo", file)} />
+            <AssetUpload label="Footer icon" assetId={brand.footerIconId} alt={`${brand.name} footer icon`} busy={busy || Boolean(uploading)} uploading={uploading === "agency_footer_icon"} onFile={(file) => upload("agency_footer_icon", "agency_footer_icon", file)} />
           </div>
           <label className="wide">Agency name<input required value={brand.name || ""} onChange={(event) => updateBrand({ name: event.target.value })} /></label>
           <label className="wide">Tagline<input value={brand.tagline || ""} onChange={(event) => updateBrand({ tagline: event.target.value })} /></label>
