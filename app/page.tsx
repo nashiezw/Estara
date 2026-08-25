@@ -1,7 +1,9 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPlatformIdentity } from "../db/platform-settings";
 import { isPlatformHost as isEstaraPlatformHost, normalizeHost } from "../db/domain.ts";
+import { agencyDescription, agencyJsonLd, agencyWebsiteJsonLd, platformIconUrl, platformLogoUrl, platformOrigin, platformSeoDescription, publicIconUrl, publicMediaUrl, publicOrigin, publicUrl, safeJsonLd } from "../db/public-seo";
 import HomeMobileDrawer from "./home-mobile-drawer";
 
 const navLinks = [
@@ -52,16 +54,62 @@ export function isPlatformHost(host: string, platform: { domain: string; tenantD
   return isEstaraPlatformHost(host, platform.domain, platform.tenantDomainSuffix);
 }
 
+export async function generateMetadata(): Promise<Metadata> {
+  const platform = await getPlatformIdentity();
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "";
+
+  if (!isPlatformHost(host, platform)) {
+    const { getPublicAgencyByHost } = await import("../db/public-site");
+    const agency = await getPublicAgencyByHost(host, platform.tenantDomainSuffix);
+    if (!agency) return { title: "Website not found", robots: { index: false, follow: false } };
+    const origin = publicOrigin(requestHeaders);
+    const description = agencyDescription(agency);
+    const image = publicMediaUrl(origin, agency, agency.publicContent.homeHeroImageId || agency.publicContent.featuredImageId || agency.logoId);
+    const icon = publicIconUrl(origin, agency);
+    const url = publicUrl(origin, agency);
+    return {
+      title: `${agency.name} | Property in Zimbabwe`,
+      description,
+      alternates: { canonical: url },
+      robots: { index: true, follow: true },
+      icons: icon ? { icon, apple: icon } : undefined,
+      openGraph: { title: agency.name, description, type: "website", url, siteName: agency.name, images: image ? [image] : [] },
+      twitter: { card: "summary_large_image", title: agency.name, description, images: image ? [image] : [] },
+    };
+  }
+
+  const origin = platformOrigin(requestHeaders, platform);
+  const description = platformSeoDescription(platform);
+  const icon = platformIconUrl(origin, platform) || "/favicon.svg";
+  const image = platformLogoUrl(origin, platform);
+  return {
+    title: `${platform.platformName} | Real estate operating system`,
+    description,
+    alternates: { canonical: origin },
+    icons: { icon, apple: icon },
+    openGraph: { title: platform.platformName, description, type: "website", url: origin, siteName: platform.platformName, images: image ? [image] : [] },
+    twitter: { card: "summary_large_image", title: platform.platformName, description, images: image ? [image] : [] },
+  };
+}
+
 export default async function Home() {
   const platform = await getPlatformIdentity();
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "";
 
   if (!isPlatformHost(host, platform)) {
-    const [{ getPublicAgencyByHost, listPublicProperties }, { PublicHome }] =
+    const [{ getPublicAgencyByHost, listPublicBranches, listPublicProperties }, { PublicHome }] =
       await Promise.all([import("../db/public-site"), import("./site/[slug]/public-website")]);
     const agency = await getPublicAgencyByHost(host, platform.tenantDomainSuffix);
-    if (agency) return <PublicHome agency={agency} properties={await listPublicProperties(agency.id)} pathMode="clean" />;
+    if (agency) {
+      const origin = publicOrigin(requestHeaders);
+      const [properties, branches] = await Promise.all([listPublicProperties(agency.id), listPublicBranches(agency.id)]);
+      return <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd([agencyJsonLd(origin, agency), agencyWebsiteJsonLd(origin, agency)]) }} />
+        <PublicHome agency={agency} properties={properties} branches={branches} pathMode="clean" />
+      </>;
+    }
     notFound();
   }
 

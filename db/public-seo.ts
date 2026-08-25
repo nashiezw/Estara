@@ -1,4 +1,5 @@
 import type { PublicAgency, PublicProperty } from "./public-site";
+import type { PlatformIdentity } from "./platform-defaults";
 
 type HeaderLike = { get(name: string): string | null };
 
@@ -18,6 +19,42 @@ export function publicOrigin(headers: HeaderLike) {
   return `${protocol}://${host}`;
 }
 
+export function absolutePublicUrl(origin: string, value?: string | null) {
+  if (!value) return undefined;
+  try {
+    return new URL(value).toString();
+  } catch {
+    const clean = value.startsWith("/") ? value : `/${value}`;
+    return `${origin}${clean}`;
+  }
+}
+
+export function platformOrigin(headers: HeaderLike, platform: Pick<PlatformIdentity, "domain">) {
+  const requestOrigin = publicOrigin(headers);
+  const host = (() => {
+    try {
+      return new URL(requestOrigin).host;
+    } catch {
+      return "";
+    }
+  })();
+  if (host.includes("localhost") || host.startsWith("127.0.0.1")) return requestOrigin;
+  const domain = platform.domain.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  return domain ? `https://${domain}` : requestOrigin;
+}
+
+export function platformIconUrl(origin: string, platform: Pick<PlatformIdentity, "iconUrl" | "darkIconUrl">) {
+  return absolutePublicUrl(origin, platform.iconUrl || platform.darkIconUrl || "/favicon.svg");
+}
+
+export function platformLogoUrl(origin: string, platform: Pick<PlatformIdentity, "logoUrl" | "darkLogoUrl" | "iconUrl">) {
+  return absolutePublicUrl(origin, platform.logoUrl || platform.darkLogoUrl || platform.iconUrl || "/og.png");
+}
+
+export function platformSeoDescription(platform: Pick<PlatformIdentity, "descriptor" | "tagline">) {
+  return platform.descriptor || platform.tagline || "A real estate operating system for property teams, marketing, enquiries and seller updates.";
+}
+
 export function publicUrl(origin: string, agency: PublicAgency, path = "") {
   const host = (() => {
     try {
@@ -26,7 +63,18 @@ export function publicUrl(origin: string, agency: PublicAgency, path = "") {
       return "";
     }
   })();
-  if (host.startsWith(`${agency.slug.toLowerCase()}.`) && !host.startsWith("app.")) return `${origin}${path || ""}`;
+  const websiteHost = (() => {
+    try {
+      return agency.website ? new URL(agency.website).hostname.toLowerCase() : "";
+    } catch {
+      return String(agency.website || "").replace(/^https?:\/\//, "").replace(/\/.*$/, "").toLowerCase();
+    }
+  })();
+  const platformHost = host === "estara.co.zw" || host === "www.estara.co.zw" || host === "app.estara.co.zw";
+  const previewHost = host.includes("localhost") || host.startsWith("127.0.0.1") || host.endsWith(".workers.dev") || host.endsWith(".pages.dev");
+  const agencySubdomain = host.startsWith(`${agency.slug.toLowerCase()}.`) && !host.startsWith("app.");
+  const customAgencyDomain = Boolean(host && !platformHost && !previewHost && (host === websiteHost || !host.endsWith(".estara.co.zw")));
+  if (agencySubdomain || customAgencyDomain) return `${origin}${path || ""}`;
   return `${origin}/site/${encodeURIComponent(agency.slug)}${path}`;
 }
 
@@ -78,8 +126,24 @@ export function agencyJsonLd(origin: string, agency: PublicAgency) {
     description: agencyDescription(agency),
     telephone: agency.phone || agency.whatsapp || undefined,
     email: agency.email || undefined,
-    image: publicMediaUrl(origin, agency, agency.logoId),
+    logo: publicMediaUrl(origin, agency, agency.logoId),
+    image: publicMediaUrl(origin, agency, agency.publicContent.featuredImageId || agency.publicContent.homeHeroImageId || agency.logoId),
     areaServed: agency.businessActivities?.length ? agency.businessActivities.join(", ") : undefined,
+  };
+}
+
+export function agencyWebsiteJsonLd(origin: string, agency: PublicAgency) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: agency.name,
+    url: publicUrl(origin, agency),
+    publisher: agencyJsonLd(origin, agency),
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${publicUrl(origin, agency, "/properties")}?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
   };
 }
 

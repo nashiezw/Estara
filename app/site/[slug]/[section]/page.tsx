@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPublicAgency, listPublicAgents, listPublicBranches, listPublicProperties } from "../../../../db/public-site";
-import { publicIconUrl, publicMediaUrl, publicOrigin, publicUrl, sectionDescription, sectionTitle } from "../../../../db/public-seo";
+import { agencyJsonLd, publicIconUrl, publicMediaUrl, publicOrigin, publicUrl, safeJsonLd, sectionDescription, sectionTitle } from "../../../../db/public-seo";
 import { PublicSection } from "../public-website";
 
 export const dynamic = "force-dynamic";
@@ -47,5 +47,9 @@ export default async function Page({ params }: { params: Promise<{ slug: string;
     section === "agents" ? listPublicAgents(agency.id) : Promise.resolve([]),
     ["about", "contact"].includes(section) ? listPublicBranches(agency.id) : Promise.resolve([]),
   ]);
-  return <PublicSection agency={agency} properties={properties} section={section} agents={agents} branches={branches} pathMode={pathMode} />;
+  const origin = publicOrigin(requestHeaders);
+  return <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(agencyJsonLd(origin, agency)) }} />
+    <PublicSection agency={agency} properties={properties} section={section} agents={agents} branches={branches} pathMode={pathMode} />
+  </>;
 }
