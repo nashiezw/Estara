@@ -438,19 +438,6 @@ export function PublicHome({ agency, properties, branches = [], pathMode = "site
           <ServiceCards agency={agency} />
         </section>
 
-        {branches.length > 0 && (
-          <section className="public-offices">
-            <div className="public-section-head">
-              <div>
-                <span>LOCAL OFFICES</span>
-                <h2>Find the right branch.</h2>
-              </div>
-              <a href={publicPath(agency, "/contact", pathMode)}>Contact us</a>
-            </div>
-            <BranchGrid branches={branches.slice(0, 3)} />
-          </section>
-        )}
-
         <section className="public-about">
           <div>
             <span>LOCAL KNOWLEDGE</span>
