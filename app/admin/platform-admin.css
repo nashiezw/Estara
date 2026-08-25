@@ -50,3 +50,29 @@
 @media(max-width:1120px){.platform-agency-grid{grid-template-columns:1fr}.platform-directory-toolbar{grid-template-columns:1fr 1fr}.platform-directory-toolbar label:first-child{grid-column:1/-1}}
 @media(max-width:760px){.platform-directory-hero{grid-template-columns:1fr;padding:24px}.platform-directory-hero strong{width:86px;height:86px}.platform-directory-toolbar,.platform-agency-grid{padding-left:18px;padding-right:18px}.platform-directory-toolbar{grid-template-columns:1fr}.platform-agency-card header{grid-template-columns:52px minmax(0,1fr)}.platform-badge-stack{grid-column:1/-1;grid-template-columns:1fr 1fr;justify-items:stretch}.platform-badge-stack em{width:100%}.platform-agency-command-strip{grid-template-columns:1fr}.platform-agency-command-strip span{white-space:normal}.platform-agency-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.platform-agency-plan{grid-template-columns:1fr}.platform-agency-plan button,.platform-agency-card footer button{width:100%}.platform-manage-panel{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.platform-manage-panel,.platform-confirm{grid-template-columns:1fr!important}.platform-confirm button{width:100%}}
+.platform-plan-workbench{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(360px,.78fr);gap:18px;align-items:start}
+.platform-plan-catalogue,.platform-plan-editor,.platform-plan-migration{display:grid;gap:16px}
+.platform-plan-catalogue p,.platform-plan-migration p,.platform-plan-warning{margin:0;color:#61766f;font-size:12px;line-height:1.65}
+.platform-plan-warning{border:1px solid #ead4a1;border-radius:12px;background:#fff8e5;color:#695010;padding:12px}
+.platform-plan-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.platform-plan-summary strong{display:grid;gap:5px;min-height:74px;border:1px solid #d9e5df;border-radius:14px;background:#f7faf8;padding:14px;color:#0d3029;font-size:28px}
+.platform-plan-summary small{color:#61766f;font-size:10px;font-weight:850}
+.platform-plan-workbench .plan-version{border:1px solid #d9e5df;border-radius:16px;background:linear-gradient(180deg,#fff,#fbfdfc);padding:16px;grid-template-columns:minmax(0,1fr) auto auto}
+.platform-plan-workbench .plan-version-published{box-shadow:inset 4px 0 0 var(--admin-brand,#153b34)}
+.platform-plan-workbench .plan-version-draft{box-shadow:inset 4px 0 0 var(--admin-accent,#e6bd5f)}
+.platform-plan-workbench .plan-version-archived{opacity:.7}
+.platform-plan-workbench .plan-version nav{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.platform-plan-workbench .plan-version nav button,.platform-plan-migration button,.platform-plan-editor>button{min-height:42px;border:1px solid #cfdcd6;border-radius:11px;background:#fff;color:#13332c;font-size:11px;font-weight:950;padding:10px 12px;cursor:pointer}
+.platform-plan-workbench .plan-version nav button:nth-child(2),.platform-plan-migration button,.platform-plan-editor>button{background:var(--admin-brand,#153b34);border-color:var(--admin-brand,#153b34);color:#fff}
+.platform-plan-workbench button:disabled{opacity:.45;cursor:not-allowed}
+.platform-plan-fields,.platform-plan-migration>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.platform-plan-fields label,.platform-plan-editor fieldset label,.platform-plan-migration label{display:grid;gap:7px;color:#314a42;font-size:10px;font-weight:900}
+.platform-plan-fields input,.platform-plan-fields select,.platform-plan-editor fieldset input,.platform-plan-migration input,.platform-plan-migration select{width:100%;min-height:42px;border:1px solid #cfddd6;border-radius:10px;background:#f9fbfa;color:#0d3029;padding:10px 12px;font-size:12px}
+.platform-plan-editor fieldset{border:1px solid #d9e5df;border-radius:14px;background:#fbfdfd;padding:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:0}
+.platform-plan-editor legend{padding:0 8px;color:#496a61;font-size:10px;font-weight:950;letter-spacing:.12em;text-transform:uppercase}
+.platform-plan-toggle{grid-template-columns:auto minmax(0,1fr)!important;align-items:center;gap:10px!important;border:1px solid #e1ebe6;border-radius:12px;background:#fff;padding:10px}
+.platform-plan-toggle input{width:18px!important;min-height:18px!important;padding:0!important}
+.platform-plan-migration{grid-column:1/-1}
+.platform-plan-migration>div{grid-template-columns:1fr 1fr 1.2fr}
+@media(max-width:980px){.platform-plan-workbench{grid-template-columns:1fr}.platform-plan-migration>div{grid-template-columns:1fr}}
+@media(max-width:620px){.platform-plan-summary,.platform-plan-fields,.platform-plan-editor fieldset,.platform-plan-workbench .plan-version,.platform-plan-workbench .plan-version nav{grid-template-columns:1fr}.platform-plan-workbench .plan-version nav button,.platform-plan-migration button,.platform-plan-editor>button{width:100%}}

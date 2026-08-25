@@ -39,6 +39,15 @@ test("super admin dashboard exposes platform-wide command, settings and evidence
   assert.match(client, /platform-empty-panel/);
   assert.match(client, /No agencies found/);
   assert.match(client, /No plan versions yet/);
+  assert.match(client, /Plans & billing control/);
+  assert.match(client, /Published versions are locked/);
+  assert.match(client, /Create new version/);
+  assert.match(client, /Migrate assigned agencies/);
+  assert.match(client, /Feature access/);
+  assert.match(client, /Usage limits/);
+  assert.match(client, /maxWebhookDeliveries/);
+  assert.match(client, /propertyPortalIntegrations/);
+  assert.match(client, /accountingIntegrations/);
   assert.match(client, /Brand System/);
   assert.match(client, /Support Desk/);
   assert.match(client, /Regional Defaults/);

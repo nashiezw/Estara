@@ -2,10 +2,11 @@ import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { requireWorkspace } from "../../../db/workspace";
 import { AuthorizationError, requirePermission, writeAudit } from "../../../db/authorization";
+import { PlanLimitError, requireCapacity } from "../../../db/entitlements";
 export const dynamic = "force-dynamic";
 const clean = (v: unknown, n = 120) => String(v ?? "").trim().slice(0, n);
 async function context(permission: "property.read" | "team.manage") { const user = await getChatGPTUser(); if (!user) return null; const workspace = await requireWorkspace(user); await requirePermission(workspace, permission); return { user, workspace }; }
-const fail = (e: unknown) => e instanceof AuthorizationError ? Response.json({ error: e.message }, { status: 403 }) : Response.json({ error: "Branches could not be processed." }, { status: 500 });
+const fail = (e: unknown) => e instanceof AuthorizationError ? Response.json({ error: e.message }, { status: 403 }) : e instanceof PlanLimitError ? Response.json({ error: e.message }, { status: 409 }) : Response.json({ error: "Branches could not be processed." }, { status: 500 });
 
 export async function GET() { try {
   const c = await context("property.read"); if (!c) return Response.json({ error: "Sign in is required." }, { status: 401 });
@@ -20,6 +21,7 @@ export async function POST(request: Request) { try {
   const c = await context("team.manage"); if (!c) return Response.json({ error: "Sign in is required." }, { status: 401 });
   const body = await request.json() as Record<string, unknown>, name = clean(body.name, 80), location = clean(body.location), phone = clean(body.phone, 40), managerUserId = clean(body.managerUserId, 100) || null;
   if (name.length < 2) return Response.json({ error: "Branch name is required." }, { status: 400 });
+  await requireCapacity(c.workspace.agencyId, c.user.userId, "branches");
   if (managerUserId && !await env.DB.prepare("SELECT 1 FROM agency_memberships WHERE agency_id=? AND user_id=?").bind(c.workspace.agencyId, managerUserId).first()) return Response.json({ error: "Branch manager must belong to this agency." }, { status: 400 });
   const id = crypto.randomUUID(); await env.DB.prepare("INSERT INTO branches(id,agency_id,name,location,phone,manager_user_id,created_by) VALUES(?,?,?,?,?,?,?)").bind(id, c.workspace.agencyId, name, location, phone, managerUserId, c.user.userId).run();
   await writeAudit(c.workspace, "branch.created", "branch", id, { name, managerUserId }); return Response.json({ branch: { id, name, location, phone, managerUserId } }, { status: 201 });

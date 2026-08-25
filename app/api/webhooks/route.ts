@@ -1,11 +1,12 @@
 import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { AuthorizationError, requirePermission, writeAudit } from "../../../db/authorization";
+import { PlanLimitError, requireEntitlement } from "../../../db/entitlements";
 import { requireWorkspace } from "../../../db/workspace";
 import { ALLOWED_WEBHOOK_EVENTS, replayWebhookDelivery, retryDueWebhooks, rotateWebhookSecret, sendTestWebhook } from "../../../db/webhooks";
 
 const clean = (v: unknown, n = 500) => typeof v === "string" ? v.trim().slice(0, n) : "";
-const fail = (e: unknown) => Response.json({ error: e instanceof Error ? e.message : "Webhook operation failed." }, { status: e instanceof AuthorizationError ? 403 : 400 });
+const fail = (e: unknown) => Response.json({ error: e instanceof Error ? e.message : "Webhook operation failed." }, { status: e instanceof AuthorizationError ? 403 : e instanceof PlanLimitError ? 402 : 400 });
 function validUrl(value: string) { try { return new URL(value).protocol === "https:"; } catch { return false; } }
 
 async function ctx() {
@@ -39,6 +40,8 @@ export async function POST(request: Request) {
       return Response.json({ signingSecret, warning: "Copy this signing secret now. The previous secret no longer verifies new deliveries." });
     }
     if (action === "test") return Response.json({ eventId: await sendTestWebhook(workspace.agencyId, clean(b.id, 100)) });
+    const plan = await requireEntitlement(workspace.agencyId, user.userId, "webhooks"), active = await env.DB.prepare("SELECT COUNT(*) count FROM webhook_subscriptions WHERE agency_id=? AND status='active'").bind(workspace.agencyId).first<{ count: number }>(), limit = Number(plan.limits.maxWebhookSubscriptions || 0);
+    if (limit > 0 && Number(active?.count || 0) >= limit) throw new PlanLimitError(`${plan.planName} allows up to ${limit} active webhook subscriptions. Upgrade the plan before creating another.`);
     const name = clean(b.name, 100), url = clean(b.url, 500), events = Array.isArray(b.events) ? [...new Set(b.events.map(String).filter(x => (ALLOWED_WEBHOOK_EVENTS as readonly string[]).includes(x)))] : [];
     if (!name || !validUrl(url) || !events.length) throw new Error("Webhook name, HTTPS URL and at least one supported event are required.");
     const id = crypto.randomUUID(), secret = `whsec_${crypto.randomUUID().replaceAll("-", "")}${crypto.randomUUID().replaceAll("-", "")}`;

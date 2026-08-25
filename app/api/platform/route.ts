@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../chatgpt-auth";
-import { ensurePlanCatalog } from "../../../db/entitlements";
+import { PLAN_ENTITLEMENT_KEYS, PLAN_LIMIT_DEFAULTS, ensurePlanCatalog } from "../../../db/entitlements";
 import { PlatformAuthorizationError, requirePlatformUser, writePlatformAudit, type PlatformContext, type PlatformRole } from "../../../db/platform-auth";
 import { calculateInvoiceDiscount, canSetAgencyStatus, canTransitionSubscription, invoiceTotal } from "../../../db/billing-policy";
 import { ensurePlatformIdentity, getPlatformIdentity } from "../../../db/platform-settings";
@@ -15,6 +15,19 @@ const hex = (value: unknown) => {
   const raw = clean(value, 20).replace(/^#/, "");
   return /^[0-9a-f]{6}$/i.test(raw) ? `#${raw.toLowerCase()}` : "";
 };
+const planEntitlements = (value: unknown) => {
+  const raw = jsonRecord(value);
+  return Object.fromEntries(PLAN_ENTITLEMENT_KEYS.map(key => [key, raw[key] === true]));
+};
+const planLimits = (value: unknown) => {
+  const raw = jsonRecord(value), limits: Record<string, number> = {};
+  for (const [key, fallback] of Object.entries(PLAN_LIMIT_DEFAULTS)) {
+    const next = Math.max(0, Math.round(Number(raw[key] ?? fallback)));
+    limits[key] = Number.isFinite(next) ? next : fallback;
+  }
+  return limits;
+};
+const periodDays = (limits: Record<string, number>, state: "trialing" | "active") => state === "trialing" ? Math.max(1, limits.trialDays || 14) : 30;
 
 async function actor(allowed: readonly PlatformRole[] = roles) {
   const user = await getChatGPTUser();
@@ -131,7 +144,7 @@ export async function GET() {
       getPlatformIdentity(),
       platformSettingsRow(),
       env.DB.prepare("SELECT user_id AS userId,email,role,active,created_at AS createdAt FROM platform_users ORDER BY created_at").all(),
-      env.DB.prepare("SELECT id,plan_key AS planKey,version,name,currency,price_minor AS priceMinor,billing_period AS billingPeriod,entitlements,limits,status,published_at AS publishedAt FROM plan_versions ORDER BY plan_key,version DESC").all(),
+      env.DB.prepare("SELECT id,plan_key AS planKey,version,name,currency,price_minor AS priceMinor,billing_period AS billingPeriod,entitlements,limits,status,published_at AS publishedAt,(SELECT COUNT(*) FROM agency_subscriptions s WHERE s.plan_version_id=plan_versions.id) AS agenciesUsing FROM plan_versions ORDER BY plan_key,version DESC").all(),
       env.DB.prepare(`SELECT a.id,a.name,a.slug,a.status AS agencyStatus,a.disabled_at AS disabledAt,a.archived_at AS archivedAt,a.created_at AS createdAt,s.id AS subscriptionId,s.state,s.trial_ends_at AS trialEndsAt,s.grace_ends_at AS graceEndsAt,s.current_period_ends_at AS currentPeriodEndsAt,s.expired_at AS expiredAt,s.status_reason AS statusReason,s.previous_plan_version_id AS previousPlanVersionId,s.plan_changed_at AS planChangedAt,p.id AS planVersionId,p.name AS planName,prev.name AS previousPlanName,
         (SELECT COUNT(*) FROM agency_memberships m WHERE m.agency_id=a.id) AS users,
         (SELECT COUNT(*) FROM properties x WHERE x.agency_id=a.id) AS properties,
@@ -180,7 +193,7 @@ export async function POST(request: Request) {
     if (action === "create_plan_version") {
       const access = await actor(["super_admin","finance"]);
       if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
-      const planKey = clean(body.planKey, 50).toLowerCase().replace(/[^a-z0-9-]/g, "-"), name = clean(body.name, 80), currency = clean(body.currency, 3).toUpperCase(), priceMinor = Math.max(0, Math.round(Number(body.priceMinor))), billingPeriod = clean(body.billingPeriod, 20), status = body.status === "published" ? "published" : "draft", entitlements = jsonRecord(body.entitlements), limits = jsonRecord(body.limits);
+      const planKey = clean(body.planKey, 50).toLowerCase().replace(/[^a-z0-9-]/g, "-"), name = clean(body.name, 80), currency = clean(body.currency, 3).toUpperCase(), priceMinor = Math.max(0, Math.round(Number(body.priceMinor))), billingPeriod = clean(body.billingPeriod, 20), status = body.status === "published" ? "published" : "draft", entitlements = planEntitlements(body.entitlements), limits = planLimits(body.limits);
       if (!planKey || !name || !/^[A-Z]{3}$/.test(currency) || !Number.isSafeInteger(priceMinor) || !["month", "year"].includes(billingPeriod)) return Response.json({ error: "Complete every plan field with valid values." }, { status: 400 });
       const latest = await env.DB.prepare("SELECT COALESCE(MAX(version),0) AS version FROM plan_versions WHERE plan_key=?").bind(planKey).first<{ version: number }>(), version = Number(latest?.version || 0) + 1, id = crypto.randomUUID();
       await env.DB.prepare("INSERT INTO plan_versions (id,plan_key,version,name,currency,price_minor,billing_period,entitlements,limits,status,published_at,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
@@ -189,12 +202,38 @@ export async function POST(request: Request) {
       return Response.json({ plan: { id, planKey, version, name, status } }, { status: 201 });
     }
 
+    if (action === "clone_plan_version") {
+      const access = await actor(["super_admin","finance"]);
+      if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
+      const sourceId = clean(body.id), source = await env.DB.prepare("SELECT plan_key AS planKey,name,currency,price_minor AS priceMinor,billing_period AS billingPeriod,entitlements,limits FROM plan_versions WHERE id=?").bind(sourceId).first<any>();
+      if (!source) return Response.json({ error: "Plan version was not found." }, { status: 404 });
+      const latest = await env.DB.prepare("SELECT COALESCE(MAX(version),0) AS version FROM plan_versions WHERE plan_key=?").bind(source.planKey).first<{ version: number }>(), version = Number(latest?.version || 0) + 1, id = crypto.randomUUID();
+      await env.DB.prepare("INSERT INTO plan_versions (id,plan_key,version,name,currency,price_minor,billing_period,entitlements,limits,status,published_at,created_by) VALUES (?,?,?,?,?,?,?,?,?,'draft',NULL,?)")
+        .bind(id, source.planKey, version, `${source.name} v${version}`, source.currency, source.priceMinor, source.billingPeriod, source.entitlements, source.limits, access.context.userId).run();
+      await writePlatformAudit(access.context, "plan.version.cloned", "plan_version", id, { fromPlanVersionId: sourceId, planKey: source.planKey, version });
+      return Response.json({ plan: { id, planKey: source.planKey, version, status: "draft" } }, { status: 201 });
+    }
+
+    if (action === "bulk_migrate_plan") {
+      const access = await actor(["super_admin","finance"]);
+      if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
+      const fromPlanVersionId = clean(body.fromPlanVersionId), toPlanVersionId = clean(body.toPlanVersionId), reason = clean(body.reason, 240);
+      const target = await env.DB.prepare("SELECT id,limits FROM plan_versions WHERE id=? AND status='published'").bind(toPlanVersionId).first<any>();
+      if (!fromPlanVersionId || !target || fromPlanVersionId === toPlanVersionId) return Response.json({ error: "Choose different source and published target plan versions." }, { status: 400 });
+      const affected = await env.DB.prepare("SELECT id,agency_id AS agencyId FROM agency_subscriptions WHERE plan_version_id=?").bind(fromPlanVersionId).all<any>();
+      await env.DB.prepare("UPDATE agency_subscriptions SET previous_plan_version_id=plan_version_id,plan_version_id=?,plan_changed_at=CURRENT_TIMESTAMP,plan_changed_by=?,status_reason=?,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE plan_version_id=?")
+        .bind(toPlanVersionId, access.context.userId, reason, access.context.userId, fromPlanVersionId).run();
+      for (const row of affected.results) await event(access.context, row.agencyId, row.id, null, "subscription.plan_migrated", { fromPlanVersionId, toPlanVersionId, reason });
+      await writePlatformAudit(access.context, "plan.version.bulk_migrated", "plan_version", toPlanVersionId, { fromPlanVersionId, toPlanVersionId, affected: affected.results.length, reason });
+      return Response.json({ migrated: affected.results.length });
+    }
+
     if (action === "assign_subscription") {
       const access = await actor(["super_admin","finance"]);
       if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
-      const agencyId = clean(body.agencyId), planVersionId = clean(body.planVersionId), state = body.state === "active" ? "active" : "trialing", plan = await env.DB.prepare("SELECT id FROM plan_versions WHERE id=? AND status='published'").bind(planVersionId).first();
+      const agencyId = clean(body.agencyId), planVersionId = clean(body.planVersionId), state = body.state === "active" ? "active" : "trialing", plan = await env.DB.prepare("SELECT id,limits FROM plan_versions WHERE id=? AND status='published'").bind(planVersionId).first<any>();
       if (!plan || !await env.DB.prepare("SELECT id FROM agencies WHERE id=?").bind(agencyId).first()) return Response.json({ error: "Agency or published plan was not found." }, { status: 404 });
-      const now = new Date(), end = new Date(now.getTime() + (state === "trialing" ? 14 : 30) * 86400000), existing = await env.DB.prepare("SELECT id,plan_version_id AS planVersionId,state FROM agency_subscriptions WHERE agency_id=?").bind(agencyId).first<{ id: string; planVersionId: string; state: string }>(), subscriptionId = existing?.id || crypto.randomUUID(), changed = existing && existing.planVersionId !== planVersionId;
+      const now = new Date(), limits = planLimits(JSON.parse(plan.limits || "{}")), end = new Date(now.getTime() + periodDays(limits, state) * 86400000), existing = await env.DB.prepare("SELECT id,plan_version_id AS planVersionId,state FROM agency_subscriptions WHERE agency_id=?").bind(agencyId).first<{ id: string; planVersionId: string; state: string }>(), subscriptionId = existing?.id || crypto.randomUUID(), changed = existing && existing.planVersionId !== planVersionId;
       await env.DB.prepare(`INSERT INTO agency_subscriptions (id,agency_id,plan_version_id,state,trial_starts_at,trial_ends_at,current_period_starts_at,current_period_ends_at,updated_by,previous_plan_version_id,plan_changed_at,plan_changed_by,status_reason) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(agency_id) DO UPDATE SET plan_version_id=excluded.plan_version_id,state=excluded.state,trial_starts_at=excluded.trial_starts_at,trial_ends_at=excluded.trial_ends_at,current_period_starts_at=excluded.current_period_starts_at,current_period_ends_at=excluded.current_period_ends_at,grace_ends_at=NULL,suspended_at=NULL,canceled_at=NULL,expired_at=NULL,updated_by=excluded.updated_by,previous_plan_version_id=excluded.previous_plan_version_id,plan_changed_at=excluded.plan_changed_at,plan_changed_by=excluded.plan_changed_by,status_reason='',updated_at=CURRENT_TIMESTAMP`)
         .bind(subscriptionId, agencyId, planVersionId, state, state === "trialing" ? now.toISOString() : null, state === "trialing" ? end.toISOString() : null, now.toISOString(), end.toISOString(), access.context.userId, changed ? existing.planVersionId : null, changed ? now.toISOString() : null, changed ? access.context.userId : null, "").run();
       await event(access.context, agencyId, subscriptionId, null, changed ? "subscription.plan_changed" : "subscription.assigned", { fromPlanVersionId: existing?.planVersionId || null, planVersionId, state });
@@ -299,6 +338,33 @@ export async function PATCH(request: Request) {
       await event(access.context, subscription.agencyId, id, null, "subscription.state_changed", { from: subscription.state, to: next, reason });
       await writePlatformAudit(access.context, "subscription.state.changed", "agency_subscription", id, { from: subscription.state, to: next, reason });
       return Response.json({ state: next });
+    }
+
+    if (action === "update_plan_version") {
+      const access = await actor(["super_admin","finance"]);
+      if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
+      const id = clean(body.id), current = await env.DB.prepare("SELECT id,status FROM plan_versions WHERE id=?").bind(id).first<{ id: string; status: string }>();
+      if (!current) return Response.json({ error: "Plan version was not found." }, { status: 404 });
+      if (current.status !== "draft") return Response.json({ error: "Published and archived plan versions are locked. Create a new version to change customer contracts." }, { status: 409 });
+      const name = clean(body.name, 80), currency = clean(body.currency, 3).toUpperCase(), priceMinor = Math.max(0, Math.round(Number(body.priceMinor))), billingPeriod = clean(body.billingPeriod, 20), entitlements = planEntitlements(body.entitlements), limits = planLimits(body.limits);
+      if (!name || !/^[A-Z]{3}$/.test(currency) || !Number.isSafeInteger(priceMinor) || !["month", "year"].includes(billingPeriod)) return Response.json({ error: "Complete every plan field with valid values." }, { status: 400 });
+      await env.DB.prepare("UPDATE plan_versions SET name=?,currency=?,price_minor=?,billing_period=?,entitlements=?,limits=? WHERE id=? AND status='draft'")
+        .bind(name, currency, priceMinor, billingPeriod, JSON.stringify(entitlements), JSON.stringify(limits), id).run();
+      await writePlatformAudit(access.context, "plan.version.updated", "plan_version", id, { name, priceMinor, billingPeriod });
+      return Response.json({ updated: true });
+    }
+
+    if (action === "publish_plan_version" || action === "archive_plan_version") {
+      const access = await actor(["super_admin","finance"]);
+      if (!access) return Response.json({ error: "Sign in is required." }, { status: 401 });
+      const id = clean(body.id), current = await env.DB.prepare("SELECT id,status FROM plan_versions WHERE id=?").bind(id).first<{ id: string; status: string }>();
+      if (!current) return Response.json({ error: "Plan version was not found." }, { status: 404 });
+      if (action === "publish_plan_version" && current.status !== "draft") return Response.json({ error: "Only draft plan versions can be published." }, { status: 409 });
+      if (action === "archive_plan_version" && current.status === "published" && await env.DB.prepare("SELECT 1 FROM agency_subscriptions WHERE plan_version_id=? LIMIT 1").bind(id).first()) return Response.json({ error: "This published plan is assigned to agencies. Migrate them before archiving it." }, { status: 409 });
+      const status = action === "publish_plan_version" ? "published" : "archived";
+      await env.DB.prepare("UPDATE plan_versions SET status=?,published_at=CASE WHEN ?='published' THEN CURRENT_TIMESTAMP ELSE published_at END WHERE id=?").bind(status, status, id).run();
+      await writePlatformAudit(access.context, action === "publish_plan_version" ? "plan.version.published" : "plan.version.archived", "plan_version", id, { from: current.status, to: status });
+      return Response.json({ status });
     }
 
     if (action === "update_agency_status") {
