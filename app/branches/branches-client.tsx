@@ -14,7 +14,7 @@ const isPublic = (branch?: Branch) => Boolean(branch?.publicEnabled);
 const initials = (value = "") => value.split(/\s+/).map(word => word[0]).join("").slice(0, 2).toUpperCase() || "BR";
 const toForm = (branch: Branch): FormState => ({ name: branch.name || "", location: branch.location || "", phone: branch.phone || "", whatsapp: branch.whatsapp || "", email: branch.email || "", address: branch.address || "", description: branch.description || "", openingHours: branch.openingHours || "", managerUserId: branch.managerUserId || "", publicEnabled: isPublic(branch) });
 
-export default function BranchesClient({ platform }: { platform: { shortName: string } }) {
+export default function BranchesClient({ platform }: { platform: { shortName: string; logoUrl?: string; iconUrl?: string } }) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -101,7 +101,7 @@ export default function BranchesClient({ platform }: { platform: { shortName: st
   const toggleProperty = (id: string) => setSelectedProperties(list => list.includes(id) ? list.filter(item => item !== id) : [...list, id]);
 
   return <main className="branches-page">
-    <nav className="branch-topbar"><a href="/workspace">Back to workspace</a><strong>{platform.shortName}<small>Team / Branches & offices</small></strong></nav>
+    <nav className="branch-topbar"><a href="/workspace">Back to workspace</a><strong>{platform.iconUrl&&<img className="branch-platform-icon" src={platform.iconUrl} alt="" />}{platform.logoUrl?<img className="branch-platform-logo" src={platform.logoUrl} alt={platform.shortName} />:<span>{platform.shortName}</span>}<small>Team / Branches & offices</small></strong></nav>
     <header className="branch-hero">
       <div><span>BRANCH NETWORK</span><h1>Branches & offices</h1><p>Structure the agency by real offices, assign managers and team scope, and decide which branch details appear on the public website.</p></div>
       <aside><strong>{branches.filter(isActive).length}</strong><small>{maxBranches ? `of ${maxBranches} active branches` : "active branches"}</small><b>{remaining === 0 ? "Plan limit reached" : remaining === null ? "No plan cap" : `${remaining} slots left`}</b></aside>

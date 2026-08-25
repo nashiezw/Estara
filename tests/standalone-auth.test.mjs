@@ -78,3 +78,13 @@ test("public navigation exposes real ESTARA auth pages", async () => {
   assert.match(userMenu, /\/api\/auth\/logout/);
   assert.match(status, /standalone ESTARA email\/password authentication/);
 });
+
+test("signed-in users are not shown login or register again", async () => {
+  const [loginPage, registerPage] = await Promise.all([read("app/login/page.tsx"), read("app/register/page.tsx")]);
+  for (const source of [loginPage, registerPage]) {
+    assert.match(source, /getChatGPTUser/);
+    assert.match(source, /safeRelativeReturnPath/);
+    assert.match(source, /redirect\(safeRelativeReturnPath\(params\?\.return_to \|\| "\/workspace"\)\)/);
+    assert.match(source, /searchParams\?: Promise<\{ return_to\?: string \}>/);
+  }
+});
