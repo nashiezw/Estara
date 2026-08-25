@@ -110,6 +110,12 @@ export default function AgencySettings({ brand, setBrand, notify }: AgencySettin
         </section>
 
         <aside style={{ display: "grid", gap: 18 }}>
+          <section className="panel agency-structure-card">
+            <span className="eyebrow">AGENCY STRUCTURE</span>
+            <h2>Branches & offices</h2>
+            <p>Create offices, assign managers, restrict branch-scoped members and keep listings owned by the right team.</p>
+            <a className="primary" href="/branches">Manage branches</a>
+          </section>
           <section className="panel form">
             <div className="panel-head compact wide"><div><h2>Brand system</h2><p>Choose the visual base every public surface inherits.</p></div></div>
             <label>Primary colour<input type="color" value={brand.primaryColor} onChange={(event) => updateBrand({ primaryColor: event.target.value })} /></label>
