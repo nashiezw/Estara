@@ -34,6 +34,7 @@ async function GET(){
  ]);
  const assets=media.results,scope=await accessiblePropertyIds(w),visibleProperties=scope?ps.results.filter((property:any)=>scope.has(String(property.id))):ps.results,visibleEnquiries=scope?es.results.filter((enquiry:any)=>scope.has(String(enquiry.propertyId))):es.results;
  const propertyRows=visibleProperties.map((property:any)=>({...rowToProperty(property),media:assets.filter((asset:any)=>asset.propertyId===property.id).map((asset:any)=>({...asset,url:`/api/media?id=${encodeURIComponent(asset.id)}`,thumbnailUrl:`/api/media?id=${encodeURIComponent(asset.id)}&variant=thumb`}))}));
+ const activeEnquiryCount=visibleEnquiries.filter((enquiry:any)=>!["Closed","Won","Lost"].includes(String(enquiry.stage||enquiry.status||""))).length;
  const scopedActionCount=scope?await env.DB.prepare(`SELECT COUNT(*) count FROM next_actions n
       LEFT JOIN enquiries e ON n.resource_type='enquiry' AND e.id=n.resource_id AND e.agency_id=n.agency_id
       LEFT JOIN deals d ON n.resource_type='deal' AND d.id=n.resource_id AND d.agency_id=n.agency_id
@@ -41,7 +42,7 @@ async function GET(){
       JOIN branch_memberships bm ON bm.agency_id=p.agency_id AND bm.branch_id=p.branch_id AND bm.user_id=?
       WHERE n.agency_id=? AND n.status='open'`).bind(w.userId,w.agencyId).first():as;
  const membership=members.results.find((member:any)=>member.userId===user.userId);
- return Response.json({agency:{id:w.agencyId,name:w.agencyName},currentUser:{userId:user.userId,email:user.email,displayName:user.displayName,role:membership?.role||""},properties:propertyRows,logo:assets.find((asset:any)=>asset.kind==="agency_logo")||null,enquiries:visibleEnquiries,openActionCount:scopedActionCount?.count??0,members:members.results,settings})
+ return Response.json({agency:{id:w.agencyId,name:w.agencyName},currentUser:{userId:user.userId,email:user.email,displayName:user.displayName,role:membership?.role||""},properties:propertyRows,logo:assets.find((asset:any)=>asset.kind==="agency_logo")||null,enquiries:visibleEnquiries,menuCounts:{enquiries:activeEnquiryCount,actions:scopedActionCount?.count??0},openActionCount:scopedActionCount?.count??0,members:members.results,settings})
 }
 
 async function ensureOwnerContact(w:any,user:any,b:any,title:string,transactionType:string){

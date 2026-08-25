@@ -44,7 +44,9 @@ export function platformOrigin(headers: HeaderLike, platform: Pick<PlatformIdent
 }
 
 export function platformIconUrl(origin: string, platform: Pick<PlatformIdentity, "iconUrl" | "darkIconUrl">) {
-  return absolutePublicUrl(origin, platform.iconUrl || platform.darkIconUrl || "/favicon.svg");
+  const saved = absolutePublicUrl(origin, platform.iconUrl || platform.darkIconUrl);
+  const browserIcon = absolutePublicUrl(origin, "/favicon.ico");
+  return saved?.includes("/api/platform/asset") ? browserIcon : saved || browserIcon || absolutePublicUrl(origin, "/favicon.svg");
 }
 
 export function platformLogoUrl(origin: string, platform: Pick<PlatformIdentity, "logoUrl" | "darkLogoUrl" | "iconUrl">) {

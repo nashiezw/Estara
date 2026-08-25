@@ -12,8 +12,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const platform = await getPlatformIdentity();
   const origin = platformOrigin(h, platform);
   const description = platformSeoDescription(platform);
-  const icon = platformIconUrl(origin, platform) || "/favicon.svg";
-  const image = platformLogoUrl(origin, platform);
+  const icon = platformIconUrl(origin, platform) || platform.iconUrl || "/favicon.svg";
+  const image = platformLogoUrl(origin, platform) || platform.logoUrl || "/og.png";
 
   return {
     metadataBase: new URL(origin),
