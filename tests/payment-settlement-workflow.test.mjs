@@ -6,13 +6,15 @@ import { productionProviderDecision } from "../db/production-providers.ts";
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("subscription checkout has durable payment methods, review-gated manual proof and signed Stripe activation", async () => {
-  const [migration, schema, agencyRoute, platformRoute, stripeRoute, client] = await Promise.all([
+  const [migration, schema, agencyRoute, platformRoute, billingProofRoute, stripeRoute, client, adminClient] = await Promise.all([
     read("../drizzle/0037_subscription_payment_system.sql"),
     read("../db/schema.ts"),
     read("../app/api/subscription/route.ts"),
     read("../app/api/platform/route.ts"),
+    read("../app/api/platform/billing-proof/route.ts"),
     read("../app/api/subscription/stripe-webhook/route.ts"),
     read("../app/subscription/subscription-client.tsx"),
+    read("../app/admin/platform-admin-client.tsx"),
   ]);
 
   assert.equal(productionProviderDecision("online_payments")?.provider, "Stripe Checkout, Billing and Customer Portal");
@@ -28,16 +30,22 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.match(agencyRoute, /proofTypes/);
   assert.match(agencyRoute, /maxProofBytes=12\*1024\*1024/);
   assert.match(agencyRoute, /state='pending_manual_review'/);
+  assert.match(agencyRoute, /cancelFailedStripeRequest/);
+  assert.match(agencyRoute, /payment\.stripe_checkout_failed/);
   assert.doesNotMatch(agencyRoute, /submit_manual_proof[\s\S]{0,900}state='active'/);
 
   assert.match(platformRoute, /review_manual_payment/);
+  assert.match(platformRoute, /proof_object_key AS proofObjectKey/);
   assert.match(platformRoute, /status='approved'/);
   assert.match(platformRoute, /state='active'/);
   assert.match(platformRoute, /WHERE id=\? AND status='open'/);
   assert.match(platformRoute, /billing\.manual_payment\.approved/);
+  assert.match(billingProofRoute, /requirePlatformUser\(user, \["super_admin", "finance"\]\)/);
+  assert.match(billingProofRoute, /bucket\.get\(row\.objectKey\)/);
 
   assert.match(stripeRoute, /STRIPE_WEBHOOK_SECRET/);
   assert.match(stripeRoute, /stripe-signature/);
+  assert.match(stripeRoute, /safeEqualHex/);
   assert.match(stripeRoute, /billing_webhook_events/);
   assert.match(stripeRoute, /duplicate:true/);
   assert.match(stripeRoute, /checkout\.session\.completed/);
@@ -47,4 +55,6 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.match(client, /Create payment request/);
   assert.match(client, /Start free plan/);
   assert.doesNotMatch(client, /STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET/);
+  assert.match(adminClient, /Open proof/);
+  assert.match(adminClient, /\/api\/platform\/billing-proof/);
 });
