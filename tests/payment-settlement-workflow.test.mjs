@@ -7,7 +7,7 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("subscription checkout has durable payment methods, review-gated manual proof and signed Stripe activation", async () => {
   const [migration, schema, agencyRoute, platformRoute, billingProofRoute, stripeRoute, client, adminClient, entitlements, worker] = await Promise.all([
-    read("../drizzle/0037_subscription_payment_system.sql"),
+    read("../drizzle/0037_subscription_payment_system.sql").then(async base => `${base}\n${await read("../drizzle/0038_stripe_customer_portal.sql")}`),
     read("../db/schema.ts"),
     read("../app/api/subscription/route.ts"),
     read("../app/api/platform/route.ts"),
@@ -23,9 +23,11 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.match(migration, /CREATE TABLE billing_payment_methods/);
   assert.match(migration, /CREATE TABLE billing_payment_requests/);
   assert.match(migration, /CREATE TABLE billing_webhook_events/);
+  assert.match(migration, /external_customer_id/);
   assert.match(schema, /billingPaymentMethods/);
   assert.match(schema, /billingPaymentRequests/);
   assert.match(schema, /billingWebhookEvents/);
+  assert.match(schema, /externalCustomerId/);
 
   assert.match(agencyRoute, /create_manual_payment/);
   assert.match(agencyRoute, /submit_manual_proof/);
@@ -39,6 +41,10 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.doesNotMatch(agencyRoute, /UPDATE agency_subscriptions SET plan_version_id=\?,state='pending_payment'/);
   assert.match(agencyRoute, /cancelFailedStripeRequest/);
   assert.match(agencyRoute, /payment\.stripe_checkout_failed/);
+  assert.match(agencyRoute, /create_stripe_portal/);
+  assert.match(agencyRoute, /billing_portal\/sessions/);
+  assert.match(agencyRoute, /customer_creation","always"/);
+  assert.match(agencyRoute, /params\.set\("customer",prior\.externalCustomerId\)/);
   assert.match(agencyRoute, /cancel_subscription/);
   assert.match(agencyRoute, /subscription\.cancelled_by_agency/);
   assert.doesNotMatch(agencyRoute, /submit_manual_proof[\s\S]{0,900}state='active'/);
@@ -61,6 +67,7 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.match(stripeRoute, /billing_webhook_events/);
   assert.match(stripeRoute, /duplicate:true/);
   assert.match(stripeRoute, /checkout\.session\.completed/);
+  assert.match(stripeRoute, /external_customer_id=COALESCE/);
   assert.match(stripeRoute, /checkout\.session\.expired/);
   assert.match(stripeRoute, /payment_intent\.payment_failed/);
   assert.match(stripeRoute, /invoice\.payment_failed/);
@@ -77,6 +84,8 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.match(client, /Create payment request/);
   assert.match(client, /Start free plan/);
   assert.match(client, /Cancel subscription/);
+  assert.match(client, /Manage Stripe billing/);
+  assert.match(client, /portalUrl/);
   assert.doesNotMatch(client, /STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET/);
   assert.match(adminClient, /Open proof/);
   assert.match(adminClient, /\/api\/platform\/billing-proof/);

@@ -1,0 +1,2 @@
+ALTER TABLE agency_subscriptions ADD COLUMN external_customer_id TEXT;
+CREATE INDEX idx_subscriptions_external_customer ON agency_subscriptions(payment_provider, external_customer_id);

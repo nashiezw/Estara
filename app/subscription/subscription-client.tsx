@@ -58,6 +58,10 @@ export default function SubscriptionClient({ platform }: { platform: PlatformBra
         location.href = result.checkoutUrl;
         return;
       }
+      if (result.portalUrl) {
+        location.href = result.portalUrl;
+        return;
+      }
       await load();
     } catch (reason: any) {
       setError(reason.message || "Could not update subscription.");
@@ -107,6 +111,7 @@ export default function SubscriptionClient({ platform }: { platform: PlatformBra
         <span>CURRENT PLAN</span><h2>{plan.planName}</h2><strong>{money(plan.currency, plan.priceMinor)}<small>/{plan.billingPeriod || "month"}</small></strong>
         {period && <p>{periodCopy(plan)} {new Date(period).toLocaleDateString()}</p>}
         <div>{Object.entries(plan.entitlements).filter(([, enabled]) => enabled).slice(0, 8).map(([name]) => <span className="enabled" key={name}>✓ {name.replace(/([A-Z])/g, " $1")}</span>)}</div>
+        {plan.state === "active" && <button disabled={busy === "create_stripe_portal"} onClick={() => requestJson("create_stripe_portal")}>{busy === "create_stripe_portal" ? "Opening Stripe..." : "Manage Stripe billing"}</button>}
         {canCancel && <button className="subscription-cancel" disabled={busy === "cancel_subscription"} onClick={() => requestJson("cancel_subscription")}>{busy === "cancel_subscription" ? "Cancelling..." : "Cancel subscription"}</button>}
       </article>
       <article className="subscription-limits"><span>USAGE LIMITS</span><h2>Capacity now</h2>{Object.entries(plan.limits).filter(([name]) => name.startsWith("max")).slice(0, 9).map(([name, value]) => <div key={name}><span>{name.replace("max", "").replace(/([A-Z])/g, " $1")}</span><strong>{String(value)}</strong></div>)}<p>Access is enforced by the server. Payment uploads stay pending until finance approves them.</p></article>
