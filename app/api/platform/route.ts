@@ -46,6 +46,12 @@ async function event(context: PlatformContext, agencyId: string, subscriptionId:
   await env.DB.prepare("INSERT INTO billing_events (id,agency_id,subscription_id,invoice_id,event_type,detail,actor_user_id) VALUES (?,?,?,?,?,?,?)")
     .bind(crypto.randomUUID(), agencyId, subscriptionId, invoiceId, eventType, JSON.stringify(detail), context.userId).run();
 }
+async function notifyAgency(agencyId: string, title: string, body: string, resourceType: string, resourceId: string) {
+  const rows = await env.DB.prepare("SELECT user_id AS userId FROM agency_memberships WHERE agency_id=?").bind(agencyId).all<any>();
+  const recipients = rows.results.map(row => row.userId).filter(Boolean);
+  if (!recipients.length) return;
+  await env.DB.batch(recipients.map(userId => env.DB.prepare("INSERT INTO notifications (id,agency_id,recipient_user_id,type,title,body,resource_type,resource_id) VALUES (?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(), agencyId, userId, "billing", title, body, resourceType, resourceId)));
+}
 
 const agencyDeleteTables = [
   "webhook_deliveries","webhook_subscriptions","credential_security_events","api_request_events","api_idempotency_keys","api_credentials",
@@ -445,6 +451,7 @@ export async function PATCH(request: Request) {
           ]);
         }
         await event(access.context, requestRow.agencyId, requestRow.subscriptionId, requestRow.invoiceId, "payment.manual_approved", { paymentRequestId: id, note });
+        await notifyAgency(requestRow.agencyId, "Payment approved", "Your subscription payment was approved and the selected plan is now active.", "billing_payment_request", id);
         await writePlatformAudit(access.context, "billing.manual_payment.approved", "billing_payment_request", id, { agencyId: requestRow.agencyId });
         return Response.json({ approved: true });
       }
@@ -453,6 +460,7 @@ export async function PATCH(request: Request) {
         await env.DB.prepare("UPDATE billing_payment_requests SET status=?,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP,review_note=?,rejection_reason=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(status, access.context.userId, note, note, id).run();
         await env.DB.prepare("UPDATE agency_subscriptions SET state='pending_payment',status_reason=?,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(note || "Payment proof requires correction.", access.context.userId, requestRow.subscriptionId).run();
         await event(access.context, requestRow.agencyId, requestRow.subscriptionId, requestRow.invoiceId, `payment.manual_${decision}`, { paymentRequestId: id, note });
+        await notifyAgency(requestRow.agencyId, decision === "resubmit" ? "Payment proof needs resubmission" : "Payment proof rejected", note || "Finance could not approve this payment proof. Please submit corrected proof.", "billing_payment_request", id);
         await writePlatformAudit(access.context, `billing.manual_payment.${decision}`, "billing_payment_request", id, { agencyId: requestRow.agencyId, note });
         return Response.json({ status });
       }

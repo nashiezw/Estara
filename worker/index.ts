@@ -2,6 +2,7 @@
 import * as Sentry from "@sentry/cloudflare";
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { processSubscriptionLifecycle } from "../db/entitlements";
 import { retryAllDueWebhooks } from "../db/webhooks";
 
 interface Env {
@@ -51,6 +52,7 @@ const worker = {
   },
   async scheduled(_controller: unknown, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(retryAllDueWebhooks().then(result=>console.log(JSON.stringify({event:"webhooks.retry_scheduled",...result,timestamp:new Date().toISOString()}))).catch(error=>console.error(JSON.stringify({event:"webhooks.retry_scheduled_failed",error:error instanceof Error?error.message:String(error),timestamp:new Date().toISOString()}))));
+    ctx.waitUntil(processSubscriptionLifecycle("system-scheduler").then(result=>console.log(JSON.stringify({event:"subscriptions.lifecycle_scheduled",...result,timestamp:new Date().toISOString()}))).catch(error=>console.error(JSON.stringify({event:"subscriptions.lifecycle_scheduled_failed",error:error instanceof Error?error.message:String(error),timestamp:new Date().toISOString()}))));
   },
 };
 

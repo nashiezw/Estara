@@ -6,7 +6,7 @@ import { productionProviderDecision } from "../db/production-providers.ts";
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("subscription checkout has durable payment methods, review-gated manual proof and signed Stripe activation", async () => {
-  const [migration, schema, agencyRoute, platformRoute, billingProofRoute, stripeRoute, client, adminClient] = await Promise.all([
+  const [migration, schema, agencyRoute, platformRoute, billingProofRoute, stripeRoute, client, adminClient, entitlements, worker] = await Promise.all([
     read("../drizzle/0037_subscription_payment_system.sql"),
     read("../db/schema.ts"),
     read("../app/api/subscription/route.ts"),
@@ -15,6 +15,8 @@ test("subscription checkout has durable payment methods, review-gated manual pro
     read("../app/api/subscription/stripe-webhook/route.ts"),
     read("../app/subscription/subscription-client.tsx"),
     read("../app/admin/platform-admin-client.tsx"),
+    read("../db/entitlements.ts"),
+    read("../worker/index.ts"),
   ]);
 
   assert.equal(productionProviderDecision("online_payments")?.provider, "Stripe Checkout, Billing and Customer Portal");
@@ -30,6 +32,7 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.match(agencyRoute, /proofTypes/);
   assert.match(agencyRoute, /maxProofBytes=12\*1024\*1024/);
   assert.match(agencyRoute, /state='pending_manual_review'/);
+  assert.match(agencyRoute, /notifyAgency\(ctx\.workspace\.agencyId,"Trial started"/);
   assert.match(agencyRoute, /cancelFailedStripeRequest/);
   assert.match(agencyRoute, /payment\.stripe_checkout_failed/);
   assert.doesNotMatch(agencyRoute, /submit_manual_proof[\s\S]{0,900}state='active'/);
@@ -40,6 +43,9 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.match(platformRoute, /state='active'/);
   assert.match(platformRoute, /WHERE id=\? AND status='open'/);
   assert.match(platformRoute, /billing\.manual_payment\.approved/);
+  assert.match(platformRoute, /notifyAgency\(requestRow\.agencyId, "Payment approved"/);
+  assert.match(platformRoute, /Payment proof needs resubmission/);
+  assert.match(platformRoute, /Payment proof rejected/);
   assert.match(billingProofRoute, /requirePlatformUser\(user, \["super_admin", "finance"\]\)/);
   assert.match(billingProofRoute, /bucket\.get\(row\.objectKey\)/);
 
@@ -57,4 +63,11 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.doesNotMatch(client, /STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET/);
   assert.match(adminClient, /Open proof/);
   assert.match(adminClient, /\/api\/platform\/billing-proof/);
+  assert.match(entitlements, /processSubscriptionLifecycle/);
+  assert.match(entitlements, /subscription\.trial_expired/);
+  assert.match(entitlements, /subscription\.expired/);
+  assert.match(entitlements, /subscription\.suspended/);
+  assert.match(entitlements, /lifecycleNotify/);
+  assert.match(worker, /processSubscriptionLifecycle\("system-scheduler"\)/);
+  assert.match(worker, /subscriptions\.lifecycle_scheduled/);
 });
