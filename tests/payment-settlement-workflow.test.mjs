@@ -31,6 +31,8 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.match(agencyRoute, /submit_manual_proof/);
   assert.match(agencyRoute, /proofTypes/);
   assert.match(agencyRoute, /maxProofBytes=12\*1024\*1024/);
+  assert.match(agencyRoute, /amountPaidMinor=money\(form\.get\("amountPaid"\)\)/);
+  assert.match(agencyRoute, /amountPaidMinor<=0/);
   assert.match(agencyRoute, /state='pending_manual_review'/);
   assert.match(agencyRoute, /notifyAgency\(ctx\.workspace\.agencyId,"Trial started"/);
   assert.match(agencyRoute, /pendingState=\["active","trialing","free"\]\.includes\(subscription\.state\)\?subscription\.state:"pending_payment"/);
@@ -62,9 +64,13 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.match(stripeRoute, /checkout\.session\.expired/);
   assert.match(stripeRoute, /payment_intent\.payment_failed/);
   assert.match(stripeRoute, /invoice\.payment_failed/);
+  assert.match(stripeRoute, /charge\.refunded/);
   assert.match(stripeRoute, /closeStripeRequest/);
+  assert.match(stripeRoute, /recordStripeRefund/);
   assert.match(stripeRoute, /payment\.stripe_expired/);
   assert.match(stripeRoute, /payment\.stripe_failed/);
+  assert.match(stripeRoute, /payment\.stripe_refunded/);
+  assert.match(stripeRoute, /status='refunded'/);
   assert.match(stripeRoute, /payment_status==="paid"/);
 
   assert.match(client, /Submit proof for review/);
