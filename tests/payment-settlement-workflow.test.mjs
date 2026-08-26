@@ -1,29 +1,50 @@
-import assert from"node:assert/strict";
-import{readFile}from"node:fs/promises";
-import test from"node:test";
-import{productionProviderDecision}from"../db/production-providers.ts";
-const read=path=>readFile(new URL(path,import.meta.url),"utf8");
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import { productionProviderDecision } from "../db/production-providers.ts";
 
-test("payment settlement workflow is documented but remains pending live evidence",async()=>{
-  const[workflow,todo,checklist]=await Promise.all([
-    read("../docs/PAYMENT-SETTLEMENT-WORKFLOW.md"),
-    read("../docs/PRODUCTION-READINESS-TODO.md"),
-    read("../docs/DELIVERY-CHECKLIST.md"),
+const read = path => readFile(new URL(path, import.meta.url), "utf8");
+
+test("subscription checkout has durable payment methods, review-gated manual proof and signed Stripe activation", async () => {
+  const [migration, schema, agencyRoute, platformRoute, stripeRoute, client] = await Promise.all([
+    read("../drizzle/0037_subscription_payment_system.sql"),
+    read("../db/schema.ts"),
+    read("../app/api/subscription/route.ts"),
+    read("../app/api/platform/route.ts"),
+    read("../app/api/subscription/stripe-webhook/route.ts"),
+    read("../app/subscription/subscription-client.tsx"),
   ]);
-  assert.equal(productionProviderDecision("online_payments")?.provider,"Stripe Checkout, Billing and Customer Portal");
-  for(const phrase of[
-    "Stripe Checkout, Billing and Customer Portal",
-    "agency_subscriptions",
-    "billing_invoices",
-    "billing_events",
-    "STRIPE_WEBHOOK_SECRET",
-    "Signed webhooks",
-    "integer minor units",
-    "replayed webhook IDs",
-    "refund",
-    "failed-payment",
-    "Finance approver",
-  ])assert.match(workflow,new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i"));
-  assert.match(todo,/Production billing\/payment settlement workflow documented; live Stripe settlement, refund, failed-payment and finance sign-off evidence still pending/);
-  assert.match(checklist,/Stripe payment provider selected and settlement workflow documented, live activation and settlement verification pending/);
+
+  assert.equal(productionProviderDecision("online_payments")?.provider, "Stripe Checkout, Billing and Customer Portal");
+  assert.match(migration, /CREATE TABLE billing_payment_methods/);
+  assert.match(migration, /CREATE TABLE billing_payment_requests/);
+  assert.match(migration, /CREATE TABLE billing_webhook_events/);
+  assert.match(schema, /billingPaymentMethods/);
+  assert.match(schema, /billingPaymentRequests/);
+  assert.match(schema, /billingWebhookEvents/);
+
+  assert.match(agencyRoute, /create_manual_payment/);
+  assert.match(agencyRoute, /submit_manual_proof/);
+  assert.match(agencyRoute, /proofTypes/);
+  assert.match(agencyRoute, /maxProofBytes=12\*1024\*1024/);
+  assert.match(agencyRoute, /state='pending_manual_review'/);
+  assert.doesNotMatch(agencyRoute, /submit_manual_proof[\s\S]{0,900}state='active'/);
+
+  assert.match(platformRoute, /review_manual_payment/);
+  assert.match(platformRoute, /status='approved'/);
+  assert.match(platformRoute, /state='active'/);
+  assert.match(platformRoute, /WHERE id=\? AND status='open'/);
+  assert.match(platformRoute, /billing\.manual_payment\.approved/);
+
+  assert.match(stripeRoute, /STRIPE_WEBHOOK_SECRET/);
+  assert.match(stripeRoute, /stripe-signature/);
+  assert.match(stripeRoute, /billing_webhook_events/);
+  assert.match(stripeRoute, /duplicate:true/);
+  assert.match(stripeRoute, /checkout\.session\.completed/);
+  assert.match(stripeRoute, /payment_status==="paid"/);
+
+  assert.match(client, /Submit proof for review/);
+  assert.match(client, /Create payment request/);
+  assert.match(client, /Start free plan/);
+  assert.doesNotMatch(client, /STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET/);
 });

@@ -1,12 +1,186 @@
-import assert from "node:assert/strict";import{readFile}from"node:fs/promises";import test from"node:test";
-const read=p=>readFile(new URL(p,import.meta.url),"utf8");
-test("tenant-owned workspace operations scope every resource query",async()=>{const [workspace,actions,settings]=await Promise.all([read("../app/api/workspace/route.ts"),read("../app/api/workspace/actions/route.ts"),read("../app/api/settings/route.ts")]);assert.match(workspace,/FROM properties WHERE agency_id=\?/);assert.match(workspace,/FROM enquiries e[\s\S]*WHERE e\.agency_id=\?/);assert.match(workspace,/WHERE id=\? AND agency_id=\?/);assert.match(actions,/WHERE id=\? AND agency_id=\?/g);assert.match(settings,/WHERE a\.id=\?/);assert.doesNotMatch(actions,/UPDATE (properties|enquiries)[\s\S]*WHERE id=\?(?! AND agency_id)/)});
-test("all write routes authenticate and authorize",async()=>{const [workspace,actions,settings]=await Promise.all([read("../app/api/workspace/route.ts"),read("../app/api/workspace/actions/route.ts"),read("../app/api/settings/route.ts")]);for(const source of[workspace,actions,settings])assert.match(source,/getChatGPTUser/);assert.match(workspace,/property\.create/);assert.match(workspace,/enquiry\.create/);assert.match(actions,/property\.publish/);assert.match(actions,/enquiry\.contact/);assert.match(settings,/agency\.settings\.manage/)});test("onboarding and team administration remain authenticated, authorized, and scoped",async()=>{const [onboarding,team,accept]=await Promise.all([read("../app/api/onboarding/route.ts"),read("../app/api/team/invitations/route.ts"),read("../app/api/team/accept/route.ts")]);assert.match(onboarding,/getChatGPTUser/);assert.match(onboarding,/agency\.settings\.manage/);assert.match(onboarding,/id<>\?/);assert.match(team,/team\.manage/g);assert.match(team,/agency_id=\?/g);assert.match(accept,/getChatGPTUser/);assert.match(accept,/invitation\.email\.toLowerCase\(\)!==u\.email\.toLowerCase\(\)/);assert.match(accept,/accepted_at IS NULL AND revoked_at IS NULL AND expires_at>CURRENT_TIMESTAMP/)});test("actions and viewings enforce identity, permissions and tenant predicates",async()=>{const [actions,viewings]=await Promise.all([read("../app/api/actions/route.ts"),read("../app/api/viewings/route.ts")]);for(const source of[actions,viewings]){assert.match(source,/getChatGPTUser/);assert.match(source,/requirePermission/);assert.match(source,/agency_id=\?/g)}assert.match(actions,/action\.manage/);assert.match(actions,/Assignee is not in this agency/);assert.match(viewings,/viewing\.manage/);assert.match(viewings,/status IN \('Requested','Confirmed'\)/);assert.match(viewings,/property_id=\? OR assigned_user_id=\?/)});test("public routes use slug-scoped published reads and rate-limited intake",async()=>{const [site,intake,events]=await Promise.all([read("../db/public-site.ts"),read("../app/api/public/[slug]/enquiries/route.ts"),read("../app/api/public/[slug]/events/route.ts")]);assert.match(site,/WHERE a\.slug=\? AND s\.onboarding_complete=1/);assert.match(site,/agency_id=\? AND status='Available'/g);assert.doesNotMatch(site,/owner_phone|created_by|notes|emailNormalized|phoneE164/);assert.match(site,/listPublicAgents/);assert.match(site,/WHERE m\.agency_id=\?/);assert.match(intake,/public_intake_attempts/);assert.match(intake,/created_at>datetime\('now','-10 minutes'\)/);assert.match(intake,/getPublicProperty\(a\.id,propertyId\)/);assert.match(intake,/agency_id=\?/g);assert.match(intake,/source,response_due_at/);assert.match(events,/getPublicProperty\(a\.id,b\.propertyId\)/);assert.match(events,/public_events/)});
-test("media routes scope private objects to the tenant and public photos to published listings",async()=>{const [media,publicMedia,platformAsset]=await Promise.all([read("../app/api/media/route.ts"),read("../app/api/public/[slug]/media/route.ts"),read("../app/api/platform/asset/route.ts")]);assert.match(media,/requirePermission\(workspace,permission\)/);assert.match(media,/WHERE id=\? AND agency_id=\?/g);assert.match(media,/optimizedMediaObjectKey\(c\.workspace\.agencyId/);assert.match(media,/website_image/);assert.match(media,/processImage/);assert.match(media,/optimized: main\.optimized/);assert.doesNotMatch(media,/Image processing is unavailable/);assert.match(platformAsset,/processBrandAsset/);assert.doesNotMatch(platformAsset,/Image processing is unavailable/);assert.match(publicMedia,/a\.slug=\?/);assert.match(publicMedia,/p\.status='Available'/);assert.match(publicMedia,/m\.kind='agency_logo'/);assert.match(publicMedia,/m\.kind='website_image'/)});
-test("seller management and portal reads are identity-bound, approved-only and tenant-scoped",async()=>{const [management,portal]=await Promise.all([read("../app/api/seller-management/route.ts"),read("../app/api/seller-portal/route.ts")]);assert.match(management,/requirePermission\(workspace,"seller\.manage"\)/);assert.match(management,/WHERE id=\? AND agency_id=\?/g);assert.match(management,/seller\.access\.revoked/);assert.match(management,/seller\.report\.approved/);assert.match(portal,/accepted_user_id=\?/g);assert.match(portal,/revoked_at IS NULL/g);assert.match(portal,/status='approved'/);assert.match(portal,/grant\.email\.toLowerCase\(\)!==user\.email\.toLowerCase\(\)/)});
-test("property detail metadata is record-specific and never inherits the landing card",async()=>{const detail=await read("../app/site/[slug]/properties/[id]/page.tsx");assert.match(detail,/generateMetadata/);assert.match(detail,/requestHeaders\.get\("host"\)/);assert.match(detail,/property\.heroMediaId/);assert.match(detail,/images:image\?\[image\]:\[\]/g);assert.match(detail,/twitter:\{card:"summary_large_image",title:property\.title,description/);assert.doesNotMatch(detail,/og\.png/)});
-test("platform and billing routes enforce platform roles, immutable versions and tenant predicates",async()=>{const [platform,auth,entitlements,subscription,credentials]=await Promise.all([read("../app/api/platform/route.ts"),read("../db/platform-auth.ts"),read("../db/entitlements.ts"),read("../app/api/subscription/route.ts"),read("../app/api/api-credentials/route.ts")]);assert.match(platform,/requirePlatformUser/);assert.match(platform,/\["super_admin","finance"\]/g);assert.match(platform,/plan\.version\.created/);assert.match(platform,/clone_plan_version/);assert.match(platform,/update_plan_version/);assert.match(platform,/publish_plan_version/);assert.match(platform,/archive_plan_version/);assert.match(platform,/bulk_migrate_plan/);assert.match(platform,/Published and archived plan versions are locked/);assert.match(platform,/agenciesUsing/);assert.match(platform,/trialDays/);assert.match(platform,/WHERE id=\? AND status='open'/);assert.match(platform,/subscription\.state_changed/);assert.match(auth,/WHERE user_id=\? AND active=1/);assert.match(entitlements,/PLAN_ENTITLEMENT_KEYS/);assert.match(entitlements,/PLAN_LIMIT_DEFAULTS/);assert.match(entitlements,/maxWebhookDeliveries/);assert.match(entitlements,/propertyPortalIntegrations/);assert.match(entitlements,/accountingIntegrations/);assert.match(entitlements,/requireCapacity/);assert.match(entitlements,/resource:"properties"\|"users"\|"branches"/);assert.match(entitlements,/state==="suspended"\|\|plan\.state==="canceled"/);assert.match(credentials,/requireEntitlement\(workspace\.agencyId,user\.userId,"apiAccess"\)/);assert.match(credentials,/maxApiCredentials/);assert.match(subscription,/WHERE agency_id=\?/);assert.doesNotMatch(subscription,/SELECT \* FROM billing_invoices(?! WHERE)/)});
-test("custom roles are tenant-owned, permission-allowlisted and invite-safe",async()=>{const [authorization,roles,team]=await Promise.all([read("../db/authorization.ts"),read("../app/api/roles/route.ts"),read("../app/api/team/invitations/route.ts")]);assert.match(authorization,/r\.agency_id=\?/);assert.match(authorization,/p\.permission=\?/);assert.match(roles,/allowed\.has\(item\)/);assert.match(roles,/agency_id=\?/g);assert.match(roles,/is_system=0/g);assert.match(team,/SELECT id FROM roles WHERE id=\? AND agency_id=\? AND is_system=0/);assert.match(team,/COALESCE\(r\.name/)});
-test("full property records enforce tenant ownership, strict activation and downstream closure",async()=>{const route=await read("../app/api/properties/[id]/route.ts"),legacy=await read("../app/api/workspace/actions/route.ts");assert.match(route,/SELECT \* FROM properties WHERE id=\? AND agency_id=\?/);assert.match(route,/activationReady/);assert.match(route,/property_verification_items WHERE agency_id=\? AND property_id=\?/g);assert.match(route,/UPDATE viewings SET status='Cancelled'/);assert.match(route,/property_status_events/);assert.match(route,/SELECT id FROM contacts WHERE id=\? AND agency_id=\?/);assert.match(legacy,/activationReady/);assert.doesNotMatch(legacy,/completeness>=75/)});
-test("automation and notification APIs are tenant-scoped, idempotent and approval-gated",async()=>{const[route,engine,notifications]=await Promise.all([read("../app/api/automation/route.ts"),read("../db/automation.ts"),read("../app/api/notifications/route.ts")]);assert.match(route,/requirePermission\(workspace,"team\.manage"\)/);assert.match(route,/WHERE id=\? AND agency_id=\? AND status='awaiting_approval'/);assert.match(route,/status='dead_letter'/);assert.match(engine,/INSERT OR IGNORE INTO automation_executions/);assert.match(engine,/event_id=\? AND rule_version_id=\?/);assert.match(engine,/attempts>=5/);assert.match(notifications,/agency_id=\? AND recipient_user_id=\?/g)});
-test("marketing outputs are fact-bound, review-gated and tenant-scoped",async()=>{const[route,output,renderer]=await Promise.all([read("../app/api/marketing/route.ts"),read("../app/api/marketing/output/route.ts"),read("../db/marketing-render.ts")]);assert.match(route,/status='approved' ORDER BY version DESC/);assert.match(route,/factsSnapshot|facts_snapshot/);assert.match(route,/WHERE id=\? AND agency_id=\? AND status='failed'/);assert.match(route,/review_status='approved'/);assert.match(output,/o\.id=\? AND o\.agency_id=\?/);assert.match(renderer,/tenants\/\$\{agencyId\}\/marketing/);assert.match(renderer,/QRCode\.toString/);assert.match(renderer,/brochurePdf/)});
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const read = path => readFile(new URL(path, import.meta.url), "utf8");
+
+test("tenant-owned workspace operations scope every resource query", async () => {
+  const [workspace, actions, settings] = await Promise.all([read("../app/api/workspace/route.ts"), read("../app/api/workspace/actions/route.ts"), read("../app/api/settings/route.ts")]);
+  assert.match(workspace, /FROM properties WHERE agency_id=\?/);
+  assert.match(workspace, /FROM enquiries e[\s\S]*WHERE e\.agency_id=\?/);
+  assert.match(workspace, /WHERE id=\? AND agency_id=\?/);
+  assert.match(actions, /WHERE id=\? AND agency_id=\?/g);
+  assert.match(settings, /WHERE a\.id=\?/);
+  assert.doesNotMatch(actions, /UPDATE (properties|enquiries)[\s\S]*WHERE id=\?(?! AND agency_id)/);
+});
+
+test("all write routes authenticate and authorize", async () => {
+  const [workspace, actions, settings] = await Promise.all([read("../app/api/workspace/route.ts"), read("../app/api/workspace/actions/route.ts"), read("../app/api/settings/route.ts")]);
+  for (const source of [workspace, actions, settings]) assert.match(source, /getChatGPTUser/);
+  assert.match(workspace, /property\.create/);
+  assert.match(workspace, /enquiry\.create/);
+  assert.match(actions, /property\.publish/);
+  assert.match(actions, /enquiry\.contact/);
+  assert.match(settings, /agency\.settings\.manage/);
+});
+
+test("onboarding and team administration remain authenticated, authorized, and scoped", async () => {
+  const [onboarding, team, accept] = await Promise.all([read("../app/api/onboarding/route.ts"), read("../app/api/team/invitations/route.ts"), read("../app/api/team/accept/route.ts")]);
+  assert.match(onboarding, /getChatGPTUser/);
+  assert.match(onboarding, /agency\.settings\.manage/);
+  assert.match(onboarding, /id<>\?/);
+  assert.match(team, /team\.manage/g);
+  assert.match(team, /agency_id=\?/g);
+  assert.match(accept, /getChatGPTUser/);
+  assert.match(accept, /invitation\.email\.toLowerCase\(\)!==u\.email\.toLowerCase\(\)/);
+  assert.match(accept, /accepted_at IS NULL AND revoked_at IS NULL AND expires_at>CURRENT_TIMESTAMP/);
+});
+
+test("actions and viewings enforce identity, permissions and tenant predicates", async () => {
+  const [actions, viewings] = await Promise.all([read("../app/api/actions/route.ts"), read("../app/api/viewings/route.ts")]);
+  for (const source of [actions, viewings]) {
+    assert.match(source, /getChatGPTUser/);
+    assert.match(source, /requirePermission/);
+    assert.match(source, /agency_id=\?/g);
+  }
+  assert.match(actions, /action\.manage/);
+  assert.match(actions, /Assignee is not in this agency/);
+  assert.match(viewings, /viewing\.manage/);
+  assert.match(viewings, /status IN \('Requested','Confirmed'\)/);
+  assert.match(viewings, /property_id=\? OR assigned_user_id=\?/);
+});
+
+test("public routes use slug-scoped published reads and rate-limited intake", async () => {
+  const [site, intake, events] = await Promise.all([read("../db/public-site.ts"), read("../app/api/public/[slug]/enquiries/route.ts"), read("../app/api/public/[slug]/events/route.ts")]);
+  assert.match(site, /WHERE a\.slug=\? AND s\.onboarding_complete=1/);
+  assert.match(site, /p\.agency_id=\? AND p\.status='Available'/g);
+  assert.doesNotMatch(site, /owner_phone|created_by|notes|emailNormalized|phoneE164/);
+  assert.match(site, /listPublicAgents/);
+  assert.match(site, /WHERE m\.agency_id=\?/);
+  assert.match(intake, /public_intake_attempts/);
+  assert.match(intake, /created_at>datetime\('now','-10 minutes'\)/);
+  assert.match(intake, /getPublicProperty\(a\.id,propertyId\)/);
+  assert.match(intake, /agency_id=\?/g);
+  assert.match(intake, /source,response_due_at/);
+  assert.match(events, /getPublicProperty\(a\.id,b\.propertyId\)/);
+  assert.match(events, /public_events/);
+});
+
+test("media routes scope private objects to the tenant and public photos to published listings", async () => {
+  const [media, publicMedia, platformAsset] = await Promise.all([read("../app/api/media/route.ts"), read("../app/api/public/[slug]/media/route.ts"), read("../app/api/platform/asset/route.ts")]);
+  assert.match(media, /requirePermission\(workspace,permission\)/);
+  assert.match(media, /WHERE id=\? AND agency_id=\?/g);
+  assert.match(media, /optimizedMediaObjectKey\(c\.workspace\.agencyId/);
+  assert.match(media, /website_image/);
+  assert.match(media, /processImage/);
+  assert.match(media, /optimized: main\.optimized/);
+  assert.doesNotMatch(media, /Image processing is unavailable/);
+  assert.match(platformAsset, /processBrandAsset/);
+  assert.doesNotMatch(platformAsset, /Image processing is unavailable/);
+  assert.match(publicMedia, /a\.slug=\?/);
+  assert.match(publicMedia, /p\.status='Available'/);
+  assert.match(publicMedia, /m\.kind='agency_logo'/);
+  assert.match(publicMedia, /m\.kind='website_image'/);
+});
+
+test("seller management and portal reads are identity-bound, approved-only and tenant-scoped", async () => {
+  const [management, portal] = await Promise.all([read("../app/api/seller-management/route.ts"), read("../app/api/seller-portal/route.ts")]);
+  assert.match(management, /requirePermission\(workspace,"seller\.manage"\)/);
+  assert.match(management, /WHERE id=\? AND agency_id=\?/g);
+  assert.match(management, /seller\.access\.revoked/);
+  assert.match(management, /seller\.report\.approved/);
+  assert.match(portal, /accepted_user_id=\?/g);
+  assert.match(portal, /revoked_at IS NULL/g);
+  assert.match(portal, /status='approved'/);
+  assert.match(portal, /grant\.email\.toLowerCase\(\)!==user\.email\.toLowerCase\(\)/);
+});
+
+test("property detail metadata is record-specific and never inherits the landing card", async () => {
+  const detail = await read("../app/site/[slug]/properties/[id]/page.tsx");
+  assert.match(detail, /generateMetadata/);
+  assert.match(detail, /requestHeaders\.get\("host"\)/);
+  assert.match(detail, /property\.heroMediaId/);
+  assert.match(detail, /images:image\?\[image\]:\[\]/g);
+  assert.match(detail, /twitter:\{card:"summary_large_image",title:property\.title,description/);
+  assert.doesNotMatch(detail, /og\.png/);
+});
+
+test("platform and billing routes enforce platform roles, immutable versions and tenant predicates", async () => {
+  const [platform, auth, entitlements, subscription, credentials] = await Promise.all([read("../app/api/platform/route.ts"), read("../db/platform-auth.ts"), read("../db/entitlements.ts"), read("../app/api/subscription/route.ts"), read("../app/api/api-credentials/route.ts")]);
+  assert.match(platform, /requirePlatformUser/);
+  assert.match(platform, /\["super_admin","finance"\]/g);
+  assert.match(platform, /plan\.version\.created/);
+  assert.match(platform, /clone_plan_version/);
+  assert.match(platform, /update_plan_version/);
+  assert.match(platform, /publish_plan_version/);
+  assert.match(platform, /archive_plan_version/);
+  assert.match(platform, /bulk_migrate_plan/);
+  assert.match(platform, /Published and archived plan versions are locked/);
+  assert.match(platform, /agenciesUsing/);
+  assert.match(platform, /trialDays/);
+  assert.match(platform, /review_manual_payment/);
+  assert.match(platform, /billing_payment_methods/);
+  assert.match(platform, /WHERE id=\? AND status='open'/);
+  assert.match(platform, /subscription\.state_changed/);
+  assert.match(auth, /WHERE user_id=\? AND active=1/);
+  assert.match(entitlements, /PLAN_ENTITLEMENT_KEYS/);
+  assert.match(entitlements, /PLAN_LIMIT_DEFAULTS/);
+  assert.match(entitlements, /maxWebhookDeliveries/);
+  assert.match(entitlements, /propertyPortalIntegrations/);
+  assert.match(entitlements, /accountingIntegrations/);
+  assert.match(entitlements, /requireCapacity/);
+  assert.match(entitlements, /resource:"properties"\|"users"\|"branches"/);
+  assert.match(entitlements, /pending_payment/);
+  assert.match(entitlements, /trial_expired/);
+  assert.match(credentials, /requireEntitlement\(workspace\.agencyId,user\.userId,"apiAccess"\)/);
+  assert.match(credentials, /maxApiCredentials/);
+  assert.match(subscription, /WHERE agency_id=\?/);
+  assert.match(subscription, /billing_payment_requests/);
+  assert.doesNotMatch(subscription, /SELECT \* FROM billing_invoices(?! WHERE)/);
+});
+
+test("custom roles are tenant-owned, permission-allowlisted and invite-safe", async () => {
+  const [authorization, roles, team] = await Promise.all([read("../db/authorization.ts"), read("../app/api/roles/route.ts"), read("../app/api/team/invitations/route.ts")]);
+  assert.match(authorization, /r\.agency_id=\?/);
+  assert.match(authorization, /p\.permission=\?/);
+  assert.match(roles, /allowed\.has\(item\)/);
+  assert.match(roles, /agency_id=\?/g);
+  assert.match(roles, /is_system=0/g);
+  assert.match(team, /SELECT id FROM roles WHERE id=\? AND agency_id=\? AND is_system=0/);
+  assert.match(team, /COALESCE\(r\.name/);
+});
+
+test("full property records enforce tenant ownership, strict activation and downstream closure", async () => {
+  const [route, legacy] = await Promise.all([read("../app/api/properties/[id]/route.ts"), read("../app/api/workspace/actions/route.ts")]);
+  assert.match(route, /SELECT \* FROM properties WHERE id=\? AND agency_id=\?/);
+  assert.match(route, /activationReady/);
+  assert.match(route, /property_verification_items WHERE agency_id=\? AND property_id=\?/g);
+  assert.match(route, /UPDATE viewings SET status='Cancelled'/);
+  assert.match(route, /property_status_events/);
+  assert.match(route, /SELECT id FROM contacts WHERE id=\? AND agency_id=\?/);
+  assert.match(legacy, /activationReady/);
+  assert.doesNotMatch(legacy, /completeness>=75/);
+});
+
+test("automation and notification APIs are tenant-scoped, idempotent and approval-gated", async () => {
+  const [route, engine, notifications] = await Promise.all([read("../app/api/automation/route.ts"), read("../db/automation.ts"), read("../app/api/notifications/route.ts")]);
+  assert.match(route, /requirePermission\(workspace,"team\.manage"\)/);
+  assert.match(route, /WHERE id=\? AND agency_id=\? AND status='awaiting_approval'/);
+  assert.match(route, /status='dead_letter'/);
+  assert.match(engine, /INSERT OR IGNORE INTO automation_executions/);
+  assert.match(engine, /event_id=\? AND rule_version_id=\?/);
+  assert.match(engine, /attempts>=5/);
+  assert.match(notifications, /agency_id=\? AND recipient_user_id=\?/g);
+});
+
+test("marketing outputs are fact-bound, review-gated and tenant-scoped", async () => {
+  const [route, output, renderer] = await Promise.all([read("../app/api/marketing/route.ts"), read("../app/api/marketing/output/route.ts"), read("../db/marketing-render.ts")]);
+  assert.match(route, /status='approved' ORDER BY version DESC/);
+  assert.match(route, /factsSnapshot|facts_snapshot/);
+  assert.match(route, /WHERE id=\? AND agency_id=\? AND status='failed'/);
+  assert.match(route, /review_status='approved'/);
+  assert.match(output, /o\.id=\? AND o\.agency_id=\?/);
+  assert.match(renderer, /tenants\/\$\{agencyId\}\/marketing/);
+  assert.match(renderer, /QRCode\.toString/);
+  assert.match(renderer, /brochurePdf/);
+});
