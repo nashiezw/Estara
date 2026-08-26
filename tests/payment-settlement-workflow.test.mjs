@@ -83,6 +83,9 @@ test("subscription checkout has durable payment methods, review-gated manual pro
   assert.match(client, /Submit proof for review/);
   assert.match(client, /Create payment request/);
   assert.match(client, /Start free plan/);
+  assert.match(client, /selectedHasTrial/);
+  assert.match(client, /Number\(item\.trialDays \|\| 0\) > 0/);
+  assert.doesNotMatch(client, /Trial unavailable/);
   assert.match(client, /Cancel subscription/);
   assert.match(client, /Manage Stripe billing/);
   assert.match(client, /portalUrl/);
