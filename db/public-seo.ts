@@ -1,5 +1,6 @@
 import type { PublicAgency, PublicProperty } from "./public-site";
 import type { PlatformIdentity } from "./platform-defaults";
+import { publicPropertyFacts } from "./public-property-display";
 
 type HeaderLike = { get(name: string): string | null };
 
@@ -112,10 +113,7 @@ export function sectionDescription(section: string, agency: PublicAgency) {
 }
 
 export function propertyDescription(property: PublicProperty, agency: PublicAgency) {
-  const facts = [`${property.transactionType} in ${property.location}`];
-  if (property.beds) facts.push(`${property.beds} bedrooms`);
-  if (property.baths) facts.push(`${property.baths} bathrooms`);
-  if (property.size) facts.push(property.size);
+  const facts = [`${property.transactionType} in ${property.location}`, ...publicPropertyFacts(property).slice(0, 3).map(fact => fact.value)];
   return `${facts.join(", ")}. Enquire with ${agency.name} for verified details and viewing support.`;
 }
 

@@ -90,7 +90,7 @@ export default function AgencySettings({ brand, setBrand, notify }: AgencySettin
             <h1 style={{ font: "42px Georgia,serif", margin: "8px 0" }}>Agency settings</h1>
             <p>Control the agency identity, public website, enquiry response promise and marketing defaults from one governed place.</p>
           </div>
-          {brand.slug && <a className="outline" style={{ background: "#ffffff14", color: "#fff", borderColor: "#ffffff40", textDecoration: "none" }} href={previewHref} target="_blank" rel="noreferrer">Preview public site</a>}
+          {brand.slug && <a className="outline" style={{ background: "#ffffff14", color: "#fff", borderColor: "#ffffff40", textDecoration: "none" }} href={previewHref} target="_blank" rel="noreferrer">Preview public website</a>}
         </div>
       </section>
 

@@ -34,7 +34,8 @@ function cdpSocket(url) {
         const message = JSON.parse(event.data);
         if (message.id !== callId) return;
         socket.removeEventListener("message", onMessage);
-        message.error ? reject(new Error(JSON.stringify(message.error))) : resolve(message.result);
+        if (message.error) reject(new Error(JSON.stringify(message.error)));
+        else resolve(message.result);
       };
       socket.addEventListener("message", onMessage);
       socket.send(JSON.stringify({ id: callId, method, params }));

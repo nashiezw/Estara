@@ -22,12 +22,13 @@ test("mobile journey audit criteria document the remaining real-device gate", as
 });
 
 test("implemented mobile journeys expose the controls required by the audit", async () => {
-  const [workspace, publicClient, reliability] = await Promise.all([
+  const [workspace, settings, publicClient, reliability] = await Promise.all([
     read("../app/estara-app.tsx"),
+    read("../app/agency-settings.tsx"),
     read("../app/site/[slug]/public-client.tsx"),
     read("../app/reliability.css"),
   ]);
-  const all = `${workspace}\n${publicClient}\n${reliability}`;
+  const all = `${workspace}\n${settings}\n${publicClient}\n${reliability}`;
 
   for (const [label, pattern] of [
     ["mobile workspace logo", /className="mobile-logo"/],
@@ -48,7 +49,7 @@ test("implemented mobile journeys expose the controls required by the audit", as
     ["public enquiry form", /PublicEnquiryForm/],
     ["public viewing request", /Request a viewing/],
     ["public website preview", /Preview public website/],
-    ["canonical subdomain preview", /const previewHref=publicPreviewHref\(brand\)/],
+    ["canonical subdomain preview", /const previewHref = publicPreviewHref\(brand\)/],
     ["tenant website hostname", /https:\/\/\$\{brand\.slug\}\.\$\{suffix\}/],
     ["public retry alert", /role="alert"/],
     ["date-time mobile input", /type="datetime-local"/],

@@ -329,21 +329,21 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
     });
     setMessage("Uploaded image deleted.");
   };
-  const useFileImage = async (file: File, at?: { x: number; y: number }) => {
+  const placeFileImage = async (file: File, at?: { x: number; y: number }) => {
     const upload = rememberUpload(await fileToDataUrl(file), file.name || "Uploaded image");
     placeOrReplaceImage(upload.url, at);
     setTool("Uploads");
   };
   const changeImage = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file?.type.startsWith("image/")) await useFileImage(file);
+    if (file?.type.startsWith("image/")) await placeFileImage(file);
     event.target.value = "";
   };
   const dragStudioItem = (event: DragEvent, payload: Row) => { event.dataTransfer.setData("text/estara", JSON.stringify(payload)); event.dataTransfer.effectAllowed = "copy"; };
   const dropOnCanvas = async (event: DragEvent) => {
     event.preventDefault();
     const at = canvasPoint(event), file = Array.from(event.dataTransfer.files).find((item) => item.type.startsWith("image/"));
-    if (file) return useFileImage(file, at);
+    if (file) return placeFileImage(file, at);
     const raw = event.dataTransfer.getData("text/estara");
     if (!raw) return;
     let payload: Row;

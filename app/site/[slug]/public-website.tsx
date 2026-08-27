@@ -1,4 +1,5 @@
 import { PublicEnquiryForm, TrackedLink } from "./public-client";
+import { publicPropertyFacts } from "../../../db/public-property-display";
 import "../../public-templates.css";
 
 type PublicAgency = {
@@ -79,9 +80,16 @@ type PublicProperty = {
   price: string;
   beds: number;
   baths: number;
+  toilets: number;
+  parking: number;
+  garages: number;
   photos: number;
   size: string;
+  buildingSize: string;
   transactionType: string;
+  propertyType: string;
+  description: string;
+  features: string[];
   heroMediaId: string | null;
   branchName?: string;
   branchLocation?: string;
@@ -180,28 +188,29 @@ export function PublicHeader({ agency, pathMode = "site" }: { agency: PublicAgen
 export function PropertyGrid({ agency, properties, pathMode = "site" }: { agency: PublicAgency; properties: PublicProperty[]; pathMode?: PublicPathMode }) {
   return (
     <div className="public-grid">
-      {properties.map((property, index) => (
-        <a href={publicPath(agency, `/properties/${property.id}`, pathMode)} className="public-card" key={property.id}>
-          <div
-            className={`public-photo photo-${index % 3}`}
-            style={propertyImage(agency, property, index, undefined, "thumb")}
-          >
-            <span>{property.transactionType}</span>
-            <b>{property.photos || 1} photos</b>
-          </div>
-          <article>
-            <small>{property.ref}</small>
-            <h3>{property.title}</h3>
-            <p>{property.location}</p>
-            <strong>{property.price}</strong>
-            <footer>
-              <span>{property.beds} beds</span>
-              <span>{property.baths} baths</span>
-              {property.size && <span>{property.size}</span>}
-            </footer>
-          </article>
-        </a>
-      ))}
+      {properties.map((property, index) => {
+        const facts = publicPropertyFacts(property).slice(0, 3);
+        return (
+          <a href={publicPath(agency, `/properties/${property.id}`, pathMode)} className="public-card" key={property.id}>
+            <div
+              className={`public-photo photo-${index % 3}`}
+              style={propertyImage(agency, property, index, undefined, "thumb")}
+            >
+              <span>{property.transactionType}</span>
+              <b>{property.photos || 1} photos</b>
+            </div>
+            <article>
+              <small>{property.ref} · {property.propertyType}</small>
+              <h3>{property.title}</h3>
+              <p>{property.location}</p>
+              <strong>{property.price}</strong>
+              <footer>
+                {facts.map((fact) => <span key={`${fact.label}-${fact.value}`}>{fact.value}</span>)}
+              </footer>
+            </article>
+          </a>
+        );
+      })}
       {!properties.length && <p className="public-empty">No live properties match this page yet.</p>}
     </div>
   );

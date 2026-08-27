@@ -6,11 +6,12 @@ import { WEBSITE_TEMPLATES, isWebsiteTemplateKey, typographyForTemplate } from "
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("agency website templates are numerous, curated and selectable end to end", async () => {
-  const [catalogue, onboarding, settings, app, publicSite, propertyPage, css] = await Promise.all([
+  const [catalogue, onboarding, settings, app, agencySettings, publicSite, propertyPage, css] = await Promise.all([
     read("../db/website-templates.ts"),
     read("../app/api/onboarding/route.ts"),
     read("../app/api/settings/route.ts"),
     read("../app/estara-app.tsx"),
+    read("../app/agency-settings.tsx"),
     read("../app/site/[slug]/public-website.tsx"),
     read("../app/site/[slug]/properties/[id]/page.tsx"),
     read("../app/public-templates.css"),
@@ -28,10 +29,10 @@ test("agency website templates are numerous, curated and selectable end to end",
   assert.match(onboarding, /isWebsiteTemplateKey\(template\)/);
   assert.match(settings, /website_template=\?/);
   assert.match(settings, /invalidatePublicSite\(w\.agencyId\)/);
-  assert.match(app, /WEBSITE_TEMPLATES\.map/);
-  assert.match(app, /Website template<select/);
-  assert.match(app, /TemplateWebsitePreview/);
-  assert.match(app, /selectedTemplate=WEBSITE_TEMPLATES\.find/);
+  assert.match(agencySettings, /WEBSITE_TEMPLATES\.map/);
+  assert.match(agencySettings, /Website template<select/);
+  assert.match(agencySettings, /TemplatePreview template=\{selectedTemplate\}/);
+  assert.match(agencySettings, /selectedTemplate = useMemo\(\(\) => WEBSITE_TEMPLATES\.find/);
   assert.match(publicSite, /template-\$\{agency\.websiteTemplate\}/g);
   assert.match(publicSite, /public-layout-\$\{agency\.websiteTemplate\}/g);
   assert.match(publicSite, /public-feature-photo photo-\$\{properties\.length % 3\}/);
@@ -81,15 +82,12 @@ test("website templates restyle the full public site journey, not only the home 
 });
 
 test("website template selector has a full selected-site preview", async () => {
-  const app = await read("../app/estara-app.tsx");
+  const agencySettings = await read("../app/agency-settings.tsx");
 
-  assert.match(app, /function TemplateWebsitePreview/);
-  assert.match(app, /aria-label=\{`\$\{template\.name\} website preview`\}/);
-  assert.match(app, /<TemplateWebsitePreview template=\{selectedTemplate\} brand=\{brand\}/);
-  assert.match(app, /template-website-preview-\$\{template\.key\}/);
-  assert.match(app, /Home, listings, services, agents and contact pages inherit this structure/);
-  assert.match(app, /gridTemplateColumns:modern\?\"\.9fr 1\.1fr\":\"1fr 140px\"/);
-  assert.match(app, /template\.key===\"boutique\"/);
-  assert.match(app, /template\.key===\"skyline\"/);
-  assert.match(app, /template\.key===\"estate\"/);
+  assert.match(agencySettings, /TemplatePreview template=\{selectedTemplate\} brand=\{brand\}/);
+  assert.match(agencySettings, /template-selected-preview wide/);
+  assert.match(agencySettings, /Preview public website/);
+  assert.match(agencySettings, /WEBSITE_TEMPLATES\.find/);
+  assert.match(agencySettings, /updateBrand\(\{ websiteTemplate: event\.target\.value/);
+  assert.match(agencySettings, /typography: template\?\.typography \|\| brand\.typography/);
 });
