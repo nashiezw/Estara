@@ -14,8 +14,8 @@ export default async function AuthShell({ children }: { children: React.ReactNod
           <span>{logo ? <img className="auth-mark-logo" src={logo} alt={`${platform.shortName} logo`} /> : platform.shortName}<small>{platform.descriptor}</small></span>
         </Link>
         <div>
-          <h1>Run your agency from one secure account.</h1>
-          <p>Properties, enquiries, viewings, seller reports and daily next actions all start behind a verified {platform.shortName} login.</p>
+          <h1>Keep your agency brand and opportunities in one accountable place.</h1>
+          <p>Your properties, enquiries, viewings, seller reports and daily next actions stay connected behind a verified {platform.shortName} login.</p>
         </div>
         <div className="auth-proof">
           <span>Email verification</span>

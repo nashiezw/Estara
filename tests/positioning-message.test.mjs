@@ -35,3 +35,15 @@ test("pilot distribution artifacts make listening, selection and proof consent e
   assert.match(proof, /raw counts beside every percentage/i);
   assert.match(proof, /approves the final text and every identifiable asset in writing/i);
 });
+
+test("homepage click-through keeps the agency-first promise", async () => {
+  const [auth, demo] = await Promise.all([
+    read("../app/auth-shell.tsx"),
+    read("../app/demo/demo-client.tsx"),
+  ]);
+  assert.match(auth, /Keep your agency brand and opportunities in one accountable place/);
+  assert.match(demo, /See one property become a website, an enquiry and a seller update/);
+  assert.match(demo, /keeps the agency brand visible while every opportunity moves through response, viewing and the next action/);
+  assert.match(demo, /Keep every client connected to the next step/);
+  assert.doesNotMatch(demo, /A complete agency day, already populated|Contacts and CRM|in one CRM/);
+});

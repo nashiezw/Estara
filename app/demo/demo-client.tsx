@@ -261,7 +261,7 @@ function TodayModule({ platform, demo, choose }: { platform: Platform; demo: typ
   const liveProperties = demo.properties.filter((property) => property.status === "Live").length;
   const openActions = demo.actions.filter((action) => action.status === "Open").length;
   return <div className="page">
-    <PageHeading label="Demo command centre" title="A complete agency day, already populated." text={`Explore how ${platform.shortName} connects properties, leads, viewings, follow-ups, marketing, portals and management controls.`} action={<button className="primary" onClick={() => choose("properties")}>Open property pipeline</button>} />
+    <PageHeading label="Agency-owned workflow" title="See one property become a website, an enquiry and a seller update." text={`Follow how ${platform.shortName} keeps the agency brand visible while every opportunity moves through response, viewing and the next action.`} action={<button className="primary" onClick={() => choose("properties")}>Start with a property</button>} />
     <section className="money demo-hero-panel">
       <div className="section-head"><div><h2>Prime Metro Realty</h2><p>Fictional Zimbabwe agency account with safe sample operations.</p></div><span className="live"><i /> Demo live</span></div>
       <div className="stats">
@@ -281,7 +281,7 @@ function TodayModule({ platform, demo, choose }: { platform: Platform; demo: typ
         {demo.viewings.map((viewing) => <div className={viewing.status === "Confirmed" ? "next" : ""} key={viewing.id}><time>{viewing.when.split(",")[0]}<small>{viewing.when.split(",")[1] || ""}</small></time><i /><span><strong>{propertyName(demo, viewing.propertyId)}</strong><small>{contactName(demo, viewing.contactId)} with {viewing.agent}</small></span><b>{viewing.status}</b></div>)}
       </section>
     </div>
-    <ModuleLinks links={[{ href: "#properties", label: "Property capture" }, { href: "#contacts", label: "Contacts and CRM" }, { href: "#reports", label: "Reports and analytics" }, { href: "#integrations", label: "Website and connectors" }]} choose={choose} />
+    <ModuleLinks links={[{ href: "#properties", label: "Property capture" }, { href: "#contacts", label: "Contacts and relationship history" }, { href: "#reports", label: "Reports and analytics" }, { href: "#integrations", label: "Website and connectors" }]} choose={choose} />
   </div>;
 }
 
@@ -318,7 +318,7 @@ function EnquiriesModule({ demo, selected, selectedContact, selectedProperty, pi
 }
 
 function ContactsModule({ contacts, choose }: { contacts: Contact[]; choose: (id: NavId) => void }) {
-  return <div className="page"><PageHeading label="Relationship memory" title="Buyers, sellers, landlords and tenants in one CRM." text="The demo shows how contacts remain linked to requirements, property interest, owners and follow-up work." action={<button className="primary" onClick={() => choose("actions")}>Create follow-up</button>} /><section className="panel demo-table">{contacts.map((contact) => <article key={contact.id}><b>{initials(contact.name)}</b><span><strong>{contact.name}</strong><small>{contact.role} - {contact.temperature}</small></span><p>{contact.interest}</p><em>{contact.agent}</em></article>)}</section></div>;
+  return <div className="page"><PageHeading label="Relationship memory" title="Keep every client connected to the next step." text="Buyers, sellers, landlords and tenants remain linked to requirements, property interest, owners and follow-up work." action={<button className="primary" onClick={() => choose("actions")}>Create follow-up</button>} /><section className="panel demo-table">{contacts.map((contact) => <article key={contact.id}><b>{initials(contact.name)}</b><span><strong>{contact.name}</strong><small>{contact.role} - {contact.temperature}</small></span><p>{contact.interest}</p><em>{contact.agent}</em></article>)}</section></div>;
 }
 
 function ViewingsModule({ demo, completeAction }: { demo: typeof seed; completeAction: (id: string) => void }) {
@@ -367,7 +367,7 @@ function SubscriptionModule() {
 }
 
 function SettingsModule({ platform }: { platform: Platform }) {
-  return <div className="page"><PageHeading label="Agency settings" title="Brand, security and governance in one place." text="The sample account mirrors logo controls, custom domains, API credentials, roles, audit evidence and platform-safe AI settings." /><ModuleLinks links={[{ href: "#branding", label: `${platform.shortName} brand kit` }, { href: "#domains", label: "Custom domains and DNS" }, { href: "#roles", label: "Roles and permissions" }, { href: "#api", label: "Developer API credentials" }, { href: "#audit", label: "Evidence ledger" }, { href: "#security", label: "Security controls" }]} /></div>;
+  return <div className="page"><PageHeading label="Agency settings" title="Keep brand, security and governance under agency control." text="The sample account mirrors logo controls, custom domains, API credentials, roles, audit evidence and platform-safe AI settings." /><ModuleLinks links={[{ href: "#branding", label: `${platform.shortName} brand kit` }, { href: "#domains", label: "Custom domains and DNS" }, { href: "#roles", label: "Roles and permissions" }, { href: "#api", label: "Developer API credentials" }, { href: "#audit", label: "Evidence ledger" }, { href: "#security", label: "Security controls" }]} /></div>;
 }
 
 function LeadRow({ demo, enquiry, selected, pick }: { demo: typeof seed; enquiry: Enquiry; selected: boolean; pick: (id: string) => void }) {
