@@ -24,10 +24,9 @@ const todayItems = [
 const reuseOutputs = ["Agency website", "Property page", "WhatsApp advert", "Social creative", "Brochure", "Buyer matching", "Viewing", "Seller report"];
 
 const promises = [
-  ["Look professional", "Branded websites, polished listings, seller portals and professional documents."],
-  ["Market faster", "Enter property facts once and reuse them across every public and marketing output."],
-  ["Lose fewer clients", "Every enquiry, viewing and follow-up creates visible work instead of disappearing."],
-  ["Run from one place", "Properties, clients, team, marketing, reports and daily actions stay connected."],
+  ["Own your agency brand", "Your buyers land on your website and contact your team, without losing your agency inside someone else's search results."],
+  ["Nothing goes cold", "Every enquiry, follow-up and viewing stays visible, with an owner and a clear next step."],
+  ["One property, zero retyping", "Add a property once. Reuse it across your website, adverts, brochures, buyer matching and seller updates."],
 ];
 
 const firstRun = ["Create agency", "Add first property", "Upload photos", "Activate listing", "Publish website", "Create marketing", "Receive enquiry", "Book viewing", "Update seller"];
@@ -84,7 +83,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const icon = platformIconUrl(origin, platform) || "/favicon.svg";
   const image = platformLogoUrl(origin, platform);
   return {
-    title: `${platform.platformName} | Real estate operating system`,
+    title: `${platform.platformName} | Agency websites, marketing and follow-up`,
     description,
     alternates: { canonical: origin },
     icons: { icon, apple: icon },
@@ -144,12 +143,12 @@ export default async function Home() {
 
       <section className="home-hero" id="product">
         <div className="home-hero-copy">
-          <p className="home-kicker">Real estate operating system</p>
-          <h1>Run your real estate agency from one place.</h1>
-          <p>Add your properties once. Market them professionally. Capture every enquiry. Know who needs follow-up. Keep sellers informed. Let today&apos;s work become obvious.</p>
+          <p className="home-kicker">Built for Zimbabwean estate agencies</p>
+          <h1>{platform.shortName} gives your agency its own front door.</h1>
+          <p>Add a property once. Turn it into your agency website, marketing, follow-up and seller update, so nothing gets lost and your brand gets the credit.</p>
           <div className="home-actions">
+            <a href="/demo">See {platform.shortName} in action</a>
             <a href={registerHref}>Start your agency setup</a>
-            <a href="/demo">View demo</a>
           </div>
         </div>
 
@@ -171,8 +170,8 @@ export default async function Home() {
       <section className="home-today" id="today">
         <div>
           <p className="home-kicker">Today&apos;s Business</p>
-          <h2>{platform.shortName} should tell the team where attention is needed.</h2>
-          <p>The dashboard is not meant to be a pile of charts. It is the agency&apos;s daily operating room: what protects revenue, what needs follow-up and what moves next.</p>
+          <h2>Know what needs to happen next.</h2>
+          <p>See what protects revenue, what needs follow-up and who owns the next step, without digging through individual chats and spreadsheets.</p>
         </div>
         <div className="home-today-list">
           {todayItems.map(([title, text, meta]) => <article key={title}><span>{meta}</span><h3>{title}</h3><p>{text}</p></article>)}
@@ -182,8 +181,8 @@ export default async function Home() {
       <section className="home-reuse">
         <div>
           <p className="home-kicker">Enter once. Use everywhere.</p>
-          <h2>One property record becomes the whole sales machine.</h2>
-          <p>A listing should not be retyped for every channel. {platform.shortName} turns verified property data into the public website, marketing assets, enquiries, viewings and seller evidence.</p>
+          <h2>One property. Every place it needs to work.</h2>
+          <p>A property should not be retyped for every channel. {platform.shortName} turns verified facts into your public website, marketing assets, enquiries, viewings and seller evidence.</p>
         </div>
         <div className="home-reuse-map">
           <strong>Property record</strong>
@@ -208,8 +207,8 @@ export default async function Home() {
       <section className="home-websites" id="websites">
         <div>
           <p className="home-kicker">Professional public presence</p>
-          <h2>Every agency should look like a serious brand.</h2>
-          <p>Agency websites, property pages, agent profiles, custom colours, images, templates and seller-facing experiences all come from the same operating system.</p>
+          <h2>Your buyers should remember your agency.</h2>
+          <p>Give them your website, your property pages, your agents and your brand, backed by the same facts your team uses every day.</p>
         </div>
         <aside>
           <a href="/demo">View guided demo</a>
@@ -222,7 +221,7 @@ export default async function Home() {
 
       <section className="home-final">
         <p className="home-kicker">Zimbabwe-first. World-class standard.</p>
-        <h2>When a property enters your agency, it should enter {platform.shortName}.</h2>
+        <h2>Make your agency the brand buyers remember and the team sellers trust.</h2>
         <div><a href={registerHref}>Start setup</a><a href={loginHref}>Log in</a></div>
       </section>
 

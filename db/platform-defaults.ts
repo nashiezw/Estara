@@ -23,7 +23,7 @@ export const DEFAULT_PLATFORM_IDENTITY: PlatformIdentity = {
   shortName: "ESTARA",
   parentBrand: "HouseLink",
   tagline: "Your Real Estate Business. Running Smarter.",
-  descriptor: "The operating system for a modern real estate business.",
+  descriptor: "Your agency website, property marketing and follow-up, connected without retyping.",
   primaryColor: "#153b34",
   accentColor: "#e6bd5f",
   defaultCountry: "ZW",

@@ -11,6 +11,22 @@ Prove that ESTARA improves agency execution in live Zimbabwean workflows. Run on
 - Name one ESTARA owner and one agency champion for every pilot.
 - Sign data-processing, support, and exit/export expectations before importing live records.
 
+## Phase 0: Listening Tour
+
+Run the five-agency process in `AGENCY-LISTENING-TOUR.md` before selecting the cohort. Preserve exact problem language, recent examples and first-week success conditions. This phase is discovery, not a sales presentation.
+
+Score each willing agency from 0-2 on each criterion:
+
+- Principal sponsor has time and authority to change the workflow.
+- At least two active users will operate real records weekly.
+- Agency has enough current enquiry volume to measure response and follow-up.
+- Agency cares about its own public brand and will publish a real website.
+- Current data can be imported with known quality limitations.
+- Team agrees to observed mobile use and weekly evidence review.
+- Agency is a credible reference candidate if the measured outcome is positive.
+
+Select for committed behavior and measurable workflow, not prestige or team size. Record why each agency was selected or declined.
+
 ## Setup Week
 
 1. Capture a 30-day pre-pilot baseline from the agency's existing records.
@@ -56,3 +72,5 @@ These are decision thresholds, not promised outcomes. Small samples must be repo
 ## Exit Criteria
 
 At day 60, continue to day 90 only when usage is real and evidence is still accumulating. At close, export each agency's data, document every known limitation, compare baseline and final periods, record the commercial decision, and produce an evidence-led case study only with the agency's written approval.
+
+Build the final evidence using `PILOT-PROOF-PACK.md`. After at least two approved case studies exist, prepare targeted local press outreach around measured agency outcomes rather than a product announcement.

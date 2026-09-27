@@ -102,7 +102,7 @@ These should not block the first sellable MVP unless already required by a custo
 
 ## Homepage Problems
 
-- The homepage now leads with "Run your real estate agency from one place."
+- The homepage now leads with "ESTARA gives your agency its own front door."
 - It shows "Today's Business" and "Enter Once. Use Everywhere." as product proof.
 - Demo counts are labelled as workspace preview content.
 - Further visual QA should happen after the full onboarding path is polished.
@@ -159,7 +159,7 @@ These should not block the first sellable MVP unless already required by a custo
 
 ## Recommended Homepage Strategy
 
-Lead with: "Run your real estate agency from one place."
+Lead with: "ESTARA gives your agency its own front door."
 
 Show:
 

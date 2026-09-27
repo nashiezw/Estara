@@ -55,7 +55,7 @@ export function platformLogoUrl(origin: string, platform: Pick<PlatformIdentity,
 }
 
 export function platformSeoDescription(platform: Pick<PlatformIdentity, "descriptor" | "tagline">) {
-  return platform.descriptor || platform.tagline || "A real estate operating system for property teams, marketing, enquiries and seller updates.";
+  return platform.descriptor || platform.tagline || "Give your real estate agency its own website, reuse every property across marketing, and keep enquiries and follow-ups visible.";
 }
 
 export function publicUrl(origin: string, agency: PublicAgency, path = "") {
