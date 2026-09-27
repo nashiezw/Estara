@@ -1,10 +1,11 @@
 import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { requireWorkspace } from "../../../db/workspace";
-import { AuthorizationError, requirePermission, writeAudit } from "../../../db/authorization";
+import { AuthorizationError, prepareAudit, requirePermission, writeAudit } from "../../../db/authorization";
 import { hashSellerToken, sellerEmail, sellerFeedbackSummary, sellerReportCopy, validSellerEmail } from "../../../db/seller-policy";
 import { sellerReportPdf } from "../../../db/seller-report-pdf";
 import { accessiblePropertyIds, requirePropertyBranchAccess } from "../../../db/access-scope";
+import { processAutomationEvents } from "../../../db/automation";
 
 const dynamic = "force-dynamic";
 const denied = (error: unknown) => error instanceof AuthorizationError
@@ -25,7 +26,7 @@ async function property(agencyId: string, id: string) {
   return env.DB.prepare("SELECT p.id,p.title,p.reference,p.location,a.name agency FROM properties p JOIN agencies a ON a.id=p.agency_id WHERE p.id=? AND p.agency_id=?").bind(id, agencyId).first<any>();
 }
 
-async function draft(agencyId: string, propertyId: string, userId: string, periodDays: number) {
+async function prepareDraft(agencyId: string, propertyId: string, userId: string, periodDays: number, id = crypto.randomUUID()) {
   const listing = await property(agencyId, propertyId);
   if (!listing) return null;
   const end = new Date();
@@ -43,10 +44,10 @@ async function draft(agencyId: string, propertyId: string, userId: string, perio
   const copy = sellerReportCopy(listing.title, views, enquiries, viewings);
   const feedbackSummary = sellerFeedbackSummary(feedbackRows.results);
   const momentum = offers ? "Offer activity" : copy.momentum;
-  const id = crypto.randomUUID();
-  await env.DB.prepare("INSERT INTO seller_reports (id,agency_id,property_id,period_start,period_end,views,enquiries,viewings,offers,momentum,summary,feedback_summary,recommended_action,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-    .bind(id, agencyId, propertyId, from, to, views, enquiries, viewings, offers, momentum, copy.summary, feedbackSummary, copy.recommendedAction, userId).run();
-  return { id, propertyId, property: listing.title, periodStart: from, periodEnd: to, views, enquiries, viewings, offers, momentum, summary: copy.summary, feedbackSummary, recommendedAction: copy.recommendedAction, status: "draft" };
+  const report = { id, propertyId, property: listing.title, periodStart: from, periodEnd: to, views, enquiries, viewings, offers, momentum, summary: copy.summary, feedbackSummary, recommendedAction: copy.recommendedAction, status: "draft" };
+  const statement = env.DB.prepare("INSERT OR IGNORE INTO seller_reports (id,agency_id,property_id,period_start,period_end,views,enquiries,viewings,offers,momentum,summary,feedback_summary,recommended_action,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+    .bind(id, agencyId, propertyId, from, to, views, enquiries, viewings, offers, momentum, copy.summary, feedbackSummary, copy.recommendedAction, userId);
+  return { report, statement };
 }
 
 async function GET() {
@@ -88,21 +89,26 @@ async function POST(request: Request) {
     if (body.action === "invite") {
       const email = sellerEmail(body.email);
       if (!validSellerEmail(email)) return Response.json({ error: "Enter a valid seller email address." }, { status: 400 });
-      await env.DB.prepare("UPDATE seller_access_grants SET revoked_at=CURRENT_TIMESTAMP WHERE agency_id=? AND property_id=? AND lower(email)=? AND revoked_at IS NULL").bind(agencyId, propertyId, email).run();
       const id = crypto.randomUUID();
       const token = crypto.randomUUID() + crypto.randomUUID().replaceAll("-", "");
       const expiresAt = new Date(Date.now() + 7 * 864e5).toISOString();
-      await env.DB.prepare("INSERT INTO seller_access_grants (id,agency_id,property_id,email,token_hash,expires_at,invited_by) VALUES (?,?,?,?,?,?,?)").bind(id, agencyId, propertyId, email, await hashSellerToken(token), expiresAt, current.user.userId).run();
-      await writeAudit(current.workspace, "seller.access.invited", "seller_access_grant", id, { propertyId, email });
+      await env.DB.batch([
+        env.DB.prepare("UPDATE seller_access_grants SET revoked_at=CURRENT_TIMESTAMP WHERE agency_id=? AND property_id=? AND lower(email)=? AND revoked_at IS NULL").bind(agencyId, propertyId, email),
+        env.DB.prepare("INSERT INTO seller_access_grants (id,agency_id,property_id,email,token_hash,expires_at,invited_by) VALUES (?,?,?,?,?,?,?)").bind(id, agencyId, propertyId, email, await hashSellerToken(token), expiresAt, current.user.userId),
+        prepareAudit(current.workspace, "seller.access.invited", "seller_access_grant", id, { propertyId, email }),
+      ]);
       return Response.json({ grant: { id, propertyId, email, property: listing.title, expiresAt, acceptPath: `/seller?token=${encodeURIComponent(token)}` } }, { status: 201 });
     }
 
     if (body.action === "create_report") {
       const frequency = String(body.frequency || "weekly");
-      const report = await draft(agencyId, propertyId, current.user.userId, days[frequency] || 7);
-      if (!report) return Response.json({ error: "Property was not found." }, { status: 404 });
-      await writeAudit(current.workspace, "seller.report.created", "seller_report", report.id, { propertyId, frequency });
-      return Response.json({ report }, { status: 201 });
+      const prepared = await prepareDraft(agencyId, propertyId, current.user.userId, days[frequency] || 7);
+      if (!prepared) return Response.json({ error: "Property was not found." }, { status: 404 });
+      await env.DB.batch([
+        prepared.statement,
+        prepareAudit(current.workspace, "seller.report.created", "seller_report", prepared.report.id, { propertyId, frequency }),
+      ]);
+      return Response.json({ report: prepared.report }, { status: 201 });
     }
 
     if (body.action === "create_offer") {
@@ -121,8 +127,8 @@ async function POST(request: Request) {
         env.DB.prepare("UPDATE enquiries SET stage='Offer',status='Contacted',contacted_at=COALESCE(contacted_at,CURRENT_TIMESTAMP),next_follow_up_at=? WHERE id=? AND agency_id=? AND property_id=?").bind(dueAt, enquiryId, agencyId, propertyId),
         env.DB.prepare("INSERT INTO next_actions(id,agency_id,resource_type,resource_id,action_type,reason,priority,due_at,status,assigned_user_id) VALUES(?,?,?,?,? ,?,'high',?,'open',?)").bind(crypto.randomUUID(), agencyId, "offer", id, "offer_follow_up", `Follow up on ${enquiry.contact || "buyer"}'s offer for ${listing.title}`, dueAt, enquiry.assignedUserId || current.user.userId),
         env.DB.prepare("INSERT INTO contact_activities(id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) VALUES(?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(), agencyId, enquiry.contactId, current.user.userId, "offer.submitted", `${currency} ${(amountMinor / 100).toLocaleString("en-US")} offer recorded for ${listing.title}`, "offer", id),
+        prepareAudit(current.workspace, "offer.submitted", "offer", id, { propertyId, enquiryId, contactId: enquiry.contactId, amountMinor, currency }),
       ]);
-      await writeAudit(current.workspace, "offer.submitted", "offer", id, { propertyId, enquiryId, contactId: enquiry.contactId, amountMinor, currency });
       return Response.json({ offer: { id, enquiryId, status: "submitted", nextActionDueAt: dueAt } }, { status: 201 });
     }
 
@@ -130,20 +136,29 @@ async function POST(request: Request) {
       const frequency = String(body.frequency || "");
       const email = sellerEmail(body.email);
       if (!days[frequency] || !validSellerEmail(email)) return Response.json({ error: "Choose a schedule and valid seller email." }, { status: 400 });
-      const id = crypto.randomUUID();
+      const id = `schedule-${(await hashSellerToken(`${agencyId}:${propertyId}:${email}`)).slice(0, 32)}`;
       const next = new Date(Date.now() + days[frequency] * 864e5).toISOString();
-      await env.DB.prepare("INSERT INTO seller_report_schedules (id,agency_id,property_id,frequency,recipient_email,next_run_at,created_by) VALUES (?,?,?,?,?,?,?) ON CONFLICT(agency_id,property_id,recipient_email) DO UPDATE SET frequency=excluded.frequency,next_run_at=excluded.next_run_at,active=1,updated_at=CURRENT_TIMESTAMP").bind(id, agencyId, propertyId, frequency, email, next, current.user.userId).run();
-      await writeAudit(current.workspace, "seller.schedule.saved", "seller_report_schedule", id, { propertyId, frequency, email });
+      await env.DB.batch([
+        env.DB.prepare("INSERT INTO seller_report_schedules (id,agency_id,property_id,frequency,recipient_email,next_run_at,created_by) VALUES (?,?,?,?,?,?,?) ON CONFLICT(agency_id,property_id,recipient_email) DO UPDATE SET frequency=excluded.frequency,next_run_at=excluded.next_run_at,active=1,updated_at=CURRENT_TIMESTAMP").bind(id, agencyId, propertyId, frequency, email, next, current.user.userId),
+        prepareAudit(current.workspace, "seller.schedule.saved", "seller_report_schedule", id, { propertyId, frequency, email }),
+      ]);
       return Response.json({ scheduled: true, nextRunAt: next }, { status: 201 });
     }
 
     if (body.action === "process_schedules") {
-      const due = await env.DB.prepare("SELECT id,property_id propertyId,frequency FROM seller_report_schedules WHERE agency_id=? AND active=1 AND next_run_at<=CURRENT_TIMESTAMP LIMIT 25").bind(agencyId).all<any>();
+      const due = await env.DB.prepare("SELECT id,property_id propertyId,frequency,next_run_at nextRunAt FROM seller_report_schedules WHERE agency_id=? AND active=1 AND next_run_at<=CURRENT_TIMESTAMP LIMIT 25").bind(agencyId).all<any>();
       let created = 0;
       for (const schedule of due.results) {
         try { await requirePropertyBranchAccess(current.workspace, schedule.propertyId); } catch { continue; }
-        if (await draft(agencyId, schedule.propertyId, current.user.userId, days[schedule.frequency] || 7)) created++;
-        await env.DB.prepare("UPDATE seller_report_schedules SET next_run_at=datetime(CURRENT_TIMESTAMP,?),updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(`+${days[schedule.frequency] || 7} days`, schedule.id, agencyId).run();
+        const reportId = `${schedule.id}:${schedule.nextRunAt}`;
+        const prepared = await prepareDraft(agencyId, schedule.propertyId, current.user.userId, days[schedule.frequency] || 7, reportId);
+        if (!prepared) continue;
+        const result = await env.DB.batch([
+          prepared.statement,
+          env.DB.prepare("UPDATE seller_report_schedules SET next_run_at=datetime(next_run_at,?),updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND next_run_at=?").bind(`+${days[schedule.frequency] || 7} days`, schedule.id, agencyId, schedule.nextRunAt),
+          env.DB.prepare("INSERT OR IGNORE INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) VALUES(?,?,?,?,?,?,?)").bind(`scheduled-report:${reportId}`, agencyId, current.user.userId, "seller.report.created", "seller_report", reportId, JSON.stringify({ propertyId: schedule.propertyId, frequency: schedule.frequency, scheduleId: schedule.id })),
+        ]);
+        if (result[0]?.meta.changes) created++;
       }
       await writeAudit(current.workspace, "seller.schedules.processed", "seller_report_schedule", "batch", { created });
       return Response.json({ created });
@@ -166,44 +181,70 @@ async function PATCH(request: Request) {
     if (linked?.propertyId) await requirePropertyBranchAccess(current.workspace, linked.propertyId);
 
     if (action === "approve_report") {
-      const report = await env.DB.prepare("SELECT r.*,p.title,p.reference,p.location,a.name agency FROM seller_reports r JOIN properties p ON p.id=r.property_id AND p.agency_id=r.agency_id JOIN agencies a ON a.id=r.agency_id WHERE r.id=? AND r.agency_id=? AND r.status='draft'").bind(id, agencyId).first<any>();
-      if (!report) return Response.json({ error: "Draft report was not found." }, { status: 404 });
+      const report = await env.DB.prepare("SELECT r.*,p.title,p.reference,p.location,a.name agency FROM seller_reports r JOIN properties p ON p.id=r.property_id AND p.agency_id=r.agency_id JOIN agencies a ON a.id=r.agency_id WHERE r.id=? AND r.agency_id=?").bind(id, agencyId).first<any>();
+      if (!report) return Response.json({ error: "Seller report was not found." }, { status: 404 });
+      if (report.status === "approved") return Response.json({ approved: true, hasPdf: Boolean(report.pdf_object_key), replayed: true });
       const approvedAt = new Date().toISOString();
+      const staleBefore = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const claimed = await env.DB.prepare("UPDATE seller_reports SET status='approving',approved_by=?,approval_started_at=? WHERE id=? AND agency_id=? AND (status='draft' OR (status='approving' AND approval_started_at<?))").bind(current.user.userId, approvedAt, id, agencyId, staleBefore).run();
+      if (!claimed.meta.changes) return Response.json({ error: "This report is already being approved. Refresh shortly." }, { status: 409 });
       const pdf = sellerReportPdf({ agency: report.agency, property: report.title, reference: report.reference, location: report.location, periodStart: report.period_start, periodEnd: report.period_end, views: report.views, enquiries: report.enquiries, viewings: report.viewings, offers: report.offers, momentum: report.momentum, summary: report.summary, feedbackSummary: report.feedback_summary, recommendedAction: report.recommended_action, approvedAt });
-      const key = `tenants/${agencyId}/seller-reports/${id}.pdf`;
-      await env.MEDIA.put(key, pdf, { httpMetadata: { contentType: "application/pdf" }, customMetadata: { agencyId, reportId: id } });
-      await env.DB.prepare("UPDATE seller_reports SET status='approved',approved_by=?,approved_at=?,pdf_object_key=?,pdf_byte_size=? WHERE id=? AND agency_id=? AND status='draft'").bind(current.user.userId, approvedAt, key, pdf.byteLength, id, agencyId).run();
-      const recipients = await env.DB.prepare("SELECT DISTINCT email FROM seller_access_grants WHERE agency_id=? AND property_id=? AND revoked_at IS NULL").bind(agencyId, report.property_id).all<any>();
-      for (const recipient of recipients.results) await env.DB.batch([
-        env.DB.prepare("INSERT INTO seller_deliveries (id,agency_id,property_id,report_id,recipient_email,channel,status,provider,attempts,sent_at) VALUES (?,?,?,?,?,'portal','sent','estara-portal',1,CURRENT_TIMESTAMP)").bind(crypto.randomUUID(), agencyId, report.property_id, id, recipient.email),
-        env.DB.prepare("INSERT INTO seller_deliveries (id,agency_id,property_id,report_id,recipient_email,channel,status,provider,attempts,last_error) VALUES (?,?,?,?,?,'email','queued','pending-provider',0,'Awaiting configured email provider')").bind(crypto.randomUUID(), agencyId, report.property_id, id, recipient.email),
-      ]);
-      await writeAudit(current.workspace, "seller.report.approved", "seller_report", id, { pdfBytes: pdf.byteLength, recipients: recipients.results.length });
+      const key = `tenants/${agencyId}/seller-reports/${id}/${approvedAt.replaceAll(":", "-")}.pdf`;
+      try {
+        await env.MEDIA.put(key, pdf, { httpMetadata: { contentType: "application/pdf" }, customMetadata: { agencyId, reportId: id } });
+        const recipients = await env.DB.prepare("SELECT DISTINCT lower(email) email FROM seller_access_grants WHERE agency_id=? AND property_id=? AND revoked_at IS NULL").bind(agencyId, report.property_id).all<any>();
+        const detail = JSON.stringify({ pdfBytes: pdf.byteLength, recipients: recipients.results.length });
+        const payload = JSON.stringify({ assignedUserId: current.user.userId, property: report.title, propertyId: report.property_id, resourceType: "seller_report", resourceId: id, recipients: recipients.results.length });
+        const ownsApproval = "EXISTS(SELECT 1 FROM seller_reports WHERE id=? AND agency_id=? AND status='approving' AND approved_by=? AND approval_started_at=?)";
+        const statements = [
+          env.DB.prepare(`INSERT OR IGNORE INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) SELECT ?,?,?,?,?,?,? WHERE ${ownsApproval}`).bind(`seller-report-approved:${id}:${approvedAt}`, agencyId, current.user.userId, "seller.report.approved", "seller_report", id, detail, id, agencyId, current.user.userId, approvedAt),
+          env.DB.prepare(`INSERT OR IGNORE INTO domain_events(id,agency_id,event_type,aggregate_type,aggregate_id,payload,created_at) SELECT ?,?,?,?,?,?,? WHERE ${ownsApproval}`).bind(`seller-report-approved:${id}:${approvedAt}`, agencyId, "seller.report.approved", "seller_report", id, payload, approvedAt, id, agencyId, current.user.userId, approvedAt),
+        ];
+        for (const recipient of recipients.results) statements.push(
+          env.DB.prepare(`INSERT OR IGNORE INTO seller_deliveries (id,agency_id,property_id,report_id,recipient_email,channel,status,provider,attempts,sent_at) SELECT ?,?,?,?,?,'portal','sent','estara-portal',1,CURRENT_TIMESTAMP WHERE ${ownsApproval}`).bind(`report:${id}:${recipient.email}:portal`, agencyId, report.property_id, id, recipient.email, id, agencyId, current.user.userId, approvedAt),
+          env.DB.prepare(`INSERT OR IGNORE INTO seller_deliveries (id,agency_id,property_id,report_id,recipient_email,channel,status,provider,attempts,last_error) SELECT ?,?,?,?,?,'email','queued','pending-provider',0,'Awaiting configured email provider' WHERE ${ownsApproval}`).bind(`report:${id}:${recipient.email}:email`, agencyId, report.property_id, id, recipient.email, id, agencyId, current.user.userId, approvedAt),
+        );
+        statements.push(env.DB.prepare("UPDATE seller_reports SET status='approved',approved_at=?,pdf_object_key=?,pdf_byte_size=?,approval_started_at=NULL WHERE id=? AND agency_id=? AND status='approving' AND approved_by=? AND approval_started_at=?").bind(approvedAt, key, pdf.byteLength, id, agencyId, current.user.userId, approvedAt));
+        const committed = await env.DB.batch(statements);
+        if (!committed[committed.length - 1]?.meta.changes) throw new Error("Seller report approval ownership was lost.");
+        try { await processAutomationEvents(agencyId, current.user.userId); } catch { }
+      } catch (error) {
+        await env.MEDIA.delete(key);
+        await env.DB.prepare("UPDATE seller_reports SET status='draft',approved_by=NULL,approval_started_at=NULL WHERE id=? AND agency_id=? AND status='approving' AND approved_by=? AND approval_started_at=?").bind(id, agencyId, current.user.userId, approvedAt).run();
+        throw error;
+      }
       return Response.json({ approved: true, hasPdf: true });
     }
 
     if (action === "approve_document") {
-      const result = await env.DB.prepare("UPDATE documents SET seller_visible=1,approved_by=?,approved_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND resource_type='property' AND status='active'").bind(current.user.userId, id, agencyId).run();
-      if (!result.meta.changes) return Response.json({ error: "Property document was not found." }, { status: 404 });
-      const document = await env.DB.prepare("SELECT resource_id propertyId FROM documents WHERE id=? AND agency_id=?").bind(id, agencyId).first<any>();
-      await env.DB.prepare("INSERT INTO seller_deliveries (id,agency_id,property_id,document_id,recipient_email,channel,status,provider,attempts,sent_at) SELECT lower(hex(randomblob(16))),agency_id,property_id,?,email,'portal','sent','estara-portal',1,CURRENT_TIMESTAMP FROM seller_access_grants WHERE agency_id=? AND property_id=? AND revoked_at IS NULL").bind(id, agencyId, document.propertyId).run();
-      await writeAudit(current.workspace, "seller.document.approved", "document", id);
-      return Response.json({ approved: true });
+      const document = await env.DB.prepare("SELECT resource_id propertyId,seller_visible sellerVisible FROM documents WHERE id=? AND agency_id=? AND resource_type='property' AND status='active'").bind(id, agencyId).first<any>();
+      if (!document) return Response.json({ error: "Property document was not found." }, { status: 404 });
+      if (document.sellerVisible) return Response.json({ approved: true, replayed: true });
+      const result = await env.DB.batch([
+        env.DB.prepare("UPDATE documents SET seller_visible=1,approved_by=?,approved_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND resource_type='property' AND status='active' AND seller_visible=0").bind(current.user.userId, id, agencyId),
+        env.DB.prepare("INSERT OR IGNORE INTO seller_deliveries (id,agency_id,property_id,document_id,recipient_email,channel,status,provider,attempts,sent_at) SELECT ?||':'||lower(email)||':portal',agency_id,property_id,?,lower(email),'portal','sent','estara-portal',1,CURRENT_TIMESTAMP FROM seller_access_grants WHERE agency_id=? AND property_id=? AND revoked_at IS NULL").bind(`document:${id}`, id, agencyId, document.propertyId),
+        env.DB.prepare("INSERT OR IGNORE INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) VALUES(?,?,?,?,?,?,?)").bind(`seller-document-approved:${id}`, agencyId, current.user.userId, "seller.document.approved", "document", id, "{}"),
+      ]);
+      return Response.json({ approved: true, replayed: !result[0]?.meta.changes });
     }
 
     if (action === "offer_status") {
       const status = String(body.status || "");
       if (!["accepted", "rejected", "withdrawn"].includes(status)) return Response.json({ error: "Invalid offer status." }, { status: 400 });
-      const result = await env.DB.prepare("UPDATE offers SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status='submitted'").bind(status, id, agencyId).run();
-      if (!result.meta.changes) return Response.json({ error: "Submitted offer was not found." }, { status: 404 });
-      await writeAudit(current.workspace, "offer.status_changed", "offer", id, { status });
+      const result = await env.DB.batch([
+        env.DB.prepare("UPDATE offers SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status='submitted'").bind(status, id, agencyId),
+        env.DB.prepare("INSERT OR IGNORE INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) SELECT ?,?,?,?,?,?,? WHERE changes()>0").bind(`offer-status:${id}:${status}`, agencyId, current.user.userId, "offer.status_changed", "offer", id, JSON.stringify({ status })),
+      ]);
+      if (!result[0]?.meta.changes) return Response.json({ error: "Submitted offer was not found." }, { status: 404 });
       return Response.json({ updated: true });
     }
 
     if (action === "revoke_access") {
-      const result = await env.DB.prepare("UPDATE seller_access_grants SET revoked_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND revoked_at IS NULL").bind(id, agencyId).run();
-      if (!result.meta.changes) return Response.json({ error: "Active seller access was not found." }, { status: 404 });
-      await writeAudit(current.workspace, "seller.access.revoked", "seller_access_grant", id);
+      const result = await env.DB.batch([
+        env.DB.prepare("UPDATE seller_access_grants SET revoked_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND revoked_at IS NULL").bind(id, agencyId),
+        env.DB.prepare("INSERT OR IGNORE INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) SELECT ?,?,?,?,?,?,? WHERE changes()>0").bind(`seller-access-revoked:${id}`, agencyId, current.user.userId, "seller.access.revoked", "seller_access_grant", id, "{}"),
+      ]);
+      if (!result[0]?.meta.changes) return Response.json({ error: "Active seller access was not found." }, { status: 404 });
       return Response.json({ revoked: true });
     }
     return Response.json({ error: "Unsupported seller action." }, { status: 400 });

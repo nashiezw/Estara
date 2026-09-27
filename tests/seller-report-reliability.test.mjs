@@ -1,0 +1,52 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { DatabaseSync } from "node:sqlite";
+import test from "node:test";
+
+const read = path => readFile(new URL(path, import.meta.url), "utf8");
+
+test("seller delivery evidence is unique per recipient and channel", async () => {
+  const migration = await read("../drizzle/0045_seller_report_reliability.sql");
+  const db = new DatabaseSync(":memory:");
+  db.exec("CREATE TABLE seller_reports(id TEXT PRIMARY KEY)");
+  db.exec("CREATE TABLE seller_deliveries(id TEXT PRIMARY KEY,agency_id TEXT NOT NULL,report_id TEXT,document_id TEXT,recipient_email TEXT NOT NULL,channel TEXT NOT NULL)");
+  db.exec(migration);
+  const insert = db.prepare("INSERT INTO seller_deliveries(id,agency_id,report_id,recipient_email,channel) VALUES(?,?,?,?,?)");
+  insert.run("one", "agency", "report", "Seller@Example.com", "portal");
+  assert.throws(() => insert.run("two", "agency", "report", "seller@example.com", "portal"));
+  insert.run("three", "agency", "report", "seller@example.com", "email");
+  assert.equal(db.prepare("SELECT COUNT(*) count FROM seller_deliveries").get().count, 2);
+  db.close();
+});
+
+test("seller reports claim approval, recover failed media and create deliveries atomically", async () => {
+  const route = await read("../app/api/seller-management/route.ts");
+  assert.match(route, /status='approving'/);
+  assert.match(route, /approval_started_at<\?/);
+  assert.match(route, /This report is already being approved/);
+  assert.match(route, /INSERT OR IGNORE INTO seller_deliveries/);
+  assert.match(route, /const ownsApproval = "EXISTS\(SELECT 1 FROM seller_reports/);
+  assert.match(route, /INSERT OR IGNORE INTO audit_logs/);
+  assert.match(route, /INSERT OR IGNORE INTO domain_events/);
+  assert.match(route, /approvedAt\.replaceAll\(":", "-"\)/);
+  assert.match(route, /await env\.DB\.batch\(statements\)/);
+  assert.match(route, /committed\[committed\.length - 1\]/);
+  assert.match(route, /await env\.MEDIA\.delete\(key\)/);
+  assert.match(route, /SET status='draft',approved_by=NULL,approval_started_at=NULL/);
+});
+
+test("scheduled seller reports are deterministic and compare-and-advance", async () => {
+  const route = await read("../app/api/seller-management/route.ts");
+  assert.match(route, /const reportId = `\$\{schedule\.id\}:\$\{schedule\.nextRunAt\}`/);
+  assert.match(route, /INSERT OR IGNORE INTO seller_reports/);
+  assert.match(route, /AND next_run_at=\?/);
+  assert.match(route, /scheduled-report:\$\{reportId\}/);
+  assert.match(route, /if \(result\[0\]\?\.meta\.changes\) created\+\+/);
+});
+
+test("offer and seller access audits only record successful transitions", async () => {
+  const route = await read("../app/api/seller-management/route.ts");
+  assert.equal((route.match(/WHERE changes\(\)>0/g) || []).length, 2);
+  assert.match(route, /offer-status:\$\{id\}:\$\{status\}/);
+  assert.match(route, /seller-access-revoked:\$\{id\}/);
+});
