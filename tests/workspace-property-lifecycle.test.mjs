@@ -9,8 +9,16 @@ test("workspace properties can be edited, deleted and activated with exact readi
  assert.match(route,/async function PATCH/);
  assert.match(route,/async function DELETE/);
  assert.match(route,/propertyCompleteness/);
- assert.match(route,/ensureOwnerContact/);
- assert.match(route,/createMandateIfNeeded/);
+ assert.match(route,/prepareOwnerContact/);
+ assert.match(route,/prepareMandateIfNeeded/);
+ assert.match(route,/ownerStatement/);
+ assert.match(route,/mandateStatement/);
+ assert.match(route,/appendMandateWork/);
+ assert.match(route,/renew_mandate/);
+ assert.match(route,/mandate\.created/);
+ assert.match(route,/prepareAudit/);
+ assert.match(route,/prepareDomainEvent/);
+ assert.match(route,/env\.DB\.batch\(statements\)/);
  assert.match(route,/UPDATE properties SET status='Withdrawn'/);
  assert.match(route,/invalidatePublicSite\(w\.agencyId,id\)/);
  assert.match(ui,/propertyToEdit/);

@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { logApiRequest, requireApiCredential } from "../../../../../db/api-auth";
-import { apiAudit, clean, idempotent, propertyPayload, remember, updateProperty } from "../../../../../db/public-api";
+import { clean, idempotent, propertyPayload, updateProperty } from "../../../../../db/public-api";
 
 const route = "/api/v1/properties/:id";
 
@@ -34,7 +34,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  let credential;
+  let credential, keyHash = "", replayRoute = "";
   try {
     credential = await requireApiCredential(request, "properties:write");
     const { id } = await params;
@@ -42,16 +42,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const key = clean(request.headers.get("idempotency-key"), 100);
     let idem: { keyHash: string; existing: any } | null = null;
     if (key) {
-      idem = await idempotent(credential, `${route}:PATCH:${id}`, key);
+      replayRoute = `${route}:PATCH:${id}`;
+      idem = await idempotent(credential, replayRoute, key);
+      keyHash = idem.keyHash;
       if (idem.existing) return new Response(idem.existing.body, { status: idem.existing.status, headers: { "content-type": "application/json", "x-idempotent-replay": "true" } });
     }
-    const updated = await updateProperty(credential, id, body);
+    const updated = await updateProperty(credential, id, body, idem ? { route: replayRoute, keyHash: idem.keyHash, status: 200 } : undefined);
     const response = JSON.stringify({ data: updated });
-    await apiAudit(credential, "api.property.updated", "property", id);
-    if (idem) await remember(credential, `${route}:PATCH:${id}`, idem.keyHash, 200, response);
     await logApiRequest(credential, route, "PATCH", 200);
     return new Response(response, { headers: { "content-type": "application/json" } });
   } catch (error) {
+    if (credential && keyHash && replayRoute) {
+      const replay = await env.DB.prepare("SELECT response_status status,response_body body FROM api_idempotency_keys WHERE credential_id=? AND route=? AND idempotency_key=?").bind(credential.id, replayRoute, keyHash).first<any>();
+      if (replay) return new Response(replay.body, { status: replay.status, headers: { "content-type": "application/json", "x-idempotent-replay": "true" } });
+    }
     if (credential) await logApiRequest(credential, route, "PATCH", 400);
     return Response.json({ error: error instanceof Error ? error.message : "API request failed." }, { status: 400 });
   }

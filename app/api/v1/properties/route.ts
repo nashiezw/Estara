@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { logApiRequest, requireApiCredential } from "../../../../db/api-auth";
-import { apiAudit, applyFieldMap, idempotent, insertProperty, propertyPayload, remember } from "../../../../db/public-api";
+import { applyFieldMap, idempotent, insertProperty, propertyPayload } from "../../../../db/public-api";
 
 const route = "/api/v1/properties";
 
@@ -28,18 +28,21 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  let credential;
+  let credential, keyHash = "";
   try {
     credential = await requireApiCredential(request,"properties:write");
     const idem = await idempotent(credential, route, request.headers.get("idempotency-key") || "");
+    keyHash = idem.keyHash;
     if (idem.existing) return new Response(idem.existing.body, { status: idem.existing.status, headers: { "content-type": "application/json", "x-idempotent-replay": "true" } });
-    const created = await insertProperty(credential, applyFieldMap(await request.json()));
+    const created = await insertProperty(credential, applyFieldMap(await request.json()), { route, keyHash, status: 201 });
     const body = JSON.stringify({ data: created });
-    await apiAudit(credential, "api.property.created", "property", created.id);
-    await remember(credential, route, idem.keyHash, 201, body);
     await logApiRequest(credential, route, "POST", 201);
     return new Response(body, { status: 201, headers: { "content-type": "application/json" } });
   } catch (error) {
+    if (credential && keyHash) {
+      const replay = await env.DB.prepare("SELECT response_status status,response_body body FROM api_idempotency_keys WHERE credential_id=? AND route=? AND idempotency_key=?").bind(credential.id, route, keyHash).first<any>();
+      if (replay) return new Response(replay.body, { status: replay.status, headers: { "content-type": "application/json", "x-idempotent-replay": "true" } });
+    }
     if (credential) await logApiRequest(credential, route, "POST", 400);
     return Response.json({ error: error instanceof Error ? error.message : "API request failed." }, { status: 400 });
   }

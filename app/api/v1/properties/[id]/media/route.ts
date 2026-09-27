@@ -1,5 +1,5 @@
 import { logApiRequest, requireApiCredential } from "../../../../../../db/api-auth";
-import { apiAudit, storePropertyMedia } from "../../../../../../db/public-api";
+import { storePropertyMedia } from "../../../../../../db/public-api";
 
 const route = "/api/v1/properties/:id/media";
 
@@ -13,7 +13,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const category = String(form.get("category") || "other");
     if (!(file instanceof File)) throw new Error("Choose a property image.");
     const asset = await storePropertyMedia(credential, id, file, category);
-    await apiAudit(credential, "api.property.media_uploaded", "media_asset", asset.id, { propertyId: id, category });
     await logApiRequest(credential, route, "POST", 201);
     return Response.json({ data: asset }, { status: 201 });
   } catch (error) {
