@@ -16,6 +16,12 @@ const mapProperty = (row: Record<string, any>) => ({ id: row.id, reference: row.
 async function fullFacts(property: Record<string, any>) { const photos = await env.DB.prepare("SELECT COUNT(*) AS count FROM media_assets WHERE agency_id=? AND property_id=? AND kind='property_photo'").bind(property.agency_id, property.id).first<{
     count: number;
 }>(); return { title: property.title, transactionType: property.transaction_type, propertyType: property.property_type, priceMinor: property.price_minor, currency: property.currency, bedrooms: property.bedrooms, bathrooms: property.bathrooms, country: property.country, city: property.city, suburb: property.suburb, address: property.address, description: property.description, ownerContactId: property.owner_contact_id, listingAgentId: property.listing_agent_id, mandateId: property.mandate_id, photoCount: photos?.count || 0, landSize: property.land_size }; }
+function guardedPropertyAudit(workspace: any, action: string, propertyId: string, detail: Record<string, unknown>, token: string) {
+    return env.DB.prepare("INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) SELECT ?,?,?,?,'property',?,? WHERE EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?)").bind(crypto.randomUUID(), workspace.agencyId, workspace.userId, action, propertyId, JSON.stringify(detail), propertyId, workspace.agencyId, token);
+}
+function guardedPropertyEvent(agencyId: string, propertyId: string, payload: Record<string, unknown>, token: string) {
+    return env.DB.prepare("INSERT INTO domain_events(id,agency_id,event_type,aggregate_type,aggregate_id,payload,created_at) SELECT ?,?,'property.status.changed','property',?,?,? WHERE EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?)").bind(crypto.randomUUID(), agencyId, propertyId, JSON.stringify(payload), new Date().toISOString(), propertyId, agencyId, token);
+}
 export async function GET(_: Request, { params }: {
     params: Promise<{
         id: string;
@@ -139,13 +145,16 @@ export async function POST(request: Request, { params }: {
         const fromStatus = current.property.status, statusChanged = fromStatus !== "Available";
         if (statusChanged && !canTransitionProperty(fromStatus, "Available"))
             return Response.json({ error: `Cannot publish property from ${fromStatus}.` }, { status: 409 });
-        const statements = [env.DB.prepare("UPDATE properties SET status='Available',updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(id, agency), ...channels.map(channel => env.DB.prepare("INSERT INTO property_activation_channels(id,agency_id,property_id,channel,enabled,status) VALUES(?,?,?,?,1,'active') ON CONFLICT(agency_id,property_id,channel) DO UPDATE SET enabled=1,status='active',activated_at=CURRENT_TIMESTAMP,deactivated_at=NULL").bind(crypto.randomUUID(), agency, id, channel))];
+        const token = crypto.randomUUID();
+        const statements = [env.DB.prepare("UPDATE properties SET status='Available',mutation_token=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status=?").bind(token, id, agency, fromStatus), ...channels.map(channel => env.DB.prepare("INSERT INTO property_activation_channels(id,agency_id,property_id,channel,enabled,status) SELECT ?,?,?,?,1,'active' WHERE EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?) ON CONFLICT(agency_id,property_id,channel) DO UPDATE SET enabled=1,status='active',activated_at=CURRENT_TIMESTAMP,deactivated_at=NULL").bind(crypto.randomUUID(), agency, id, channel, id, agency, token))];
         if (statusChanged) {
-            const event = prepareDomainEvent(agency, "property.status.changed", "property", id, { assignedUserId: current.property.listing_agent_id || current.user.userId, property: current.property.title, fromStatus, toStatus: "Available", resourceType: "property", resourceId: id });
-            statements.push(env.DB.prepare("INSERT INTO property_status_events(id,agency_id,property_id,from_status,to_status,reason,actor_user_id) VALUES(?,?,?,?,'Available','Listing published',?)").bind(crypto.randomUUID(), agency, id, fromStatus, current.user.userId), event.statement);
+            const payload = { assignedUserId: current.property.listing_agent_id || current.user.userId, property: current.property.title, fromStatus, toStatus: "Available", resourceType: "property", resourceId: id };
+            statements.push(env.DB.prepare("INSERT INTO property_status_events(id,agency_id,property_id,from_status,to_status,reason,actor_user_id) SELECT ?,?,?,?,'Available','Listing published',? WHERE EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?)").bind(crypto.randomUUID(), agency, id, fromStatus, current.user.userId, id, agency, token), guardedPropertyEvent(agency, id, payload, token));
         }
-        statements.push(prepareAudit(current.workspace, "property.published", "property", id, { channels, verifiedReady: readiness.ready, complianceMissing: readiness.completeness.missing, statusChanged }));
-        await env.DB.batch(statements);
+        statements.push(guardedPropertyAudit(current.workspace, "property.published", id, { channels, verifiedReady: readiness.ready, complianceMissing: readiness.completeness.missing, statusChanged }, token));
+        const result = await env.DB.batch(statements);
+        if (!result[0]?.meta.changes)
+            return Response.json({ error: "This property changed while it was being published. Refresh and try again." }, { status: 409 });
         if (statusChanged) {
             try {
                 await processAutomationEvents(agency, current.user.userId);
@@ -159,13 +168,16 @@ export async function POST(request: Request, { params }: {
         const toStatus = clean(body.status, 20), fromStatus = current.property.status;
         if (!canTransitionProperty(fromStatus, toStatus))
             return Response.json({ error: `Cannot move property from ${fromStatus} to ${toStatus}.` }, { status: 409 });
-        const statements = [env.DB.prepare("UPDATE properties SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(toStatus, id, agency), env.DB.prepare("INSERT INTO property_status_events(id,agency_id,property_id,from_status,to_status,reason,actor_user_id) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), agency, id, fromStatus, toStatus, clean(body.reason, 500), current.user.userId)];
+        const token = crypto.randomUUID();
+        const statements = [env.DB.prepare("UPDATE properties SET status=?,mutation_token=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status=?").bind(toStatus, token, id, agency, fromStatus), env.DB.prepare("INSERT INTO property_status_events(id,agency_id,property_id,from_status,to_status,reason,actor_user_id) SELECT ?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?)").bind(crypto.randomUUID(), agency, id, fromStatus, toStatus, clean(body.reason, 500), current.user.userId, id, agency, token)];
         if (statusDisablesPublicDemand(toStatus)) {
-            statements.push(env.DB.prepare("UPDATE property_activation_channels SET status='inactive',deactivated_at=CURRENT_TIMESTAMP WHERE agency_id=? AND property_id=? AND status='active'").bind(agency, id), env.DB.prepare("UPDATE viewings SET status='Cancelled',notes=CASE WHEN notes='' THEN 'Property no longer available' ELSE notes||' · Property no longer available' END,updated_at=CURRENT_TIMESTAMP WHERE agency_id=? AND property_id=? AND status IN ('Requested','Confirmed')").bind(agency, id), env.DB.prepare("UPDATE next_actions SET status='complete',completed_at=CURRENT_TIMESTAMP WHERE agency_id=? AND resource_type='viewing' AND resource_id IN (SELECT id FROM viewings WHERE agency_id=? AND property_id=?) AND status='open'").bind(agency, agency, id));
+            statements.push(env.DB.prepare("UPDATE property_activation_channels SET status='inactive',deactivated_at=CURRENT_TIMESTAMP WHERE agency_id=? AND property_id=? AND status='active' AND EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?)").bind(agency, id, id, agency, token), env.DB.prepare("UPDATE viewings SET status='Cancelled',notes=CASE WHEN notes='' THEN 'Property no longer available' ELSE notes||' · Property no longer available' END,updated_at=CURRENT_TIMESTAMP WHERE agency_id=? AND property_id=? AND status IN ('Requested','Confirmed') AND EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?)").bind(agency, id, id, agency, token), env.DB.prepare("UPDATE next_actions SET status='complete',completed_at=CURRENT_TIMESTAMP WHERE agency_id=? AND resource_type='viewing' AND resource_id IN (SELECT id FROM viewings WHERE agency_id=? AND property_id=?) AND status='open' AND EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?)").bind(agency, agency, id, id, agency, token));
         }
-        const event = prepareDomainEvent(agency, "property.status.changed", "property", id, { assignedUserId: current.property.listing_agent_id || current.user.userId, property: current.property.title, fromStatus, toStatus, resourceType: "property", resourceId: id });
-        statements.push(prepareAudit(current.workspace, "property.status.changed", "property", id, { from: fromStatus, to: toStatus }), event.statement);
-        await env.DB.batch(statements);
+        const payload = { assignedUserId: current.property.listing_agent_id || current.user.userId, property: current.property.title, fromStatus, toStatus, resourceType: "property", resourceId: id };
+        statements.push(guardedPropertyAudit(current.workspace, "property.status.changed", id, { from: fromStatus, to: toStatus }, token), guardedPropertyEvent(agency, id, payload, token));
+        const result = await env.DB.batch(statements);
+        if (!result[0]?.meta.changes)
+            return Response.json({ error: "This property changed while its status was being updated. Refresh and try again." }, { status: 409 });
         try {
             await processAutomationEvents(agency, current.user.userId);
         }

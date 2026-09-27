@@ -9,6 +9,8 @@ test("workspace properties can be edited, deleted and activated with exact readi
  assert.match(route,/async function PATCH/);
  assert.match(route,/async function DELETE/);
  assert.match(route,/propertyCompleteness/);
+ assert.match(route,/SELECT COUNT\(\*\) FROM media_assets m WHERE m\.agency_id=properties\.agency_id AND m\.property_id=properties\.id AND m\.kind='property_photo'/);
+ assert.doesNotMatch(route,/photo_count AS photos/);
  assert.match(route,/prepareOwnerContact/);
  assert.match(route,/prepareMandateIfNeeded/);
  assert.match(route,/ownerStatement/);
@@ -31,6 +33,7 @@ test("workspace properties can be edited, deleted and activated with exact readi
  assert.match(ui,/Seller phone/);
  assert.match(ui,/Landlord phone/);
  assert.match(ui,/Publish listing/);
+ assert.match(ui,/disabled=\{publishMissing\.length>0\}/);
  assert.match(ui,/Published-ready\. Improve later/);
  assert.doesNotMatch(ui,/required minLength=\{40\}/);
  assert.doesNotMatch(ui,/Street address<input required/);
@@ -48,7 +51,10 @@ test("property command mutations commit lifecycle evidence atomically and do not
  assert.match(route,/canTransitionProperty\(fromStatus, "Available"\)/);
  assert.match(route,/const fromStatus = current\.property\.status, statusChanged = fromStatus !== "Available"/);
  assert.match(route,/if \(statusChanged\)[\s\S]*property_status_events/);
- assert.match(route,/statements\.push\(prepareAudit[\s\S]*event\.statement\)/);
+ assert.match(route,/guardedPropertyAudit/);
+ assert.match(route,/guardedPropertyEvent/);
+ assert.match(route,/mutation_token=\?/);
+ assert.match(route,/WHERE EXISTS\(SELECT 1 FROM properties WHERE id=\? AND agency_id=\? AND mutation_token=\?\)/);
  assert.match(route,/await env\.DB\.batch\(statements\)/);
  assert.doesNotMatch(route,/writeAudit|publishDomainEvent/);
 });

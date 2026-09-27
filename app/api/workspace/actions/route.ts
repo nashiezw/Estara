@@ -1,15 +1,26 @@
 import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../../chatgpt-auth";
 import { requireWorkspace } from "../../../../db/workspace";
-import { AuthorizationError, requirePermission, writeAudit } from "../../../../db/authorization";
+import { AuthorizationError, requirePermission } from "../../../../db/authorization";
+import { processAutomationEvents } from "../../../../db/automation";
 import { canTransition } from "../../../../db/contact-policy";
-import { VERIFICATION_ITEMS, activationReady, propertyPhotoRequirement, propertyPublishReadiness } from "../../../../db/property-policy";
+import { VERIFICATION_ITEMS, activationReady, canTransitionProperty, propertyPhotoRequirement, propertyPublishReadiness } from "../../../../db/property-policy";
 import { requireEnquiryBranchAccess, requirePropertyBranchAccess } from "../../../../db/access-scope";
 import { invalidatePublicSite } from "../../../../db/public-cache";
 
 function guardedEnquiryAudit(workspace: any, action: string, enquiryId: string, detail: Record<string, unknown>, token: string) {
   return env.DB.prepare("INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) SELECT ?,?,?,?,'enquiry',?,? WHERE EXISTS(SELECT 1 FROM enquiries WHERE id=? AND agency_id=? AND mutation_token=?)")
     .bind(crypto.randomUUID(), workspace.agencyId, workspace.userId, action, enquiryId, JSON.stringify(detail), enquiryId, workspace.agencyId, token);
+}
+
+function guardedPropertyAudit(workspace: any, action: string, propertyId: string, detail: Record<string, unknown>, token: string) {
+  return env.DB.prepare("INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) SELECT ?,?,?,?,'property',?,? WHERE EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?)")
+    .bind(crypto.randomUUID(), workspace.agencyId, workspace.userId, action, propertyId, JSON.stringify(detail), propertyId, workspace.agencyId, token);
+}
+
+function guardedPropertyEvent(agencyId: string, propertyId: string, payload: Record<string, unknown>, token: string) {
+  return env.DB.prepare("INSERT INTO domain_events(id,agency_id,event_type,aggregate_type,aggregate_id,payload,created_at) SELECT ?,?,'property.status.changed','property',?,?,? WHERE EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?)")
+    .bind(crypto.randomUUID(), agencyId, propertyId, JSON.stringify(payload), new Date().toISOString(), propertyId, agencyId, token);
 }
 
 async function POST(request: Request) {
@@ -51,11 +62,18 @@ async function POST(request: Request) {
       const autoVerified = VERIFICATION_ITEMS.filter(item => item === "ownership" ? Boolean(property.owner_contact_id) : item === "mandate" ? Boolean(property.mandate_id) : item === "price" ? Number(property.price_minor) > 0 : item === "address" ? Boolean(property.address && property.city && property.suburb) : item === "description" ? String(property.description || "").trim().length >= 40 : item === "photos" ? Number(property.actual_photos) >= propertyPhotoRequirement(facts) : false);
       const readiness = activationReady(facts, [...new Set([...verified.results.map(item => item.itemKey), ...autoVerified])]);
       if (!publish.ready) return Response.json({ error: `Add before publishing: ${publish.missing.join(", ")}.`, publish, readiness }, { status: 409 });
-      await env.DB.batch([
-        env.DB.prepare("UPDATE properties SET status='Available',updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(body.resourceId, workspace.agencyId),
-        env.DB.prepare("INSERT INTO property_status_events(id,agency_id,property_id,from_status,to_status,reason,actor_user_id) VALUES(?,?,?,?,'Available','Listing published',?)").bind(crypto.randomUUID(), workspace.agencyId, body.resourceId, property.status, user.userId),
+      if (property.status === "Available") return Response.json({ error: "This property is already published." }, { status: 409 });
+      if (!canTransitionProperty(property.status, "Available")) return Response.json({ error: `Cannot publish property from ${property.status}.` }, { status: 409 });
+      const token = crypto.randomUUID();
+      const eventPayload = { assignedUserId: property.listing_agent_id || user.userId, property: property.title, fromStatus: property.status, toStatus: "Available", resourceType: "property", resourceId: body.resourceId };
+      const result = await env.DB.batch([
+        env.DB.prepare("UPDATE properties SET status='Available',mutation_token=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status=?").bind(token, body.resourceId, workspace.agencyId, property.status),
+        env.DB.prepare("INSERT INTO property_status_events(id,agency_id,property_id,from_status,to_status,reason,actor_user_id) SELECT ?,?,?,?,'Available','Listing published',? WHERE EXISTS(SELECT 1 FROM properties WHERE id=? AND agency_id=? AND mutation_token=?)").bind(crypto.randomUUID(), workspace.agencyId, body.resourceId, property.status, user.userId, body.resourceId, workspace.agencyId, token),
+        guardedPropertyAudit(workspace, "property.published", body.resourceId, { verifiedReady: readiness.ready, complianceMissing: readiness.completeness.missing }, token),
+        guardedPropertyEvent(workspace.agencyId, body.resourceId, eventPayload, token),
       ]);
-      await writeAudit(workspace, "property.published", "property", body.resourceId, { verifiedReady: readiness.ready, complianceMissing: readiness.completeness.missing });
+      if (!result[0]?.meta.changes) return Response.json({ error: "This property changed while it was being published. Refresh and try again." }, { status: 409 });
+      try { await processAutomationEvents(workspace.agencyId, user.userId); } catch { }
       await invalidatePublicSite(workspace.agencyId, body.resourceId);
       return Response.json({ status: "Available", publish, readiness });
     }
