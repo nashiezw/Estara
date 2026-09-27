@@ -40,3 +40,15 @@ test("workspace properties can be edited, deleted and activated with exact readi
  assert.match(actions,/propertyPhotoRequirement/);
  assert.match(actions,/autoVerified/);
 });
+
+test("property command mutations commit lifecycle evidence atomically and do not invent reactivation history",async()=>{
+ const route=await read("../app/api/properties/[id]/route.ts");
+ assert.match(route,/prepareAudit/);
+ assert.match(route,/prepareDomainEvent/);
+ assert.match(route,/canTransitionProperty\(fromStatus, "Available"\)/);
+ assert.match(route,/const fromStatus = current\.property\.status, statusChanged = fromStatus !== "Available"/);
+ assert.match(route,/if \(statusChanged\)[\s\S]*property_status_events/);
+ assert.match(route,/statements\.push\(prepareAudit[\s\S]*event\.statement\)/);
+ assert.match(route,/await env\.DB\.batch\(statements\)/);
+ assert.doesNotMatch(route,/writeAudit|publishDomainEvent/);
+});

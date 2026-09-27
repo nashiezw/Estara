@@ -9,7 +9,7 @@ test("branch scope is explicit, tenant-bound and enforced on property records",(
   assert.match(migration,/branch_scope_enabled INTEGER NOT NULL DEFAULT 0/);
   assert.match(migration,/UNIQUE INDEX idx_branch_memberships_unique ON branch_memberships\(agency_id, branch_id, user_id\)/);
   assert.match(scope,/agency_id=\? AND user_id=\? AND branch_id=\?/);
-  assert.match(property,/requireBranchAccess\(workspace,property\.branch_id\)/);
+  assert.match(property,/requireBranchAccess\(workspace,\s*property\.branch_id\)/);
   assert.match(branches,/b\.id=\? AND b\.agency_id=\? AND m\.user_id=\?/);
 });
 
