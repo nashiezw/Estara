@@ -29,6 +29,8 @@ const emptyData = (properties: SellerProperty[]): SellerData => ({
 
 const deliveryLabel = (channel: string) => channel === "email" ? "Email delivery" : channel === "portal" ? "Seller portal" : "Delivery";
 const deliveryStatus = (status: string) => status === "sent" ? "Sent" : status === "queued" ? "Queued" : status === "failed" ? "Needs attention" : status;
+const deliveryDate = (value: string) => new Intl.DateTimeFormat("en-ZW", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
+const deliveryTime = (value: string) => new Intl.DateTimeFormat("en-ZW", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 
 export default function SellerOperations({
   properties,
@@ -432,6 +434,12 @@ export default function SellerOperations({
                     <span className="seller-delivery-copy">
                       <strong>{deliveryLabel(delivery.channel)}</strong>
                       <small>{delivery.recipientEmail}</small>
+                      <small className="seller-delivery-meta">
+                        {delivery.reportPeriodStart && delivery.reportPeriodEnd
+                          ? `Report ${deliveryDate(delivery.reportPeriodStart)} - ${deliveryDate(delivery.reportPeriodEnd)}`
+                          : delivery.documentId ? "Seller document" : "Seller update"}
+                        {` · ${delivery.sentAt ? "Sent" : "Queued"} ${deliveryTime(delivery.sentAt || delivery.createdAt)}`}
+                      </small>
                       {delivery.lastError && <small className="seller-delivery-note">{delivery.lastError}</small>}
                     </span>
                     <em className={`seller-delivery-status ${statusClass}`}>{deliveryStatus(delivery.status)}</em>
