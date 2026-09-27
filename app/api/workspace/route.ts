@@ -1,10 +1,10 @@
 import{env}from"cloudflare:workers";
 import{getChatGPTUser}from"../../chatgpt-auth";
 import{requireWorkspace}from"../../../db/workspace";
-import{requirePermission,writeAudit}from"../../../db/authorization";
+import{prepareAudit,requirePermission,writeAudit}from"../../../db/authorization";
 import{normalizeEmail,normalizePhone,normalizeRoles}from"../../../db/contact-policy";
 import{PlanLimitError,requireCapacity}from"../../../db/entitlements";
-import{processAutomationEvents,publishDomainEvent}from"../../../db/automation";
+import{prepareDomainEvent,processAutomationEvents,publishDomainEvent}from"../../../db/automation";
 import{accessiblePropertyIds,requirePropertyBranchAccess}from"../../../db/access-scope";
 import{propertyCompleteness}from"../../../db/property-policy";
 import{invalidatePublicSite}from"../../../db/public-cache";
@@ -112,7 +112,7 @@ async function POST(request:Request){
   statements.push(env.DB.prepare(`INSERT INTO enquiries (id,agency_id,property_id,contact_id,assigned_user_id,stage,next_follow_up_at,contact_name,initials,property_label,status,source,response_due_at) VALUES (?,?,?,?,?,'New',?,?,?,?,?,'Manual',?)`).bind(id2,w.agencyId,property.id,contactId,assignedUserId,new Date(followUpMs).toISOString(),name,initials,property.title,"New",due));
   statements.push(env.DB.prepare(`INSERT INTO next_actions (id,agency_id,resource_type,resource_id,action_type,reason,priority,due_at,status,assigned_user_id) VALUES (?,?,'enquiry',?,'respond',?,'high',?,'open',?)`).bind(crypto.randomUUID(),w.agencyId,id2,`Respond to ${name}`,due,assignedUserId));
   statements.push(env.DB.prepare(`INSERT INTO contact_activities (id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) VALUES (?,?,?,?,? ,?,'enquiry',?)`).bind(crypto.randomUUID(),w.agencyId,contactId,user.userId,"enquiry.created",`Enquiry recorded for ${property.title}`,id2));
-  await env.DB.batch(statements);await publishDomainEvent(w.agencyId,"enquiry.created","enquiry",id2,{name,property:property.title,assignedUserId,resourceType:"enquiry",resourceId:id2,responseDueAt:due});try{await processAutomationEvents(w.agencyId,user.userId)}catch{}await writeAudit(w,"enquiry.created","enquiry",id2,{contactId,assignedUserId,source:"Manual"});
+   const event=prepareDomainEvent(w.agencyId,"enquiry.created","enquiry",id2,{name,property:property.title,assignedUserId,resourceType:"enquiry",resourceId:id2,responseDueAt:due});statements.push(event.statement,prepareAudit(w,"enquiry.created","enquiry",id2,{contactId,assignedUserId,source:"Manual"}));await env.DB.batch(statements);try{await processAutomationEvents(w.agencyId,user.userId)}catch{}
   return Response.json({enquiry:{id:id2,name,initials,property:property.title,status:"New",stage:"New",responseDueAt:due,nextFollowUpAt:new Date(followUpMs).toISOString(),phone,email,roles:rolesJson,requirements,assignedUserId,assignedEmail:assignee.email,propertyId:property.id,contactId,time:"Just now"},contact:{id:contactId,reused:Boolean(existing)}},{status:201})
  }
  return saveProperty(new Request(request.url,{method:"POST",headers:request.headers,body:JSON.stringify(b)}),"create")

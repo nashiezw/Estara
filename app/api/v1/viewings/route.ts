@@ -1,8 +1,8 @@
 import { env } from "cloudflare:workers";
 import { logApiRequest, requireApiCredential } from "../../../../db/api-auth";
-import { processAutomationEvents, publishDomainEvent } from "../../../../db/automation";
+import { prepareDomainEvent, processAutomationEvents } from "../../../../db/automation";
 import { reminderTime, validViewingWindow } from "../../../../db/viewing-policy";
-import { apiAudit, applyFieldMap, clean, idempotent, remember } from "../../../../db/public-api";
+import { applyFieldMap, clean, idempotent, prepareApiAudit, prepareRemember } from "../../../../db/public-api";
 
 const route = "/api/v1/viewings";
 
@@ -25,10 +25,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  let credential: any;
+  let credential: any, keyHash = "";
   try {
     credential = await requireApiCredential(request, "viewings:write");
     const replay = await idempotent(credential, route, request.headers.get("idempotency-key") || "");
+    keyHash = replay.keyHash;
     if (replay.existing) return new Response(replay.existing.body, { status: replay.existing.status, headers: { "content-type": "application/json", "x-idempotent-replay": "true" } });
 
     const body = applyFieldMap(await request.json());
@@ -65,21 +66,25 @@ export async function POST(request: Request) {
     const id = crypto.randomUUID();
     const reminder = reminderTime(start);
     const due = Date.parse(reminder) > Date.now() ? reminder : new Date().toISOString();
+    const responseBody = JSON.stringify({ data: { id, propertyId, enquiryId, contactId, assignedUserId, startsAt: start, endsAt: end, status: "Requested", reminderAt: reminder } });
     const statements = [
       env.DB.prepare("INSERT INTO viewings(id,agency_id,property_id,enquiry_id,contact_id,assigned_user_id,starts_at,ends_at,status,notes,reminder_at,created_by) VALUES(?,?,?,?,?,?,?,?,'Requested',?,?,?)").bind(id, credential.agencyId, propertyId, enquiryId, contactId, assignedUserId, start, end, notes, reminder, `api:${credential.id}`),
       env.DB.prepare("INSERT INTO next_actions(id,agency_id,resource_type,resource_id,action_type,reason,priority,due_at,status,assigned_user_id) VALUES(?,?,'viewing',?,'viewing_reminder','Prepare for scheduled viewing','normal',?,'open',?)").bind(crypto.randomUUID(), credential.agencyId, id, due, assignedUserId),
+      prepareApiAudit(credential, "api.viewing.requested", "viewing", id, { propertyId, startsAt: start, assignedUserId }),
+      prepareRemember(credential, route, keyHash, 201, responseBody),
     ];
     if (contactId) statements.push(env.DB.prepare("INSERT INTO contact_activities(id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) VALUES(?,?,?,?,?,'Viewing requested','viewing',?)").bind(crypto.randomUUID(), credential.agencyId, contactId, `api:${credential.id}`, "viewing.requested", id));
+    const event = prepareDomainEvent(credential.agencyId, "viewing.requested", "viewing", id, { assignedUserId, property: listing.title, resourceType: "viewing", resourceId: id, startsAt: start, source: "Public API" });
+    statements.push(event.statement);
     await env.DB.batch(statements);
-    await apiAudit(credential, "api.viewing.requested", "viewing", id, { propertyId, startsAt: start });
-    await publishDomainEvent(credential.agencyId, "viewing.requested", "viewing", id, { assignedUserId, property: listing.title, resourceType: "viewing", resourceId: id, startsAt: start, source: "Public API" });
     try { await processAutomationEvents(credential.agencyId, `api:${credential.id}`); } catch {}
-
-    const responseBody = JSON.stringify({ data: { id, propertyId, enquiryId, contactId, assignedUserId, startsAt: start, endsAt: end, status: "Requested", reminderAt: reminder } });
-    await remember(credential, route, replay.keyHash, 201, responseBody);
     await logApiRequest(credential, route, "POST", 201);
     return new Response(responseBody, { status: 201, headers: { "content-type": "application/json" } });
   } catch (error) {
+    if (credential && keyHash) {
+      const replay = await env.DB.prepare("SELECT response_status status,response_body body FROM api_idempotency_keys WHERE credential_id=? AND route=? AND idempotency_key=?").bind(credential.id, route, keyHash).first<any>();
+      if (replay) return new Response(replay.body, { status: replay.status, headers: { "content-type": "application/json", "x-idempotent-replay": "true" } });
+    }
     if (credential) await logApiRequest(credential, route, "POST", 400);
     return Response.json({ error: error instanceof Error ? error.message : "API request failed." }, { status: 400 });
   }

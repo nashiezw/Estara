@@ -1,8 +1,8 @@
-import { processAutomationEvents, publishDomainEvent } from "../../../db/automation";
+import { prepareDomainEvent, processAutomationEvents } from "../../../db/automation";
 import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { requireWorkspace } from "../../../db/workspace";
-import { AuthorizationError, requirePermission, writeAudit } from "../../../db/authorization";
+import { AuthorizationError, prepareAudit, requirePermission } from "../../../db/authorization";
 import { canCompleteViewing, canTransitionViewing, reminderTime, validViewingFeedback, validViewingWindow, viewingFollowUp } from "../../../db/viewing-policy";
 import { accessiblePropertyIds, requirePropertyBranchAccess } from "../../../db/access-scope";
 
@@ -71,10 +71,10 @@ async function POST(request: Request) {
       statements.push(env.DB.prepare("UPDATE next_actions SET status='complete',completed_at=CURRENT_TIMESTAMP WHERE agency_id=? AND resource_type='enquiry' AND resource_id=? AND action_type IN ('respond','follow_up') AND status='open'").bind(workspace.agencyId, enquiryId));
     }
     if (contactId) statements.push(env.DB.prepare("INSERT INTO contact_activities(id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) VALUES(?,?,?,?,?,'Viewing requested','viewing',?)").bind(crypto.randomUUID(), workspace.agencyId, contactId, user.userId, "viewing.requested", id));
+    const event = prepareDomainEvent(workspace.agencyId, "viewing.requested", "viewing", id, { assignedUserId, property: propertyId, resourceType: "viewing", resourceId: id, startsAt: start });
+    statements.push(event.statement, prepareAudit(workspace, "viewing.requested", "viewing", id, { propertyId, enquiryId: enquiryId || null, startsAt: start }));
     await env.DB.batch(statements);
-    await publishDomainEvent(workspace.agencyId, "viewing.requested", "viewing", id, { assignedUserId, property: propertyId, resourceType: "viewing", resourceId: id, startsAt: start });
     try { await processAutomationEvents(workspace.agencyId, user.userId); } catch {}
-    await writeAudit(workspace, "viewing.requested", "viewing", id, { propertyId, enquiryId: enquiryId || null, startsAt: start });
     return Response.json({ viewing: { id, propertyId, enquiryId, contactId, assignedUserId, startsAt: start, endsAt: end, status: "Requested", notes, reminderAt: reminder } }, { status: 201 });
   } catch (error) {
     if (error instanceof AuthorizationError) return Response.json({ error: error.message }, { status: 403 });
@@ -106,10 +106,10 @@ async function PATCH(request: Request) {
       );
       if (status === "Cancelled" || status === "No-show") statements.push(env.DB.prepare("UPDATE next_actions SET status='complete',completed_at=CURRENT_TIMESTAMP WHERE agency_id=? AND resource_type='viewing' AND resource_id=? AND status='open'").bind(workspace.agencyId, id));
       if (viewing.contactId) statements.push(env.DB.prepare("INSERT INTO contact_activities(id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) VALUES(?,?,?,?,?,?,'viewing',?)").bind(crypto.randomUUID(), workspace.agencyId, viewing.contactId, user.userId, "viewing.status_changed", `Viewing moved from ${viewing.status} to ${status}`, id));
+      const event = prepareDomainEvent(workspace.agencyId, `viewing.${status.toLowerCase().replace(/[^a-z]+/g, "_")}`, "viewing", id, { assignedUserId: viewing.assignedUserId, propertyId: viewing.propertyId, resourceType: "viewing", resourceId: id, status });
+      statements.push(event.statement, prepareAudit(workspace, "viewing.status_changed", "viewing", id, { from: viewing.status, to: status }));
       await env.DB.batch(statements);
-      await publishDomainEvent(workspace.agencyId, `viewing.${status.toLowerCase().replace(/[^a-z]+/g, "_")}`, "viewing", id, { assignedUserId: viewing.assignedUserId, propertyId: viewing.propertyId, resourceType: "viewing", resourceId: id, status });
       try { await processAutomationEvents(workspace.agencyId, user.userId); } catch {}
-      await writeAudit(workspace, "viewing.status_changed", "viewing", id, { from: viewing.status, to: status });
       return Response.json({ status });
     }
 
@@ -126,11 +126,13 @@ async function PATCH(request: Request) {
       ];
       const changed = viewing.feedback !== feedback || viewing.interestLevel !== interest;
       if (viewing.contactId && changed) statements.push(env.DB.prepare("INSERT INTO contact_activities(id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) VALUES(?,?,?,?,?,?,'viewing',?)").bind(crypto.randomUUID(), workspace.agencyId, viewing.contactId, user.userId, "viewing.feedback", feedback, id));
+      if (changed) {
+        const event = prepareDomainEvent(workspace.agencyId, "viewing.feedback_recorded", "viewing", id, { assignedUserId: viewing.assignedUserId, propertyId: viewing.propertyId, resourceType: "viewing", resourceId: id, interestLevel: interest });
+        statements.push(event.statement, prepareAudit(workspace, "viewing.feedback_recorded", "viewing", id, { interest }));
+      }
       await env.DB.batch(statements);
       if (changed) {
-        await publishDomainEvent(workspace.agencyId, "viewing.feedback_recorded", "viewing", id, { assignedUserId: viewing.assignedUserId, propertyId: viewing.propertyId, resourceType: "viewing", resourceId: id, interestLevel: interest });
         try { await processAutomationEvents(workspace.agencyId, user.userId); } catch {}
-        await writeAudit(workspace, "viewing.feedback_recorded", "viewing", id, { interest });
       }
       return Response.json({ feedback: true, nextAction: followUp.reason });
     }

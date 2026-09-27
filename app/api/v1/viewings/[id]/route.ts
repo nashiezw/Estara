@@ -1,8 +1,8 @@
 import { env } from "cloudflare:workers";
 import { logApiRequest, requireApiCredential } from "../../../../../db/api-auth";
-import { processAutomationEvents, publishDomainEvent } from "../../../../../db/automation";
+import { prepareDomainEvent, processAutomationEvents } from "../../../../../db/automation";
 import { canCompleteViewing, canTransitionViewing, validViewingFeedback, viewingFollowUp } from "../../../../../db/viewing-policy";
-import { apiAudit, clean } from "../../../../../db/public-api";
+import { clean, prepareApiAudit } from "../../../../../db/public-api";
 
 const route = "/api/v1/viewings/:id";
 
@@ -48,12 +48,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       if (row.contactId && feedbackChanged) statements.push(env.DB.prepare("INSERT INTO contact_activities(id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) VALUES(?,?,?,?,?,?,'viewing',?)").bind(crypto.randomUUID(), credential.agencyId, row.contactId, `api:${credential.id}`, "viewing.feedback", feedback, id));
     }
     if (!statements.length) throw new Error("Provide a status or viewing feedback update.");
+    if (status) {
+      const event = prepareDomainEvent(credential.agencyId, `viewing.${status.toLowerCase().replace(/[^a-z]+/g, "_")}`, "viewing", id, { assignedUserId: row.assignedUserId, propertyId: row.propertyId, resourceType: "viewing", resourceId: id, status, source: "Public API" });
+      statements.push(event.statement);
+    }
+    if (feedbackChanged) {
+      const event = prepareDomainEvent(credential.agencyId, "viewing.feedback_recorded", "viewing", id, { assignedUserId: row.assignedUserId, propertyId: row.propertyId, resourceType: "viewing", resourceId: id, interestLevel: interest, source: "Public API" });
+      statements.push(event.statement);
+    }
+    statements.push(prepareApiAudit(credential, "api.viewing.updated", "viewing", id, { from: row.status, status: effectiveStatus, feedbackRecorded: hasFeedback }));
     await env.DB.batch(statements);
-
-    if (status) await publishDomainEvent(credential.agencyId, `viewing.${status.toLowerCase().replace(/[^a-z]+/g, "_")}`, "viewing", id, { assignedUserId: row.assignedUserId, propertyId: row.propertyId, resourceType: "viewing", resourceId: id, status, source: "Public API" });
-    if (feedbackChanged) await publishDomainEvent(credential.agencyId, "viewing.feedback_recorded", "viewing", id, { assignedUserId: row.assignedUserId, propertyId: row.propertyId, resourceType: "viewing", resourceId: id, interestLevel: interest, source: "Public API" });
     try { await processAutomationEvents(credential.agencyId, `api:${credential.id}`); } catch {}
-    await apiAudit(credential, "api.viewing.updated", "viewing", id, { from: row.status, status: effectiveStatus, feedbackRecorded: hasFeedback });
     await logApiRequest(credential, route, "PATCH", 200);
     return Response.json({ data: { id, status: effectiveStatus, feedbackRecorded: hasFeedback, nextAction: followUp?.reason || null } });
   } catch (error) {
