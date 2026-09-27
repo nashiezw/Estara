@@ -2,7 +2,7 @@
 
 ## One sentence to remember
 
-ESTARA gives a real estate agency its own front door and keeps every opportunity moving behind it.
+ESTARA gives an agency a branded home of its own, so every listing builds its brand and no enquiry goes cold.
 
 This sentence is the filter for homepage copy, outreach, demos, onboarding, press and sales conversations. Public messaging should lead with an agency's pain and desired outcome, not software categories.
 
@@ -14,7 +14,7 @@ The primary buyer is the agency principal who cares about brand ownership, lead 
 
 ### Own your agency brand
 
-Your buyers should land on your website and contact your team, without losing your agency inside someone else's search results.
+Your own branded website, not a listing lost inside someone else's marketplace.
 
 Evidence ESTARA can show:
 
@@ -47,6 +47,8 @@ Evidence ESTARA can show:
 ## Words to use
 
 - Your agency, your website, your enquiries.
+- Stop renting shelf space on someone else's portal.
+- Give your agency a home of its own.
 - Nothing falls through the cracks.
 - Know what needs to happen next.
 - Add once. Use everywhere.
@@ -65,7 +67,7 @@ These terms can appear in technical, procurement or investor conversations after
 
 ## Thirty-second introduction
 
-ESTARA helps a real estate agency own its online brand and stop opportunities disappearing in chats and spreadsheets. Add a property once and it powers the agency website, marketing, enquiry follow-up, viewings and seller updates. Agents can keep working through familiar channels while principals can see what needs attention and who owns the next step.
+Portals can provide reach, but they place your listing beside your competitors. ESTARA gives your agency a branded home of its own and stops opportunities disappearing in chats and spreadsheets. Add a property once and it powers your website, marketing, enquiry follow-up, viewings and seller updates.
 
 ## Five-minute demo narrative
 

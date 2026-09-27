@@ -15,7 +15,7 @@ test("server-renders the ESTARA landing and public auth entry points", () => wit
   const landingHtml = await landing.text();
   const loginHtml = await login.text();
   assert.match(landingHtml, /<title>ESTARA/);
-  assert.match(landingHtml, /gives your agency its own front door/i);
+  assert.match(landingHtml, /Stop renting shelf space on someone else(?:'|&#x27;|&apos;)s portal/i);
   assert.match(landingHtml, /Nothing goes cold/i);
   assert.match(landingHtml, /Zimbabwe-first/);
   assert.match(landingHtml, /Start your agency setup/);

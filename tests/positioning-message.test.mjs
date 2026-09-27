@@ -11,13 +11,15 @@ test("public positioning leads with agency outcomes instead of software categori
     read("../db/public-seo.ts"),
     read("../docs/POSITIONING-MESSAGE-HOUSE.md"),
   ]);
-  assert.match(home, /gives your agency its own front door/);
+  assert.match(home, /Stop renting shelf space on someone else&apos;s portal/);
+  assert.match(home, /Your agency&apos;s own front door/);
   for (const pillar of ["Own your agency brand", "Nothing goes cold", "One property, zero retyping"]) assert.match(home, new RegExp(pillar));
   const publicPitch = [home.match(/<section className="home-hero"[\s\S]*?<\/section>/)?.[0] || "", defaults, seo].join("\n");
   assert.doesNotMatch(publicPitch, /real estate operating system|\bCRM\b|\bSaaS\b/i);
   assert.match(defaults, /agency website, property marketing and follow-up/);
   assert.match(messageHouse, /Thirty-second introduction/);
   assert.match(messageHouse, /Five-minute demo narrative/);
+  assert.match(messageHouse, /Give your agency a home of its own/);
   assert.match(messageHouse, /Do not publish a customer quote/);
 });
 

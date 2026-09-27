@@ -22,10 +22,14 @@ test("platform home treats first deploy hosts as the ESTARA landing page", async
   assert.match(source, /HomeMobileDrawer/);
   assert.match(source, /platform\.logoUrl/);
   const heroActions = source.match(/<div className="home-actions">([\s\S]*?)<\/div>/)?.[1] || "";
-  assert.match(source, /gives your agency its own front door/);
+  assert.match(source, /Stop renting shelf space on someone else&apos;s portal/);
+  assert.match(source, /Your agency&apos;s own front door/);
+  assert.match(source, /your own branded website, your marketing and a system where no enquiry goes cold/);
   assert.match(source, /Own your agency brand/);
   assert.match(source, /Nothing goes cold/);
   assert.match(source, /One property, zero retyping/);
+  assert.match(source, /Your own branded website, not a listing lost inside someone else's marketplace/);
+  assert.match(source, /Other portals put your listing next to your competitors/);
   assert.doesNotMatch(source, /Real estate operating system|Run your real estate agency from one place/);
   assert.match(heroActions, /See \{platform\.shortName\} in action/);
   assert.match(heroActions, /Start your agency setup/);

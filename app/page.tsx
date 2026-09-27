@@ -21,10 +21,10 @@ const todayItems = [
   ["Listings losing momentum", "Properties needing photos, copy or price review.", "4 at risk"],
 ];
 
-const reuseOutputs = ["Agency website", "Property page", "WhatsApp advert", "Social creative", "Brochure", "Buyer matching", "Viewing", "Seller report"];
+const reuseOutputs = ["Your branded website", "Property page", "WhatsApp advert", "Social creative", "Brochure", "Buyer matching", "Viewing", "Seller report"];
 
 const promises = [
-  ["Own your agency brand", "Your buyers land on your website and contact your team, without losing your agency inside someone else's search results."],
+  ["Own your agency brand", "Your own branded website, not a listing lost inside someone else's marketplace."],
   ["Nothing goes cold", "Every enquiry, follow-up and viewing stays visible, with an owner and a clear next step."],
   ["One property, zero retyping", "Add a property once. Reuse it across your website, adverts, brochures, buyer matching and seller updates."],
 ];
@@ -143,9 +143,9 @@ export default async function Home() {
 
       <section className="home-hero" id="product">
         <div className="home-hero-copy">
-          <p className="home-kicker">Built for Zimbabwean estate agencies</p>
-          <h1>{platform.shortName} gives your agency its own front door.</h1>
-          <p>Add a property once. Turn it into your agency website, marketing, follow-up and seller update, so nothing gets lost and your brand gets the credit.</p>
+          <p className="home-kicker">Your agency&apos;s own front door</p>
+          <h1>Stop renting shelf space on someone else&apos;s portal.</h1>
+          <p>Add a property once. {platform.shortName} turns it into your own branded website, your marketing and a system where no enquiry goes cold.</p>
           <div className="home-actions">
             <a href="/demo">See {platform.shortName} in action</a>
             <a href={registerHref}>Start your agency setup</a>
@@ -208,7 +208,7 @@ export default async function Home() {
         <div>
           <p className="home-kicker">Professional public presence</p>
           <h2>Your buyers should remember your agency.</h2>
-          <p>Give them your website, your property pages, your agents and your brand, backed by the same facts your team uses every day.</p>
+          <p>Other portals put your listing next to your competitors. {platform.shortName} gives your agency a home of its own, with your property pages, agents and brand.</p>
         </div>
         <aside>
           <a href="/demo">View guided demo</a>
