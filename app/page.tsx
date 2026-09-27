@@ -182,7 +182,7 @@ export default async function Home() {
         <div>
           <p className="home-kicker">Enter once. Use everywhere.</p>
           <h2>One property. Every place it needs to work.</h2>
-          <p>A property should not be retyped for every channel. {platform.shortName} turns verified facts into your public website, marketing assets, enquiries, viewings and seller evidence.</p>
+          <p>Add a property once. {platform.shortName} turns its verified facts into your public website, marketing assets, enquiries, viewings and seller evidence.</p>
         </div>
         <div className="home-reuse-map">
           <strong>Property record</strong>
@@ -196,9 +196,9 @@ export default async function Home() {
 
       <section className="home-workflow" id="workflow">
         <div>
-          <p className="home-kicker">First success moment</p>
+          <p className="home-kicker">Your first week</p>
           <h2>From empty account to live agency presence.</h2>
-          <p>The first sellable {platform.shortName} experience should take a new agency from setup to a live property, share-ready marketing, incoming enquiry, viewing and seller update.</p>
+          <p>Set up your agency, add your first property and go live with a real website, ready-to-share marketing, and your first enquiry, viewing and seller update, all in your first sitting.</p>
           <a href={registerHref}>Create account</a>
         </div>
         <ol>{firstRun.map((item, index) => <li key={item}><span>{String(index + 1).padStart(2, "0")}</span><strong>{item}</strong></li>)}</ol>
@@ -207,7 +207,7 @@ export default async function Home() {
       <section className="home-websites" id="websites">
         <div>
           <p className="home-kicker">Professional public presence</p>
-          <h2>Your buyers should remember your agency.</h2>
+          <h2>Make your agency the brand buyers remember.</h2>
           <p>Other portals put your listing next to your competitors. {platform.shortName} gives your agency a home of its own, with your property pages, agents and brand.</p>
         </div>
         <aside>

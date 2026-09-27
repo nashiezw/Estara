@@ -65,6 +65,8 @@ Evidence ESTARA can show:
 
 These terms can appear in technical, procurement or investor conversations after the commercial value is understood.
 
+Public copy must speak to the agency owner, not describe the product from the builder's point of view. Keep internal terms such as "activation," "first success moment" and "sellable experience" in product planning. Replace specification language about what the experience "should" do with a direct customer promise.
+
 ## Thirty-second introduction
 
 Portals can provide reach, but they place your listing beside your competitors. ESTARA gives your agency a branded home of its own and stops opportunities disappearing in chats and spreadsheets. Add a property once and it powers your website, marketing, enquiry follow-up, viewings and seller updates.

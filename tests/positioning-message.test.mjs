@@ -20,6 +20,8 @@ test("public positioning leads with agency outcomes instead of software categori
   assert.match(messageHouse, /Thirty-second introduction/);
   assert.match(messageHouse, /Five-minute demo narrative/);
   assert.match(messageHouse, /Give your agency a home of its own/);
+  assert.match(messageHouse, /speak to the agency owner, not describe the product from the builder's point of view/);
+  assert.match(messageHouse, /first success moment/);
   assert.match(messageHouse, /Do not publish a customer quote/);
 });
 
