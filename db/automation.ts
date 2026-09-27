@@ -16,12 +16,18 @@ export async function ensureDefaultRules(agencyId: string, userId: string) {
   ).bind(crypto.randomUUID(), agencyId, rule.key, 1, rule.name, rule.event, JSON.stringify(rule.actions), userId)));
 }
 
-export async function publishDomainEvent(agencyId: string, eventType: string, aggregateType: string, aggregateId: string, payload: Record<string, unknown>) {
+export function prepareDomainEvent(agencyId: string, eventType: string, aggregateType: string, aggregateId: string, payload: Record<string, unknown>) {
   const id = crypto.randomUUID(), createdAt = new Date().toISOString();
-  await env.DB.prepare(
+  const statement = env.DB.prepare(
     "INSERT INTO domain_events(id,agency_id,event_type,aggregate_type,aggregate_id,payload,created_at) VALUES(?,?,?,?,?,?,?)",
-  ).bind(id, agencyId, eventType, aggregateType, aggregateId, JSON.stringify(payload), createdAt).run();
-  return id;
+  ).bind(id, agencyId, eventType, aggregateType, aggregateId, JSON.stringify(payload), createdAt);
+  return { id, statement };
+}
+
+export async function publishDomainEvent(agencyId: string, eventType: string, aggregateType: string, aggregateId: string, payload: Record<string, unknown>) {
+  const event = prepareDomainEvent(agencyId, eventType, aggregateType, aggregateId, payload);
+  await event.statement.run();
+  return event.id;
 }
 
 async function perform(executionId: string, agencyId: string, event: any, rule: any) {

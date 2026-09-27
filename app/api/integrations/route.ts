@@ -21,8 +21,9 @@ async function context() {
 }
 const fail = (e: unknown) => {
   const phoneClaimConflict = e instanceof Error && e.message.includes("idx_whatsapp_routable_phone_number");
-  const error = phoneClaimConflict ? "This WhatsApp phone number is already connected to an agency." : e instanceof Error ? e.message : "Integration operation failed.";
-  return Response.json({ error }, { status: e instanceof AuthorizationError ? 403 : e instanceof PlanLimitError ? 402 : e instanceof IntegrationConflictError || phoneClaimConflict ? 409 : 400 });
+  const connectionConflict = e instanceof Error && e.message.includes("idx_integration_connection");
+  const error = phoneClaimConflict ? "This WhatsApp phone number is already connected to an agency." : connectionConflict ? "This agency already has this integration connected or awaiting approval." : e instanceof Error ? e.message : "Integration operation failed.";
+  return Response.json({ error }, { status: e instanceof AuthorizationError ? 403 : e instanceof PlanLimitError ? 402 : e instanceof IntegrationConflictError || phoneClaimConflict || connectionConflict ? 409 : 400 });
 };
 
 export async function GET() {
@@ -60,7 +61,8 @@ export async function POST(request: Request) {
     if (duplicatePhone) throw new IntegrationConflictError("This WhatsApp phone number is already connected to an agency.");
     const id = existing?.id || crypto.randomUUID(), config = { sourceUrl: clean(b.sourceUrl, 600), destinationUrl: clean(b.destinationUrl, 600), bearerToken: clean(b.bearerToken, 300), phoneNumberId, businessAccountId };
     if (existing) {
-      await env.DB.prepare("UPDATE integration_connections SET status='pending',configuration=?,approved_by=NULL,approved_at=NULL,created_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status='disabled'").bind(JSON.stringify(config), c.user.userId, id, c.workspace.agencyId).run();
+      const reconfigured = await env.DB.prepare("UPDATE integration_connections SET status='pending',configuration=?,approved_by=NULL,approved_at=NULL,created_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status='disabled'").bind(JSON.stringify(config), c.user.userId, id, c.workspace.agencyId).run();
+      if (!reconfigured.meta.changes) throw new IntegrationConflictError("This integration changed while it was being reconfigured. Refresh and try again.");
       await writeAudit(c.workspace, "integration.connection_reconfigured", "integration_connection", id, { kind: preset.kind, provider: preset.provider });
       return Response.json({ id, status: "pending", reconfigured: true });
     }
@@ -79,7 +81,8 @@ export async function PATCH(request: Request) {
     if (action === "approve") {
       await requireEntitlement(c.workspace.agencyId, c.user.userId, entitlementFor(row.kind) as any);
       if (row.status !== "pending") throw new IntegrationConflictError("Only a pending integration can be approved.");
-      await env.DB.prepare("UPDATE integration_connections SET status='active',approved_by=?,approved_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status='pending'").bind(c.user.userId, id, c.workspace.agencyId).run();
+      const approved = await env.DB.prepare("UPDATE integration_connections SET status='active',approved_by=?,approved_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=? AND status='pending'").bind(c.user.userId, id, c.workspace.agencyId).run();
+      if (!approved.meta.changes) throw new IntegrationConflictError("This integration changed while it was being approved. Refresh and try again.");
       await writeAudit(c.workspace, "integration.connection_approved", "integration_connection", id, { kind: row.kind });
       return Response.json({ status: "active" });
     }

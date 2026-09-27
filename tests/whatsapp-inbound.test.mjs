@@ -101,8 +101,10 @@ test("signed WhatsApp intake creates the complete enquiry workflow", async () =>
   assert.match(route, /INSERT INTO next_actions/);
   assert.match(route, /INSERT INTO contact_activities/);
   assert.match(route, /INSERT INTO audit_logs/);
-  assert.match(route, /publishDomainEvent/);
+  assert.match(route, /prepareDomainEvent/);
+  assert.match(route, /statements\.push\(event\.statement\)[\s\S]*env\.DB\.batch\(statements\)/);
   assert.match(route, /processAutomationEvents/);
+  assert.match(route, /committed && committed\.status !== "failed"/);
   assert.match(route, /agency_id=\?/g);
   assert.match(migration, /UNIQUE INDEX idx_whatsapp_provider_message/);
   assert.match(routingMigration, /UNIQUE INDEX idx_whatsapp_routable_phone_number/);

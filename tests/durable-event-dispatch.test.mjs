@@ -58,6 +58,7 @@ test("durable domain-event processing owns webhook fan-out and scheduled recover
   );
 
   assert.doesNotMatch(publish, /dispatchWebhooks/);
+  assert.match(automation, /export function prepareDomainEvent/);
   assert.match(process, /await dispatchWebhooks/);
   assert.match(process, /status IN \('pending','retry'\)/);
   assert.match(automation, /export async function processAllAutomationEvents/);

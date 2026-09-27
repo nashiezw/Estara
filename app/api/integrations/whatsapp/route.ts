@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { processAutomationEvents, publishDomainEvent } from "../../../../db/automation";
+import { prepareDomainEvent, processAutomationEvents } from "../../../../db/automation";
 import { normalizePhone, normalizeRoles } from "../../../../db/contact-policy";
 
 export const dynamic = "force-dynamic";
@@ -97,8 +97,9 @@ async function processMessage(connection: any, value: any, message: InboundMessa
     env.DB.prepare("INSERT INTO whatsapp_inbound_events(id,agency_id,connection_id,provider_message_id,phone_number_id,sender_phone,sender_name,message_text,payload_hash,property_id,contact_id,enquiry_id,status,received_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?, 'processed',?)").bind(eventId, connection.agencyId, connection.id, providerMessageId, phoneNumberId, senderPhone, senderName, messageText, payloadHash, property?.id || null, contactId, enquiryId, receivedAt),
     env.DB.prepare("INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), connection.agencyId, "whatsapp-cloud", conversation ? "enquiry.whatsapp_message_received" : "enquiry.whatsapp_received", "enquiry", enquiryId, JSON.stringify({ providerMessageId, propertyId: property?.id || conversation?.propertyId || null, assignedUserId, responseDueAt: conversation?.responseDueAt || dueAt, continued: Boolean(conversation) }))
   );
+  const event = prepareDomainEvent(connection.agencyId, conversation ? "enquiry.whatsapp_message_received" : "enquiry.created", "enquiry", enquiryId, { name: contactName, property: property?.title || "General property enquiry", assignedUserId, resourceType: "enquiry", resourceId: enquiryId, responseDueAt: conversation?.responseDueAt || dueAt, source: "WhatsApp" });
+  statements.push(event.statement);
   await env.DB.batch(statements);
-  await publishDomainEvent(connection.agencyId, conversation ? "enquiry.whatsapp_message_received" : "enquiry.created", "enquiry", enquiryId, { name: contactName, property: property?.title || "General property enquiry", assignedUserId, resourceType: "enquiry", resourceId: enquiryId, responseDueAt: conversation?.responseDueAt || dueAt, source: "WhatsApp" });
   try { await processAutomationEvents(connection.agencyId, assignedUserId); } catch {}
   return { enquiryId, responseDueAt: conversation?.responseDueAt || dueAt, continued: Boolean(conversation) };
 }
@@ -131,6 +132,8 @@ export async function POST(request: Request) {
       } catch {
         const providerMessageId = clean(message.id, 200);
         if (providerMessageId) {
+          const committed = await env.DB.prepare("SELECT status FROM whatsapp_inbound_events WHERE provider_message_id=?").bind(providerMessageId).first<{ status: string }>();
+          if (committed && committed.status !== "failed") { outcomes.push({ duplicate: true }); continue; }
           const senderPhone = normalizePhone(message.from);
           const senderName = clean(value?.contacts?.find((contact: any) => contact.wa_id === message.from)?.profile?.name, 100) || senderPhone || "WhatsApp contact";
           const receivedAt = providerReceivedAt(message.timestamp);
