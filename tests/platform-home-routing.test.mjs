@@ -33,6 +33,9 @@ test("platform home treats first deploy hosts as the ESTARA landing page", async
   assert.match(source, /Your first week/);
   assert.match(source, /Set up your agency, add your first property and go live/);
   assert.match(source, /all in your first sitting/);
+  assert.match(source, /<h2>Give your agency a home of its own\.<\/h2>/);
+  assert.match(source, /<h2>Make your agency the brand buyers remember and the team sellers trust\.<\/h2>/);
+  assert.doesNotMatch(source, /<h2>Make your agency the brand buyers remember\.<\/h2>/);
   assert.doesNotMatch(source, /First success moment|first sellable|experience should take|A property should not be retyped|Your buyers should remember/i);
   assert.doesNotMatch(source, /Real estate operating system|Run your real estate agency from one place/);
   assert.match(heroActions, /See \{platform\.shortName\} in action/);

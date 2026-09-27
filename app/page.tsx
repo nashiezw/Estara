@@ -207,7 +207,7 @@ export default async function Home() {
       <section className="home-websites" id="websites">
         <div>
           <p className="home-kicker">Professional public presence</p>
-          <h2>Make your agency the brand buyers remember.</h2>
+          <h2>Give your agency a home of its own.</h2>
           <p>Other portals put your listing next to your competitors. {platform.shortName} gives your agency a home of its own, with your property pages, agents and brand.</p>
         </div>
         <aside>
