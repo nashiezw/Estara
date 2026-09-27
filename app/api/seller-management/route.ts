@@ -183,18 +183,21 @@ async function PATCH(request: Request) {
     if (action === "approve_report") {
       const report = await env.DB.prepare("SELECT r.*,p.title,p.reference,p.location,a.name agency FROM seller_reports r JOIN properties p ON p.id=r.property_id AND p.agency_id=r.agency_id JOIN agencies a ON a.id=r.agency_id WHERE r.id=? AND r.agency_id=?").bind(id, agencyId).first<any>();
       if (!report) return Response.json({ error: "Seller report was not found." }, { status: 404 });
-      if (report.status === "approved") return Response.json({ approved: true, hasPdf: Boolean(report.pdf_object_key), replayed: true });
+      const recoveringPdf = report.status === "approved";
+      if (recoveringPdf && report.pdf_object_key && await env.MEDIA.head(report.pdf_object_key)) {
+        return Response.json({ approved: true, hasPdf: true, replayed: true });
+      }
       const approvedAt = new Date().toISOString();
       const staleBefore = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-      const claimed = await env.DB.prepare("UPDATE seller_reports SET status='approving',approved_by=?,approval_started_at=? WHERE id=? AND agency_id=? AND (status='draft' OR (status='approving' AND approval_started_at<?))").bind(current.user.userId, approvedAt, id, agencyId, staleBefore).run();
+      const claimed = await env.DB.prepare("UPDATE seller_reports SET status='approving',approved_by=?,approval_started_at=? WHERE id=? AND agency_id=? AND (status='draft' OR (status='approving' AND approval_started_at<?) OR (status='approved' AND COALESCE(pdf_object_key,'')=?))").bind(current.user.userId, approvedAt, id, agencyId, staleBefore, report.pdf_object_key || "").run();
       if (!claimed.meta.changes) return Response.json({ error: "This report is already being approved. Refresh shortly." }, { status: 409 });
       const pdf = sellerReportPdf({ agency: report.agency, property: report.title, reference: report.reference, location: report.location, periodStart: report.period_start, periodEnd: report.period_end, views: report.views, enquiries: report.enquiries, viewings: report.viewings, offers: report.offers, momentum: report.momentum, summary: report.summary, feedbackSummary: report.feedback_summary, recommendedAction: report.recommended_action, approvedAt });
       const key = `tenants/${agencyId}/seller-reports/${id}/${approvedAt.replaceAll(":", "-")}.pdf`;
       try {
         await env.MEDIA.put(key, pdf, { httpMetadata: { contentType: "application/pdf" }, customMetadata: { agencyId, reportId: id } });
         const recipients = await env.DB.prepare("SELECT DISTINCT lower(email) email FROM seller_access_grants WHERE agency_id=? AND property_id=? AND revoked_at IS NULL").bind(agencyId, report.property_id).all<any>();
-        const detail = JSON.stringify({ pdfBytes: pdf.byteLength, recipients: recipients.results.length });
-        const payload = JSON.stringify({ assignedUserId: current.user.userId, property: report.title, propertyId: report.property_id, resourceType: "seller_report", resourceId: id, recipients: recipients.results.length });
+        const detail = JSON.stringify({ pdfBytes: pdf.byteLength, recipients: recipients.results.length, recovered: recoveringPdf });
+        const payload = JSON.stringify({ assignedUserId: current.user.userId, property: report.title, propertyId: report.property_id, resourceType: "seller_report", resourceId: id, recipients: recipients.results.length, recovered: recoveringPdf });
         const ownsApproval = "EXISTS(SELECT 1 FROM seller_reports WHERE id=? AND agency_id=? AND status='approving' AND approved_by=? AND approval_started_at=?)";
         const statements = [
           env.DB.prepare(`INSERT OR IGNORE INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) SELECT ?,?,?,?,?,?,? WHERE ${ownsApproval}`).bind(`seller-report-approved:${id}:${approvedAt}`, agencyId, current.user.userId, "seller.report.approved", "seller_report", id, detail, id, agencyId, current.user.userId, approvedAt),
@@ -210,7 +213,9 @@ async function PATCH(request: Request) {
         try { await processAutomationEvents(agencyId, current.user.userId); } catch { }
       } catch (error) {
         await env.MEDIA.delete(key);
-        await env.DB.prepare("UPDATE seller_reports SET status='draft',approved_by=NULL,approval_started_at=NULL WHERE id=? AND agency_id=? AND status='approving' AND approved_by=? AND approval_started_at=?").bind(id, agencyId, current.user.userId, approvedAt).run();
+        const failureStatus = recoveringPdf ? "approved" : "draft";
+        const failureApprovedBy = recoveringPdf ? report.approved_by || null : null;
+        await env.DB.prepare("UPDATE seller_reports SET status=?,approved_by=?,approval_started_at=NULL WHERE id=? AND agency_id=? AND status='approving' AND approved_by=? AND approval_started_at=?").bind(failureStatus, failureApprovedBy, id, agencyId, current.user.userId, approvedAt).run();
         throw error;
       }
       return Response.json({ approved: true, hasPdf: true });

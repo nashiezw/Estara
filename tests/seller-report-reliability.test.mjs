@@ -19,10 +19,13 @@ test("seller delivery evidence is unique per recipient and channel", async () =>
   db.close();
 });
 
-test("seller reports claim approval, recover failed media and create deliveries atomically", async () => {
+test("seller reports claim approval, recover missing artifacts and create deliveries atomically", async () => {
   const route = await read("../app/api/seller-management/route.ts");
+  const operations = await read("../app/seller-operations.tsx");
   assert.match(route, /status='approving'/);
   assert.match(route, /approval_started_at<\?/);
+  assert.match(route, /await env\.MEDIA\.head\(report\.pdf_object_key\)/);
+  assert.match(route, /status='approved' AND COALESCE\(pdf_object_key,''\)=\?/);
   assert.match(route, /This report is already being approved/);
   assert.match(route, /INSERT OR IGNORE INTO seller_deliveries/);
   assert.match(route, /const ownsApproval = "EXISTS\(SELECT 1 FROM seller_reports/);
@@ -32,7 +35,11 @@ test("seller reports claim approval, recover failed media and create deliveries 
   assert.match(route, /await env\.DB\.batch\(statements\)/);
   assert.match(route, /committed\[committed\.length - 1\]/);
   assert.match(route, /await env\.MEDIA\.delete\(key\)/);
-  assert.match(route, /SET status='draft',approved_by=NULL,approval_started_at=NULL/);
+  assert.match(route, /const failureStatus = recoveringPdf \? "approved" : "draft"/);
+  assert.match(route, /const failureApprovedBy = recoveringPdf \? report\.approved_by \|\| null : null/);
+  assert.match(route, /SET status=\?,approved_by=\?,approval_started_at=NULL/);
+  assert.match(operations, /report\.status === "approved" && !report\.hasPdf/);
+  assert.match(operations, /Create missing PDF/);
 });
 
 test("scheduled seller reports are deterministic and compare-and-advance", async () => {
