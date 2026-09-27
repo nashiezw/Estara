@@ -75,6 +75,19 @@ test("homepage hero balances agency messaging and product proof in two columns",
   assert.match(styles, /@media\(max-width:1100px\)\{\.estara-home \.home-hero\{min-height:auto;grid-template-columns:1fr\}/);
 });
 
+test("homepage story sections use compact hierarchy without changing the approved closing band", async () => {
+  const styles = await readFile("app/globals.css", "utf8");
+
+  assert.match(styles, /:is\(\.home-today,\.home-reuse,\.home-workflow,\.home-websites\) h2\{max-width:720px;font-size:clamp\(44px,4\.6vw,66px\)/);
+  assert.match(styles, /\.estara-home \.home-today-list\{gap:0;border:1px solid var\(--home-line\);border-radius:8px;overflow:hidden/);
+  assert.match(styles, /\.estara-home \.home-reuse-map strong\{min-height:84px;border-radius:8px;font-family:var\(--font\),Arial,sans-serif/);
+  assert.match(styles, /\.estara-home \.home-promises article:nth-child\(3\)\{border-top-color:var\(--home-coral\)\}/);
+  assert.match(styles, /\.estara-home \.home-workflow li\{min-height:108px;padding:20px;gap:24px\}/);
+  assert.match(styles, /\.estara-home \.home-websites aside a:first-child\{background:var\(--home-forest\)/);
+  const refinement = styles.match(/\.estara-home :is\(\.home-today,\.home-reuse,\.home-workflow,\.home-websites\)\{[\s\S]*?(?=\n@media\(max-width:760px\))/)?.[0] || "";
+  assert.doesNotMatch(refinement, /home-final|home-footer/);
+});
+
 test("public pages expose mobile menus and demo app links use the app host", async () => {
   const [publicWebsite, demo, demoClient, styles] = await Promise.all([
     readFile("app/site/[slug]/public-website.tsx", "utf8"),
