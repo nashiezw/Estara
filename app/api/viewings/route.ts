@@ -128,18 +128,26 @@ async function PATCH(request: Request) {
       if (!validViewingFeedback(viewing.status, feedback, interest)) return Response.json({ error: viewing.status === "Completed" ? "Feedback and interest level are required." : "Complete the viewing before recording feedback." }, { status: viewing.status === "Completed" ? 400 : 409 });
       const followUp = viewingFollowUp(interest);
       const due = new Date(Date.now() + 864e5).toISOString();
+      const feedbackToken = crypto.randomUUID();
+      const recordedAt = new Date().toISOString();
+      const ownsFeedback = "EXISTS(SELECT 1 FROM viewings WHERE id=? AND agency_id=? AND status='Completed' AND transition_token=?)";
+      const ownership = [id, workspace.agencyId, feedbackToken];
       const statements = [
-        env.DB.prepare("UPDATE viewings SET feedback=?,interest_level=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(feedback, interest, id, workspace.agencyId),
-        env.DB.prepare("UPDATE next_actions SET status='complete',completed_at=CURRENT_TIMESTAMP WHERE agency_id=? AND resource_type='viewing' AND resource_id=? AND action_type='capture_feedback' AND status='open'").bind(workspace.agencyId, id),
-        env.DB.prepare("INSERT INTO next_actions(id,agency_id,resource_type,resource_id,action_type,reason,priority,due_at,status,assigned_user_id) SELECT ?,?,'viewing',?,?,?,'normal',?,'open',? WHERE NOT EXISTS (SELECT 1 FROM next_actions WHERE agency_id=? AND resource_type='viewing' AND resource_id=? AND action_type=? AND status='open')").bind(crypto.randomUUID(), workspace.agencyId, id, followUp.actionType, followUp.reason, due, viewing.assignedUserId, workspace.agencyId, id, followUp.actionType),
+        env.DB.prepare("UPDATE viewings SET feedback=?,interest_level=?,transition_token=?,updated_at=? WHERE id=? AND agency_id=? AND status='Completed' AND feedback=? AND COALESCE(interest_level,'')=?").bind(feedback, interest, feedbackToken, recordedAt, id, workspace.agencyId, viewing.feedback || "", viewing.interestLevel || ""),
+        env.DB.prepare(`UPDATE next_actions SET status='complete',completed_at=CURRENT_TIMESTAMP WHERE agency_id=? AND resource_type='viewing' AND resource_id=? AND action_type='capture_feedback' AND status='open' AND ${ownsFeedback}`).bind(workspace.agencyId, id, ...ownership),
+        env.DB.prepare(`INSERT INTO next_actions(id,agency_id,resource_type,resource_id,action_type,reason,priority,due_at,status,assigned_user_id) SELECT ?,?,'viewing',?,?,?,'normal',?,'open',? WHERE ${ownsFeedback} AND NOT EXISTS (SELECT 1 FROM next_actions WHERE agency_id=? AND resource_type='viewing' AND resource_id=? AND action_type=? AND status='open')`).bind(crypto.randomUUID(), workspace.agencyId, id, followUp.actionType, followUp.reason, due, viewing.assignedUserId, ...ownership, workspace.agencyId, id, followUp.actionType),
       ];
       const changed = viewing.feedback !== feedback || viewing.interestLevel !== interest;
-      if (viewing.contactId && changed) statements.push(env.DB.prepare("INSERT INTO contact_activities(id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) VALUES(?,?,?,?,?,?,'viewing',?)").bind(crypto.randomUUID(), workspace.agencyId, viewing.contactId, user.userId, "viewing.feedback", feedback, id));
+      if (viewing.contactId && changed) statements.push(env.DB.prepare(`INSERT INTO contact_activities(id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) SELECT ?,?,?,?,?,?,'viewing',? WHERE ${ownsFeedback}`).bind(crypto.randomUUID(), workspace.agencyId, viewing.contactId, user.userId, "viewing.feedback", feedback, id, ...ownership));
       if (changed) {
-        const event = prepareDomainEvent(workspace.agencyId, "viewing.feedback_recorded", "viewing", id, { assignedUserId: viewing.assignedUserId, propertyId: viewing.propertyId, resourceType: "viewing", resourceId: id, interestLevel: interest });
-        statements.push(event.statement, prepareAudit(workspace, "viewing.feedback_recorded", "viewing", id, { interest }));
+        const payload = JSON.stringify({ assignedUserId: viewing.assignedUserId, propertyId: viewing.propertyId, resourceType: "viewing", resourceId: id, interestLevel: interest });
+        statements.push(
+          env.DB.prepare(`INSERT INTO domain_events(id,agency_id,event_type,aggregate_type,aggregate_id,payload,created_at) SELECT ?,?,'viewing.feedback_recorded','viewing',?,?,? WHERE ${ownsFeedback}`).bind(crypto.randomUUID(), workspace.agencyId, id, payload, recordedAt, ...ownership),
+          env.DB.prepare(`INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) SELECT ?,?,?,'viewing.feedback_recorded','viewing',?,? WHERE ${ownsFeedback}`).bind(crypto.randomUUID(), workspace.agencyId, workspace.userId, id, JSON.stringify({ interest }), ...ownership),
+        );
       }
-      await env.DB.batch(statements);
+      const committed = await env.DB.batch(statements);
+      if (!committed[0]?.meta.changes) return Response.json({ error: "This viewing feedback changed while you were updating it. Refresh and try again." }, { status: 409 });
       if (changed) {
         try { await processAutomationEvents(workspace.agencyId, user.userId); } catch {}
       }
