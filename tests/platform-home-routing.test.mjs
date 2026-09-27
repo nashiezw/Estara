@@ -62,6 +62,19 @@ test("homepage sections keep heading, copy and action spacing scoped to the land
   assert.doesNotMatch(styles, /:where\(\.estara-home/);
 });
 
+test("homepage hero balances agency messaging and product proof in two columns", async () => {
+  const styles = await readFile("app/globals.css", "utf8");
+
+  assert.match(styles, /\.estara-home \.home-hero\{[^}]*grid-template-columns:minmax\(0,1\.05fr\) minmax\(480px,\.95fr\)/);
+  assert.match(styles, /\.estara-home \.home-hero-copy\{width:100%;max-width:760px\}/);
+  assert.match(styles, /\.estara-home \.home-command\{width:100%;max-width:620px;justify-self:end\}/);
+  assert.match(styles, /\.estara-home \.home-command-list\{display:grid\}/);
+  assert.match(styles, /\.estara-home \.home-command-grid b\{font-family:var\(--font\),Arial,sans-serif/);
+  assert.match(styles, /\.estara-home \.home-actions a:last-child\{border-color:#93a69f/);
+  assert.match(styles, /\.estara-home \.home-kicker\{color:#0a7469/);
+  assert.match(styles, /@media\(max-width:1100px\)\{\.estara-home \.home-hero\{min-height:auto;grid-template-columns:1fr\}/);
+});
+
 test("public pages expose mobile menus and demo app links use the app host", async () => {
   const [publicWebsite, demo, demoClient, styles] = await Promise.all([
     readFile("app/site/[slug]/public-website.tsx", "utf8"),
