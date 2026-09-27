@@ -27,6 +27,9 @@ const emptyData = (properties: SellerProperty[]): SellerData => ({
   mandates: [],
 });
 
+const deliveryLabel = (channel: string) => channel === "email" ? "Email delivery" : channel === "portal" ? "Seller portal" : "Delivery";
+const deliveryStatus = (status: string) => status === "sent" ? "Sent" : status === "queued" ? "Queued" : status === "failed" ? "Needs attention" : status;
+
 export default function SellerOperations({
   properties,
   notify,
@@ -418,17 +421,23 @@ export default function SellerOperations({
           </div>
           <div className="seller-stack">
             {data.deliveries.length ? (
-              data.deliveries.map((delivery) => (
-                <p key={delivery.id}>
-                  <strong>
-                    {delivery.channel} · {delivery.status}
-                  </strong>{" "}
-                  <small>
-                    {delivery.recipientEmail}
-                    {delivery.lastError ? ` · ${delivery.lastError}` : ""}
-                  </small>
-                </p>
-              ))
+              data.deliveries.map((delivery) => {
+                const channelClass = delivery.channel === "email" ? "email" : "portal";
+                const statusClass = ["sent", "queued", "failed"].includes(delivery.status) ? delivery.status : "pending";
+                return (
+                  <article className="seller-delivery-row" key={delivery.id}>
+                    <span className={`seller-delivery-icon ${channelClass}`} aria-hidden="true">
+                      {delivery.channel === "email" ? "@" : "↗"}
+                    </span>
+                    <span className="seller-delivery-copy">
+                      <strong>{deliveryLabel(delivery.channel)}</strong>
+                      <small>{delivery.recipientEmail}</small>
+                      {delivery.lastError && <small className="seller-delivery-note">{delivery.lastError}</small>}
+                    </span>
+                    <em className={`seller-delivery-status ${statusClass}`}>{deliveryStatus(delivery.status)}</em>
+                  </article>
+                );
+              })
             ) : (
               <p className="empty-state">Approvals will create tracked portal and email delivery records.</p>
             )}
