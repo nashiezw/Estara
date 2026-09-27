@@ -47,6 +47,18 @@ export const PRODUCTION_PROVIDER_DECISIONS: readonly ProductionProviderDecision[
     ],
   },
   {
+    area: "whatsapp_inbound",
+    provider: "Meta WhatsApp Cloud API",
+    status: "selected_pending_activation",
+    requiredEnv: ["WHATSAPP_APP_SECRET", "WHATSAPP_VERIFY_TOKEN"],
+    activationEvidence: [
+      "Meta webhook subscription challenge succeeds",
+      "Signed inbound text creates one tenant-scoped enquiry and response action",
+      "Duplicate provider message IDs do not create duplicate records",
+      "Invalid signatures are rejected before payload processing",
+    ],
+  },
+  {
     area: "error_retention_alerting",
     provider: "Sentry for Cloudflare plus Cloudflare platform logs",
     status: "selected_pending_activation",

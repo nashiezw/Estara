@@ -1,0 +1,26 @@
+.branch-card .branch-card-select {
+  grid-column: 1 / 3;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.branch-card .branch-card-select:focus-visible {
+  outline: 3px solid #e6bd5f;
+  outline-offset: 4px;
+}
+
+@media (max-width: 860px) {
+  .branch-card .branch-card-select {
+    grid-column: 1 / -1;
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+}

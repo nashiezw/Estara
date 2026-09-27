@@ -97,7 +97,7 @@ test("marketing studio supports editable design workflow and durable renders", a
     "studioUploads",
     "estara-marketing-uploads",
     "rememberUpload",
-    "useFileImage",
+    "placeFileImage",
     "dragStudioItem",
     "text/estara",
     "onDrop",

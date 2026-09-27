@@ -85,14 +85,14 @@ test("media routes scope private objects to the tenant and public photos to publ
 
 test("seller management and portal reads are identity-bound, approved-only and tenant-scoped", async () => {
   const [management, portal] = await Promise.all([read("../app/api/seller-management/route.ts"), read("../app/api/seller-portal/route.ts")]);
-  assert.match(management, /requirePermission\(workspace,"seller\.manage"\)/);
+  assert.match(management, /requirePermission\(workspace,\s*"seller\.manage"\)/);
   assert.match(management, /WHERE id=\? AND agency_id=\?/g);
   assert.match(management, /seller\.access\.revoked/);
   assert.match(management, /seller\.report\.approved/);
   assert.match(portal, /accepted_user_id=\?/g);
   assert.match(portal, /revoked_at IS NULL/g);
   assert.match(portal, /status='approved'/);
-  assert.match(portal, /grant\.email\.toLowerCase\(\)!==user\.email\.toLowerCase\(\)/);
+  assert.match(portal, /grant\.email\.toLowerCase\(\)\s*!==\s*user\.email\.toLowerCase\(\)/);
 });
 
 test("property detail metadata is record-specific and never inherits the landing card", async () => {
@@ -169,7 +169,7 @@ test("automation and notification APIs are tenant-scoped, idempotent and approva
   assert.match(route, /status='dead_letter'/);
   assert.match(engine, /INSERT OR IGNORE INTO automation_executions/);
   assert.match(engine, /event_id=\? AND rule_version_id=\?/);
-  assert.match(engine, /attempts>=5/);
+  assert.match(engine, /attempts\s*>=\s*5/);
   assert.match(notifications, /agency_id=\? AND recipient_user_id=\?/g);
 });
 

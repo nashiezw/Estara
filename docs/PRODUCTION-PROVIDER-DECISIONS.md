@@ -15,6 +15,7 @@ This document records the selected production providers and the evidence require
 | Hosting, DNS, TLS, storage and upload-edge scanning | Cloudflare Workers, Worker routes, Custom Domains, D1, R2, Queues and WAF malicious uploads detection | The app is already Cloudflare-compatible, uses D1/R2 bindings, and needs exact-host routing for the app/root hosts plus wildcard routing for ESTARA-hosted tenant subdomains. Cloudflare WAF malicious upload detection can inspect uploads before app processing when the required Enterprise add-on is active. | Production Worker deployed; `estara.co.zw`, `www.estara.co.zw` and `app.estara.co.zw` attached as explicit Custom Domains; `*.estara.co.zw/*` attached as a Worker route for hosted tenant websites; certificates active for `*.estara.co.zw`; production D1/R2 bindings connected; R2 object-create notifications feeding the scan queue; WAF rules blocking malicious uploads. |
 | Transactional email | Resend | Simple HTTPS API, sender-domain verification, idempotency support and webhooks fit the existing notification-delivery ledger. | Sending domain verified, `RESEND_API_KEY` and webhook secret installed, delivery/bounce/complaint webhooks updating the ledger. |
 | Web push | Firebase Cloud Messaging | FCM supports browser Push API workflows over HTTPS and can cover web push before a native app exists. | Production HTTPS service worker registered, consent-gated token capture implemented, server credentials installed, delivery outcomes recorded. |
+| WhatsApp inbound | Meta WhatsApp Cloud API | Signed webhooks preserve agents' familiar WhatsApp interface while ESTARA captures tenant-owned contacts, enquiries, response SLAs, next actions and automation events. | `WHATSAPP_APP_SECRET` and `WHATSAPP_VERIFY_TOKEN` installed; subscription challenge succeeds; signed text creates one enquiry; duplicate message replay creates no duplicate; invalid signatures are rejected. |
 | Error retention and alerting | Sentry for Cloudflare plus Cloudflare platform logs | Sentry has Cloudflare setup guidance for errors, tracing and logs; Cloudflare logs keep platform-level request evidence close to the runtime. | `SENTRY_DSN` and release metadata installed, protected errors retained outside D1, alert routes tested for launch-blocking events. |
 | Online payments | Stripe Checkout, Billing and Customer Portal | Checkout supports hosted subscription flows; Billing webhooks can drive existing subscription and invoice state without storing card data. | Live products/prices created, Checkout and Customer Portal sessions work, signed webhooks update subscriptions and invoices, finance signs off settlement/refund/failed-payment reconciliation. |
 
@@ -33,6 +34,8 @@ The source-level contract lives in `db/production-providers.ts`. `.env.example` 
 - `FCM_CLIENT_EMAIL`
 - `FCM_PRIVATE_KEY`
 - `NEXT_PUBLIC_FCM_VAPID_KEY`
+- `WHATSAPP_APP_SECRET`
+- `WHATSAPP_VERIFY_TOKEN`
 - `SENTRY_DSN`
 - `SENTRY_RELEASE`
 - `SENTRY_AUTH_TOKEN`
@@ -53,7 +56,7 @@ Normal production Worker vars are owned by Wrangler configuration. For the curre
 
 Additional non-sensitive provider identifiers may be added as normal vars when their live values are known: `CLOUDFLARE_ACCOUNT_ID`, `RESEND_FROM_EMAIL`, `FCM_PROJECT_ID`, `FCM_CLIENT_EMAIL`, `NEXT_PUBLIC_FCM_VAPID_KEY`, `SENTRY_DSN`, `SENTRY_RELEASE`, `SENTRY_ORG`, `SENTRY_PROJECT`, `STRIPE_PRICE_STARTER` and `STRIPE_PRICE_GROWTH`.
 
-Secrets must remain in Cloudflare secrets or CI secrets: `BACKUP_ENCRYPTION_KEY`, `OPENAI_API_KEY`, `CLOUDFLARE_API_TOKEN`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `FCM_PRIVATE_KEY`, `SENTRY_AUTH_TOKEN`, `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
+Secrets must remain in Cloudflare secrets or CI secrets: `BACKUP_ENCRYPTION_KEY`, `OPENAI_API_KEY`, `CLOUDFLARE_API_TOKEN`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `FCM_PRIVATE_KEY`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `SENTRY_AUTH_TOKEN`, `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
 
 Bindings are not plain vars: `DB` is the D1 binding, `MEDIA` is the R2 binding, `ASSETS` is the static asset binding and `IMAGES` is the Cloudflare image-transform binding. The existing `MEDIA` binding to `site-creator-r2` must remain intact.
 

@@ -26,7 +26,7 @@ test("workspace properties can be edited, deleted and activated with exact readi
  assert.match(ui,/Published-ready\. Improve later/);
  assert.doesNotMatch(ui,/required minLength=\{40\}/);
  assert.doesNotMatch(ui,/Street address<input required/);
- assert.match(ui,/mandateExpiresAt:source\.mandateId\?"":""/);
+ assert.match(ui,/mandateExpiresAt:property\?source\.mandateExpiresAt\|\|"":future\(\)/);
  assert.match(actions,/Add before publishing:/);
  assert.match(actions,/propertyPublishReadiness/);
  assert.match(actions,/propertyPhotoRequirement/);

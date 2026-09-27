@@ -6,6 +6,7 @@ export const CONNECTOR_PRESETS = {
   webflow: { label: "Webflow", kind: "website", provider: "webflow", directions: ["push"], resources: ["properties", "enquiries"] },
   custom_website: { label: "Custom agency website", kind: "website", provider: "custom_json", directions: ["pull", "push"], resources: ["properties", "contacts", "enquiries", "viewings"] },
   property_portal: { label: "Property portal", kind: "property_portal", provider: "estara_json_feed", directions: ["push"], resources: ["properties"] },
+  whatsapp_cloud: { label: "WhatsApp Cloud API", kind: "messaging", provider: "whatsapp_cloud", directions: ["pull"], resources: ["enquiries"] },
   crm: { label: "CRM", kind: "crm", provider: "generic_crm", directions: ["pull", "push"], resources: ["contacts", "enquiries", "viewings"] }
 } as const;
 

@@ -131,6 +131,8 @@
   .studio-cards{grid-template-columns:1fr!important}
 }
 
+.studio-position-control{display:grid;margin:0;gap:4px;font-size:9px;color:#374151}
+
 @media(max-width:380px){
   .studio-topbar{grid-template-columns:auto minmax(0,1fr) auto!important}
   .studio-topbar a{font-size:10px!important;padding:0 8px!important}

@@ -8,6 +8,7 @@ import{processAutomationEvents,publishDomainEvent}from"../../../db/automation";
 import{accessiblePropertyIds,requirePropertyBranchAccess}from"../../../db/access-scope";
 import{propertyCompleteness}from"../../../db/property-policy";
 import{invalidatePublicSite}from"../../../db/public-cache";
+import{workspaceMetrics}from"../../../db/workspace-metrics";
 
 const dynamic="force-dynamic";
 const unauthorized=()=>Response.json({error:"Sign in is required."},{status:401});
@@ -41,8 +42,8 @@ async function GET(){
       LEFT JOIN properties p ON (n.resource_type='property' AND p.id=n.resource_id OR p.id=COALESCE(e.property_id,d.property_id)) AND p.agency_id=n.agency_id
       JOIN branch_memberships bm ON bm.agency_id=p.agency_id AND bm.branch_id=p.branch_id AND bm.user_id=?
       WHERE n.agency_id=? AND n.status='open'`).bind(w.userId,w.agencyId).first():as;
- const membership=members.results.find((member:any)=>member.userId===user.userId);
- return Response.json({agency:{id:w.agencyId,name:w.agencyName},currentUser:{userId:user.userId,email:user.email,displayName:user.displayName,role:membership?.role||""},properties:propertyRows,logo:assets.find((asset:any)=>asset.kind==="agency_logo")||null,enquiries:visibleEnquiries,menuCounts:{enquiries:activeEnquiryCount,actions:scopedActionCount?.count??0},openActionCount:scopedActionCount?.count??0,members:members.results,settings})
+ const membership=members.results.find((member:any)=>member.userId===user.userId),insights=await workspaceMetrics(w.agencyId,membership?.role||"");
+ return Response.json({agency:{id:w.agencyId,name:w.agencyName},currentUser:{userId:user.userId,email:user.email,displayName:user.displayName,role:membership?.role||""},properties:propertyRows,logo:assets.find((asset:any)=>asset.kind==="agency_logo")||null,enquiries:visibleEnquiries,menuCounts:{enquiries:activeEnquiryCount,actions:scopedActionCount?.count??0},openActionCount:scopedActionCount?.count??0,members:members.results,settings,...insights})
 }
 
 async function ensureOwnerContact(w:any,user:any,b:any,title:string,transactionType:string){
@@ -102,7 +103,7 @@ async function POST(request:Request){
   const name=clean(b.name,100),propertyId=clean(b.propertyId,80),note=clean(b.note,500),requirements=clean(b.requirements,700),phone=normalizePhone(b.phone),email=normalizeEmail(b.email),assignedUserId=clean(b.assignedUserId,100)||user.userId,followUpAt=clean(b.followUpAt,40),roles=normalizeRoles(b.roles);
   if(!name||!propertyId||!phone&&!email)return Response.json({error:"Client, property, and a valid phone or email are required."},{status:400});
   const followUpMs=Date.parse(followUpAt);if(!Number.isFinite(followUpMs)||followUpMs<Date.now()-6e4||followUpMs>Date.now()+730*864e5)return Response.json({error:"Choose a valid next follow-up time."},{status:400});
-  const[property,assignee,settings]=await Promise.all([env.DB.prepare(`SELECT id,title FROM properties WHERE id=? AND agency_id=?`).bind(propertyId,w.agencyId).first(),env.DB.prepare(`SELECT user_id AS userId FROM agency_memberships WHERE agency_id=? AND user_id=?`).bind(w.agencyId,assignedUserId).first(),env.DB.prepare(`SELECT response_sla_minutes AS minutes FROM agency_settings WHERE agency_id=?`).bind(w.agencyId).first()]);
+  const[property,assignee,settings]=await Promise.all([env.DB.prepare(`SELECT id,title FROM properties WHERE id=? AND agency_id=?`).bind(propertyId,w.agencyId).first(),env.DB.prepare(`SELECT user_id AS userId,email,role FROM agency_memberships WHERE agency_id=? AND user_id=?`).bind(w.agencyId,assignedUserId).first<any>(),env.DB.prepare(`SELECT response_sla_minutes AS minutes FROM agency_settings WHERE agency_id=?`).bind(w.agencyId).first()]);
   if(!property)return Response.json({error:"Property was not found."},{status:404});await requirePropertyBranchAccess(w,propertyId);if(!assignee)return Response.json({error:"Assigned agent is not in this agency."},{status:400});
   const matches=await env.DB.prepare(`SELECT id,roles FROM contacts WHERE agency_id=? AND ((?<>'' AND phone_e164=?) OR (?<>'' AND email_normalized=?))`).bind(w.agencyId,phone,phone,email,email).all(),unique=[...new Map(matches.results.map((x:any)=>[x.id,x])).values()];
   if(unique.length>1)return Response.json({error:"Phone and email match different contacts. Review them before merging."},{status:409});
@@ -112,7 +113,7 @@ async function POST(request:Request){
   statements.push(env.DB.prepare(`INSERT INTO next_actions (id,agency_id,resource_type,resource_id,action_type,reason,priority,due_at,status,assigned_user_id) VALUES (?,?,'enquiry',?,'respond',?,'high',?,'open',?)`).bind(crypto.randomUUID(),w.agencyId,id2,`Respond to ${name}`,due,assignedUserId));
   statements.push(env.DB.prepare(`INSERT INTO contact_activities (id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) VALUES (?,?,?,?,? ,?,'enquiry',?)`).bind(crypto.randomUUID(),w.agencyId,contactId,user.userId,"enquiry.created",`Enquiry recorded for ${property.title}`,id2));
   await env.DB.batch(statements);await publishDomainEvent(w.agencyId,"enquiry.created","enquiry",id2,{name,property:property.title,assignedUserId,resourceType:"enquiry",resourceId:id2,responseDueAt:due});try{await processAutomationEvents(w.agencyId,user.userId)}catch{}await writeAudit(w,"enquiry.created","enquiry",id2,{contactId,assignedUserId,source:"Manual"});
-  return Response.json({enquiry:{id:id2,name,initials,property:property.title,status:"New",stage:"New",responseDueAt:due,nextFollowUpAt:new Date(followUpMs).toISOString(),phone,email,roles:rolesJson,requirements,assignedUserId,time:"Just now"},contact:{id:contactId,reused:Boolean(existing)}},{status:201})
+  return Response.json({enquiry:{id:id2,name,initials,property:property.title,status:"New",stage:"New",responseDueAt:due,nextFollowUpAt:new Date(followUpMs).toISOString(),phone,email,roles:rolesJson,requirements,assignedUserId,assignedEmail:assignee.email,propertyId:property.id,contactId,time:"Just now"},contact:{id:contactId,reused:Boolean(existing)}},{status:201})
  }
  return saveProperty(new Request(request.url,{method:"POST",headers:request.headers,body:JSON.stringify(b)}),"create")
 }

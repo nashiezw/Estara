@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
-    "start": "vinext start",
+    "start": "wrangler dev --config dist/server/wrangler.json",
     "deploy": "node scripts/deploy-cloudflare.mjs",
     "dev:migrate": "node scripts/migrate-local-d1.mjs",
     "dev:smoke": "node scripts/smoke-local-preview.mjs",

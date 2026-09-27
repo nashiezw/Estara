@@ -35,7 +35,7 @@ test("super admin dashboard exposes platform-wide command, settings and evidence
   assert.match(client, /type="color"/);
   assert.match(client, /cache: "no-store"/);
   assert.match(client, /result\.settings/);
-  assert.match(client, /const showPageStrip = tab === "settings"/);
+  assert.doesNotMatch(client, /showPageStrip/);
   assert.match(client, /platform-empty-panel/);
   assert.match(client, /No agencies found/);
   assert.match(client, /No plan versions yet/);

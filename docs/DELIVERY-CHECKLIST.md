@@ -159,6 +159,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Conflict checks
 - [-] Persistent viewing reminders; notification delivery pending
 - [x] After-viewing feedback workflow
+- [x] Anonymized viewing-feedback snapshot in approved seller reports and branded PDFs
 - [x] Alternative-property suggestion handoff
 - [x] Offer workflow handoff
 - [x] Next-action generation
@@ -253,7 +254,7 @@ This is the authoritative implementation checklist for the ESTARA master specifi
 - [x] Lead and report summaries
   - [x] Authorized Ask ESTARA interface
   - [x] Advanced automation builder
-- [ ] Official WhatsApp integration, if approved and feasible
+- [-] Official WhatsApp Cloud inbound webhook, signed verification, idempotent delivery ledger, property-reference routing, contact/enquiry capture, SLA action and retry evidence implemented; live Meta app approval, production credentials and webhook activation pending
   - [x] Property portal integrations
   - [x] Accounting integrations
   - [x] Public API and scoped credentials

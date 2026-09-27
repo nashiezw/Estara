@@ -188,7 +188,7 @@ const styles = `
     gap: 0.5rem;
   }
 
-  .field-group label {
+  .field-group .field-label {
     font-weight: 500;
     color: #6b7280;
     font-size: 0.875rem;
@@ -551,6 +551,11 @@ const styles = `
     }
   }
 
+  .copyable:focus-visible {
+    outline: 3px solid #e6bd5f;
+    outline-offset: 2px;
+  }
+
   @media (min-width: 641px) {
     .domain-breadcrumbs,
     .domain-help-card {
@@ -693,12 +698,12 @@ export default function DomainClient({ platform }: { platform: PlatformBrand }) 
                     </div>
                     <div className="instruction-detail">
                       <div className="field-group">
-                        <label>Name:</label>
-                        <code className="copyable" onClick={() => navigator.clipboard.writeText(item.txtName)}>{item.txtName}</code>
+                        <span className="field-label">Name:</span>
+                        <button type="button" className="copyable" aria-label="Copy TXT record name" onClick={() => navigator.clipboard.writeText(item.txtName)}>{item.txtName}</button>
                       </div>
                       <div className="field-group">
-                        <label>Value:</label>
-                        <code className="copyable" onClick={() => navigator.clipboard.writeText(item.txtValue)}>{item.txtValue}</code>
+                        <span className="field-label">Value:</span>
+                        <button type="button" className="copyable" aria-label="Copy TXT record value" onClick={() => navigator.clipboard.writeText(item.txtValue)}>{item.txtValue}</button>
                       </div>
                     </div>
                   </div>
@@ -710,8 +715,8 @@ export default function DomainClient({ platform }: { platform: PlatformBrand }) 
                     </div>
                     <div className="instruction-detail">
                       <div className="field-group">
-                        <label>Target:</label>
-                        <code className="copyable" onClick={() => navigator.clipboard.writeText(item.expectedCname)}>{item.expectedCname}</code>
+                        <span className="field-label">Target:</span>
+                        <button type="button" className="copyable" aria-label="Copy CNAME target" onClick={() => navigator.clipboard.writeText(item.expectedCname)}>{item.expectedCname}</button>
                       </div>
                     </div>
                   </div>
@@ -780,12 +785,12 @@ function DomainCheck({ id, busy, call }: { id: string; busy: boolean; call: (met
   
   return <form className="domain-check" onSubmit={event => { event.preventDefault(); call("PATCH", { id, action: "check_dns", observedTxt, observedCname }); }}>
     <div className="check-form-group">
-      <label>Observed TXT value</label>
-      <input required value={observedTxt} onChange={event => setTxt(event.target.value)} placeholder="Paste the TXT value from your DNS provider" />
+      <label htmlFor={`observed-txt-${id}`}>Observed TXT value</label>
+      <input id={`observed-txt-${id}`} required value={observedTxt} onChange={event => setTxt(event.target.value)} placeholder="Paste the TXT value from your DNS provider" />
     </div>
     <div className="check-form-group">
-      <label>Observed CNAME target</label>
-      <input required value={observedCname} onChange={event => setCname(event.target.value)} placeholder="Paste the CNAME target from your DNS provider" />
+      <label htmlFor={`observed-cname-${id}`}>Observed CNAME target</label>
+      <input id={`observed-cname-${id}`} required value={observedCname} onChange={event => setCname(event.target.value)} placeholder="Paste the CNAME target from your DNS provider" />
     </div>
     <button disabled={busy} className="check-button">{busy ? "Checking..." : "Verify DNS"}</button>
   </form>;

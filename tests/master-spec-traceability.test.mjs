@@ -39,7 +39,7 @@ test("five-minute sales demo path is represented by working app surfaces", async
   for (const marker of [
     "Capture property",
     "Listing completeness",
-    "Activate property",
+    "Publish listing",
     "PublicEnquiryForm",
     "responseDueAt",
     "Book viewing",

@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 type SellerProperty = { id: string | number; title: string };
 type SellerData = {
   properties: SellerProperty[];
+  enquiries: any[];
   grants: any[];
   reports: any[];
   offers: any[];
@@ -16,6 +17,7 @@ type SellerData = {
 
 const emptyData = (properties: SellerProperty[]): SellerData => ({
   properties,
+  enquiries: [],
   grants: [],
   reports: [],
   offers: [],
@@ -34,10 +36,12 @@ export default function SellerOperations({
 }) {
   const [data, setData] = useState<SellerData>(() => emptyData(properties));
   const [busy, setBusy] = useState(false);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
   const [propertyId, setPropertyId] = useState(String(properties[0]?.id || ""));
   const [sellerEmail, setSellerEmail] = useState("");
   const [scheduleEmail, setScheduleEmail] = useState("");
   const [amount, setAmount] = useState("");
+  const [enquiryId, setEnquiryId] = useState("");
   const [frequency, setFrequency] = useState("fortnightly");
 
   const liveProperties = useMemo(
@@ -46,21 +50,32 @@ export default function SellerOperations({
   );
   const selectedPropertyId = propertyId || String(liveProperties[0]?.id || "");
   const hasProperty = Boolean(selectedPropertyId);
+  const propertyEnquiries = useMemo(
+    () => data.enquiries.filter((enquiry) => String(enquiry.propertyId) === selectedPropertyId),
+    [data.enquiries, selectedPropertyId],
+  );
 
-  const load = async () => {
-    const response = await fetch("/api/seller-management");
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error);
-    setData({
-      ...emptyData(properties),
-      ...body,
-      properties: body.properties || properties,
-    });
-  };
+  const load = useCallback(async () => {
+    setLoadState("loading");
+    try {
+      const response = await fetch("/api/seller-management");
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error);
+      setData({
+        ...emptyData(properties),
+        ...body,
+        properties: body.properties || properties,
+      });
+      setLoadState("ready");
+    } catch (error) {
+      setLoadState("error");
+      throw error;
+    }
+  }, [properties]);
 
   useEffect(() => {
     load().catch(() => notify("Seller centre could not be loaded."));
-  }, []);
+  }, [load, notify]);
 
   useEffect(() => {
     if (!liveProperties.length) return;
@@ -68,6 +83,10 @@ export default function SellerOperations({
       liveProperties.some((p) => String(p.id) === current) ? current : String(liveProperties[0].id),
     );
   }, [liveProperties]);
+
+  useEffect(() => {
+    setEnquiryId((current) => propertyEnquiries.some((enquiry) => enquiry.id === current) ? current : propertyEnquiries[0]?.id || "");
+  }, [propertyEnquiries]);
 
   const act = async (action: string, payload: Record<string, any> = {}, patch = false) => {
     if (!hasProperty) {
@@ -134,7 +153,19 @@ export default function SellerOperations({
         </label>
       </section>
 
-      {!liveProperties.length && (
+      {loadState === "error" && (
+        <section className="panel seller-empty-state" role="alert">
+          <h2>Seller information could not be loaded.</h2>
+          <p>The existing records have not been replaced. Check the connection and try again.</p>
+          <button className="outline" onClick={() => load().catch(() => notify("Seller centre could not be loaded."))}>
+            Try again
+          </button>
+        </section>
+      )}
+
+      {loadState === "loading" && <p className="empty-state" role="status">Loading seller information...</p>}
+
+      {loadState === "ready" && !liveProperties.length && (
         <section className="panel seller-empty-state">
           <h2>No properties are ready for seller workflows.</h2>
           <p>Create a property first, then return here to invite sellers, publish reports and track offers.</p>
@@ -227,6 +258,7 @@ export default function SellerOperations({
                 </small>
               </div>
               <p>{report.summary}</p>
+              {report.feedbackSummary && <p className="seller-feedback-summary"><strong>Viewing feedback:</strong> {report.feedbackSummary}</p>}
               <footer>
                 <em>{report.status}</em>
                 {report.status === "draft" ? (
@@ -249,7 +281,14 @@ export default function SellerOperations({
               <h2>Offer desk</h2>
             </div>
           </div>
-          <form onSubmit={(event) => submit(event, "create_offer", { amount, currency: "USD" })}>
+          <form onSubmit={(event) => submit(event, "create_offer", { amount, currency: "USD", enquiryId })}>
+            <label>
+              Buyer enquiry
+              <select required value={enquiryId} onChange={(event) => setEnquiryId(event.target.value)}>
+                {!propertyEnquiries.length && <option value="">No active enquiries for this property</option>}
+                {propertyEnquiries.map((enquiry) => <option value={enquiry.id} key={enquiry.id}>{enquiry.contact} · {enquiry.stage}</option>)}
+              </select>
+            </label>
             <label>
               Offer amount (USD)
               <input
@@ -260,7 +299,7 @@ export default function SellerOperations({
                 placeholder="125000"
               />
             </label>
-            <button className="primary" disabled={busy || !hasProperty}>
+            <button className="primary" disabled={busy || !hasProperty || !enquiryId}>
               Record submitted offer
             </button>
           </form>
@@ -272,7 +311,7 @@ export default function SellerOperations({
                     {offer.currency} {(offer.amountMinor / 100).toLocaleString()}
                   </strong>
                   <small>
-                    {offer.property} · {offer.status}
+                    {offer.property} · {offer.contact || "Buyer not linked"} · {offer.status}
                   </small>
                 </span>
                 {offer.status === "submitted" && (

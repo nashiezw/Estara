@@ -15,7 +15,7 @@ function rowsFor(file) {
 }
 
 const rows = files.flatMap(rowsFor);
-const unfinished = rows.filter((row) => /^\- \[( |-)\]/.test(row.text));
+const unfinished = rows.filter((row) => /^- \[( |-)\]/.test(row.text));
 const completed = rows.filter((row) => row.text.startsWith("- [x]"));
 const publicLaunchRows = unfinished.filter((row) =>
   row.section === "Must Complete Before Public Launch" ||

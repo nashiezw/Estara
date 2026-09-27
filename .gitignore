@@ -40,3 +40,9 @@ yarn-error.log*
 /.wrangler-dry-run-root/
 /outputs/
 /work/
+
+# local verification artifacts
+/.chrome-*
+/.wrangler-config/
+/*.log
+*.tsbuildinfo

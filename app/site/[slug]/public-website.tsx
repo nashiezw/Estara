@@ -460,6 +460,16 @@ export function PublicHome({ agency, properties, branches = [], pathMode = "site
             <small>response target</small>
           </aside>
         </section>
+
+        {branches.length > 0 && (
+          <section className="public-offices">
+            <div className="public-section-head">
+              <div><span>OUR OFFICES</span><h2>Local teams, one standard.</h2></div>
+              <a href={publicPath(agency, "/contact", pathMode)}>Contact an office</a>
+            </div>
+            <BranchGrid branches={branches} />
+          </section>
+        )}
       </main>
       <PublicFooter agency={agency} pathMode={pathMode} />
     </div>

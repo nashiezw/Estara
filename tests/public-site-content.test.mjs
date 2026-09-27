@@ -5,11 +5,10 @@ import test from "node:test";
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("public website page content is editable, persisted and rendered", async () => {
-  const [migration, schema, settings, workspace, agencySettings, publicSite, publicData, css] = await Promise.all([
+  const [migration, schema, settings, agencySettings, publicSite, publicData, css] = await Promise.all([
     read("../drizzle/0026_public_site_content.sql"),
     read("../db/schema.ts"),
     read("../app/api/settings/route.ts"),
-    read("../app/estara-app.tsx"),
     read("../app/agency-settings.tsx"),
     read("../app/site/[slug]/public-website.tsx"),
     read("../db/public-site.ts"),

@@ -12,7 +12,7 @@ This register is the working to-do list for converting the remaining public-laun
 
 | Gate | Evidence required before completion |
 | --- | --- |
-| Provider activation | Live provider accounts, production secrets, webhook endpoints, smoke-test logs and protected `/health` provider-readiness output for Resend, Firebase Cloud Messaging, Stripe, Cloudflare WAF malware scanning, Sentry and Cloudflare log retention. |
+| Provider activation | Live provider accounts, production secrets, webhook endpoints, smoke-test logs and protected `/health` provider-readiness output for Resend, Firebase Cloud Messaging, Stripe, Meta WhatsApp Cloud API, Cloudflare WAF malware scanning, Sentry and Cloudflare log retention. WhatsApp proof must include subscription verification, a valid signed inbound message, duplicate replay, failed-delivery retry and tenant routing evidence. |
 | Domain and TLS | Hosting-provider domain attachment, DNS verification, certificate activation screenshot or API response, unknown-host fail-closed check and public route smoke test. |
 | D1 restore rehearsal | `docs/evidence/d1-restore-rehearsal.json` validated by `npm run d1:restore:verify -- docs/evidence/d1-restore-rehearsal.json`, with isolated D1 Time Travel restore evidence, restored-environment URL or binding, tenant attack suite output and signed recovery decision. |
 | External penetration test | Independent tester scope, report, remediation notes and explicit closure of all launch-blocking findings. |

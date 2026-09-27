@@ -18,6 +18,7 @@ test("production provider decisions cover every launch-blocking service area", (
       "hosting_dns_tls_storage",
       "transactional_email",
       "web_push",
+      "whatsapp_inbound",
       "error_retention_alerting",
       "online_payments",
     ]
@@ -25,7 +26,7 @@ test("production provider decisions cover every launch-blocking service area", (
   for (const decision of PRODUCTION_PROVIDER_DECISIONS) {
     assert.equal(decision.status, "selected_pending_activation");
     assert.ok(decision.provider.length > 3);
-    assert.ok(decision.requiredEnv.length >= 3);
+    assert.ok(decision.requiredEnv.length >= 2);
     assert.ok(decision.activationEvidence.length >= 3);
   }
 });

@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 
-export const ALLOWED_WEBHOOK_EVENTS = ["property.created", "property.updated", "property.status.changed", "property.media.created", "enquiry.created", "contact.created", "contact.updated", "viewing.requested", "viewing.confirmed", "viewing.completed", "viewing.cancelled", "viewing.no_show"] as const;
+export const ALLOWED_WEBHOOK_EVENTS = ["property.created", "property.updated", "property.status.changed", "property.media.created", "enquiry.created", "enquiry.whatsapp_message_received", "contact.created", "contact.updated", "viewing.requested", "viewing.confirmed", "viewing.completed", "viewing.cancelled", "viewing.no_show"] as const;
 const encoder = new TextEncoder();
 const retryMinutes = [1, 5, 30, 120];
 
@@ -21,7 +21,10 @@ async function deliver(row: any, event: { id: string; eventType: string; aggrega
   const body = previous?.requestBody || JSON.stringify({ id: event.id, type: event.eventType, createdAt: event.createdAt || new Date().toISOString(), data: event.payload, aggregate: { type: event.aggregateType, id: event.aggregateId } });
   const signature = previous?.signature || await signWebhookPayload(row.signingSecret, body);
   const attempts = Number(previous?.attempts || 0) + 1;
-  if (!previous) await env.DB.prepare("INSERT INTO webhook_deliveries(id,agency_id,subscription_id,event_id,event_type,url,status,request_body,signature,attempts) VALUES(?,?,?,?,?,?, 'pending',?,?,0)").bind(deliveryId, row.agencyId, row.id, event.id, event.eventType, row.url, body, signature).run();
+  if (!previous) {
+    const queued = await env.DB.prepare("INSERT OR IGNORE INTO webhook_deliveries(id,agency_id,subscription_id,event_id,event_type,url,status,request_body,signature,attempts) VALUES(?,?,?,?,?,?,'pending',?,?,0)").bind(deliveryId, row.agencyId, row.id, event.id, event.eventType, row.url, body, signature).run();
+    if (!queued.meta.changes) return true;
+  }
   try {
     const response = await fetch(row.url, { method: "POST", headers: { "content-type": "application/json", "user-agent": "Estara-Webhooks/1.0", "x-estara-event-id": event.id, "x-estara-delivery-id": deliveryId, "x-estara-signature": `sha256=${signature}` }, body });
     const text = (await response.text()).slice(0, 1000);
@@ -44,7 +47,7 @@ export async function dispatchWebhooks(agencyId: string, event: { id: string; ev
 }
 
 export async function retryDueWebhooks(agencyId: string, limit = 20) {
-  const rows = await env.DB.prepare("SELECT d.id,d.agency_id agencyId,d.subscription_id subscriptionId,d.event_id eventId,d.event_type eventType,d.request_body requestBody,d.signature,d.attempts,s.id,s.url,s.signing_secret signingSecret FROM webhook_deliveries d JOIN webhook_subscriptions s ON s.id=d.subscription_id AND s.agency_id=d.agency_id WHERE d.agency_id=? AND d.status='failed' AND d.next_attempt_at<=CURRENT_TIMESTAMP AND s.status='active' ORDER BY d.next_attempt_at LIMIT ?").bind(agencyId, Math.min(50, Math.max(1, limit))).all<any>();
+  const rows = await env.DB.prepare("SELECT d.id,d.agency_id agencyId,d.subscription_id subscriptionId,d.event_id eventId,d.event_type eventType,d.request_body requestBody,d.signature,d.attempts,s.id,s.url,s.signing_secret signingSecret FROM webhook_deliveries d JOIN webhook_subscriptions s ON s.id=d.subscription_id AND s.agency_id=d.agency_id WHERE d.agency_id=? AND ((d.status='failed' AND d.next_attempt_at<=CURRENT_TIMESTAMP) OR (d.status='pending' AND d.created_at<=datetime('now','-5 minutes'))) AND s.status='active' ORDER BY COALESCE(d.next_attempt_at,d.created_at) LIMIT ?").bind(agencyId, Math.min(50, Math.max(1, limit))).all<any>();
   let delivered = 0;
   for (const row of rows.results) {
     const body = JSON.parse(row.requestBody || "{}");
@@ -54,7 +57,7 @@ export async function retryDueWebhooks(agencyId: string, limit = 20) {
 }
 
 export async function retryAllDueWebhooks(limit = 100) {
-  const rows = await env.DB.prepare("SELECT DISTINCT agency_id agencyId FROM webhook_deliveries WHERE status='failed' AND next_attempt_at<=CURRENT_TIMESTAMP ORDER BY next_attempt_at LIMIT ?").bind(Math.min(500, Math.max(1, limit))).all<any>();
+  const rows = await env.DB.prepare("SELECT agency_id agencyId,MIN(COALESCE(next_attempt_at,created_at)) oldestDueAt FROM webhook_deliveries WHERE (status='failed' AND next_attempt_at<=CURRENT_TIMESTAMP) OR (status='pending' AND created_at<=datetime('now','-5 minutes')) GROUP BY agency_id ORDER BY oldestDueAt LIMIT ?").bind(Math.min(500, Math.max(1, limit))).all<any>();
   let processed = 0, delivered = 0;
   for (const row of rows.results) {
     const result = await retryDueWebhooks(row.agencyId, 25);

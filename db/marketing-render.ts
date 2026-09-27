@@ -15,7 +15,7 @@ export async function renderMarketingJob(jobId: string, agencyId: string) {
   if (!job) throw new Error("Render job was not found.");
   const snapshot = JSON.parse(job.inputSnapshot), format = job.format as MarketingFormat, spec = MARKETING_FORMATS[format];
   if (!spec) throw new Error("Unsupported marketing format.");
-  let bytes: Uint8Array, contentType: string, kind = spec.kind;
+  let bytes: Uint8Array, contentType: string; const kind = spec.kind;
   if (format === "brochure" || format === "flyer") {
     bytes = await brochurePdf(snapshot, format === "flyer");
     contentType = "application/pdf";

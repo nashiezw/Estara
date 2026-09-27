@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export default function ContactsClient({ platform }: { platform: { shortName: string } }) {
   const [data, setData] = useState<any>({ contacts: [], timeline: [] });
@@ -11,13 +11,13 @@ export default function ContactsClient({ platform }: { platform: { shortName: st
   const [choices, setChoices] = useState<any>({});
   const [message, setMessage] = useState("");
 
-  const load = async (id = selected) => {
+  const load = useCallback(async (id: string) => {
     const r = await fetch(`/api/contacts${id ? `?id=${encodeURIComponent(id)}` : ""}`), j = await r.json();
     setData(j);
     if (!id && j.contacts?.length) setSelected(j.contacts[0].id);
-  };
-  useEffect(() => { load(); }, []);
-  useEffect(() => { if (selected) load(selected); }, [selected]);
+  }, []);
+  useEffect(() => { load(""); }, [load]);
+  useEffect(() => { if (selected) load(selected); }, [load, selected]);
 
   const current = data.contacts?.find((x: any) => x.id === selected);
   const visible = useMemo(() => (data.contacts || []).filter((x: any) => `${x.fullName} ${x.phone || ""} ${x.email || ""}`.toLowerCase().includes(query.toLowerCase())), [data.contacts, query]);

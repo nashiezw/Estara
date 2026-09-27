@@ -114,7 +114,7 @@ export default function SubscriptionClient({ platform }: { platform: PlatformBra
   const canCancel = ["trialing", "active", "past_due", "grace"].includes(plan.state);
 
   return <>
-    <header><div><span>AGENCY SUBSCRIPTION</span><h1>{agency.name}</h1><p>Choose a plan, start an eligible trial, submit payment proof, and keep receipts under one controlled billing record.</p></div><em className={`subscription-${plan.state}`}>{label(plan.state)}</em></header>
+    <header><div><span>{platform.shortName.toUpperCase()} AGENCY SUBSCRIPTION</span><h1>{agency.name}</h1><p>Choose a plan, start an eligible trial, submit payment proof, and keep receipts under one controlled billing record.</p></div><em className={`subscription-${plan.state}`}>{label(plan.state)}</em></header>
     {error && <p className="subscription-alert">{error}</p>}
     <section className="subscription-grid subscription-top-grid">
       <article className="subscription-plan">

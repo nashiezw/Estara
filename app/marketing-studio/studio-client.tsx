@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, CSSProperties, DragEvent, PointerEvent, TouchEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, CSSProperties, DragEvent, PointerEvent, TouchEvent, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { propertyDetails } from "../../db/marketing-creative";
 import { marketingDocumentToSvg } from "../../db/marketing-document";
 
@@ -231,48 +231,56 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
   const propertyPhotos = property?.media?.length ? property.media : property?.photoUrl ? [{ id: "hero", url: property.photoUrl, label: "Property hero" }] : [];
   const samplePhotos = propertyPhotos.length || studioUploads.length ? [] : [0, 1, 2, 3, 4, 5].map((index) => ({ id: `sample-${index}`, url: samplePhoto(index), label: "Sample property image" }));
   const galleryPhotos = [...propertyPhotos, ...studioUploads, ...samplePhotos];
-  const uploadKey = `estara-marketing-uploads:${data?.agency?.id || "local"}`;
+  const agencyId = data?.agency?.id;
+  const uploadKey = `estara-marketing-uploads:${agencyId || "local"}`;
+  const docWidth = doc?.width;
+  const docHeight = doc?.height;
+  const isStudioReady = data !== null;
+  const propertyImage = property?.photoUrl || property?.media?.[0]?.url || "";
 
   useEffect(() => {
-    if (!doc) return;
+    if (!docWidth || !docHeight) return;
     const fit = () => {
       const mobile = window.matchMedia("(max-width: 820px)").matches;
       if (!mobile) return;
       const viewport = window.visualViewport;
       const width = Math.max(1, (viewport?.width || window.innerWidth) - 20), height = Math.max(1, (viewport?.height || window.innerHeight) - 222);
-      const next = Math.max(.18, Math.min(width / doc.width, height / doc.height, .85));
+      const next = Math.max(.18, Math.min(width / docWidth, height / docHeight, .85));
       setMobileFitZoom(Number(next.toFixed(3)));
     };
     fit();
     window.addEventListener("resize", fit);
     window.visualViewport?.addEventListener("resize", fit);
     return () => { window.removeEventListener("resize", fit); window.visualViewport?.removeEventListener("resize", fit); };
-  }, [doc?.width, doc?.height]);
+  }, [docHeight, docWidth]);
 
-  useEffect(() => {
-    if (!data) return;
+  const initializeDocument = useEffectEvent(() => {
+    if (!isStudioReady) return;
     try {
       const storageKey = propertyId || "__no-property__";
       const saved = localStorage.getItem(`estara-marketing-document:${storageKey}`);
       const parsed = saved ? JSON.parse(saved) : null;
-      const nextDoc = parsed?.editorVersion === 3 && parsed.propertyId === storageKey ? parsed : createDoc(property, data.agency);
-      const image = property?.photoUrl || property?.media?.[0]?.url || "";
+      const nextDoc = parsed?.editorVersion === 3 && parsed.propertyId === storageKey ? parsed : createDoc(property, data?.agency);
+      const image = propertyImage;
       setRenderFormat(nextDoc.format || presetSizes.find((item) => item.width === nextDoc.width && item.height === nextDoc.height)?.key || "whatsapp_card");
-      setDoc({ ...nextDoc, propertyId: storageKey, elements: nextDoc.elements.map((item) => item.binding === "{{property.image}}" && image ? { ...item, src: image } : item.binding ? { ...item, text: bindValue(item.binding, property, data.agency) } : item) });
+      setDoc({ ...nextDoc, propertyId: storageKey, elements: nextDoc.elements.map((item) => item.binding === "{{property.image}}" && image ? { ...item, src: image } : item.binding ? { ...item, text: bindValue(item.binding, property, data?.agency) } : item) });
     } catch {
-      const nextDoc = createDoc(property, data.agency);
+      const nextDoc = createDoc(property, data?.agency);
       setRenderFormat(nextDoc.format || "whatsapp_card"); setDoc({ ...nextDoc, propertyId: propertyId || "__no-property__" });
     }
-  }, [data?.agency?.id, propertyId, property?.photoUrl]);
+  });
   useEffect(() => {
-    if (!data?.agency?.id) return;
+    initializeDocument();
+  }, [agencyId, isStudioReady, propertyId, propertyImage]);
+  useEffect(() => {
+    if (!agencyId) return;
     try {
       const saved = JSON.parse(localStorage.getItem(uploadKey) || "[]");
       setStudioUploads(Array.isArray(saved) ? saved.filter((item) => item?.url).slice(0, 36) : []);
     } catch { setStudioUploads([]); }
-  }, [data?.agency?.id]);
+  }, [agencyId, uploadKey]);
 
-  useEffect(() => { setCopy(activeCopy ? { headline: activeCopy.headline || "", listingDescription: activeCopy.listingDescription || "", socialCaption: activeCopy.socialCaption || "" } : defaultCopy); }, [activeCopy?.id, activeCopy?.headline, activeCopy?.listingDescription, activeCopy?.socialCaption]);
+  useEffect(() => { setCopy(activeCopy ? { headline: activeCopy.headline || "", listingDescription: activeCopy.listingDescription || "", socialCaption: activeCopy.socialCaption || "" } : defaultCopy); }, [activeCopy]);
   useEffect(() => {
     if (!doc) return;
     setSaveState("Saving...");
@@ -379,24 +387,25 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
   const undo = () => setHistory((items) => { const previous = items.at(-1); if (!previous || !doc) return items; setFuture((next) => [doc, ...next.slice(0, 39)]); setDoc(previous); return items.slice(0, -1); });
   const redo = () => setFuture((items) => { const next = items[0]; if (!next || !doc) return items; setHistory((previous) => [...previous.slice(-39), doc]); setDoc(next); return items.slice(1); });
 
+  const onStudioKey = useEffectEvent((event: KeyboardEvent) => {
+    const target = event.target as HTMLElement;
+    if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable) return;
+    const mod = event.ctrlKey || event.metaKey;
+    if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); remove(); }
+    if (mod && event.key.toLowerCase() === "c" && selected) { event.preventDefault(); setClipboard(selected); }
+    if (mod && event.key.toLowerCase() === "v" && clipboard) { event.preventDefault(); paste(); }
+    if (mod && event.key.toLowerCase() === "d") { event.preventDefault(); duplicate(); }
+    if (mod && event.key.toLowerCase() === "z" && !event.shiftKey) { event.preventDefault(); undo(); }
+    if (mod && event.key.toLowerCase() === "z" && event.shiftKey) { event.preventDefault(); redo(); }
+    if (selected && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+      event.preventDefault(); const step = event.shiftKey ? 10 : 1;
+      patchElement(selected.id, { x: selected.x + (event.key === "ArrowRight" ? step : event.key === "ArrowLeft" ? -step : 0), y: selected.y + (event.key === "ArrowDown" ? step : event.key === "ArrowUp" ? -step : 0) });
+    }
+  });
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable) return;
-      const mod = event.ctrlKey || event.metaKey;
-      if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); remove(); }
-      if (mod && event.key.toLowerCase() === "c" && selected) { event.preventDefault(); setClipboard(selected); }
-      if (mod && event.key.toLowerCase() === "v" && clipboard) { event.preventDefault(); paste(); }
-      if (mod && event.key.toLowerCase() === "d") { event.preventDefault(); duplicate(); }
-      if (mod && event.key.toLowerCase() === "z" && !event.shiftKey) { event.preventDefault(); undo(); }
-      if (mod && event.key.toLowerCase() === "z" && event.shiftKey) { event.preventDefault(); redo(); }
-      if (selected && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
-        event.preventDefault(); const step = event.shiftKey ? 10 : 1;
-        patchElement(selected.id, { x: selected.x + (event.key === "ArrowRight" ? step : event.key === "ArrowLeft" ? -step : 0), y: selected.y + (event.key === "ArrowDown" ? step : event.key === "ArrowUp" ? -step : 0) });
-      }
-    };
+    const onKey = (event: KeyboardEvent) => onStudioKey(event);
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
-  }, [doc, selectedIds.join("|")]);
+  }, []);
 
   const point = (event: PointerEvent) => canvasPoint(event);
   const begin = (event: PointerEvent, element: CanvasElement, mode: DragState["mode"], handle?: string) => {
@@ -529,7 +538,7 @@ export default function MarketingStudioClient({ platform }: { platform: { shortN
         {tool === "Effects" && selectedIsText && <><div className="studio-panel-title"><strong>Effects</strong><button aria-label="Close effects panel" onClick={() => setTool("Text")}>×</button></div><div className="studio-effect-grid">{textEffects.map((effect) => <button className={selected?.textEffect === effect.value ? "active" : ""} key={effect.value} onClick={() => selected && patchElement(selected.id, { textEffect: effect.value })}><b>Ag</b><span>{effect.name}</span></button>)}</div><div className="studio-panel-section"><header><strong>Shape</strong></header><div className="studio-effect-grid compact"><button className={selected?.textEffect === "curve" ? "active" : ""} onClick={() => selected && patchElement(selected.id, { textEffect: "curve" })}><b>ABCD</b><span>Curve</span></button></div></div><div className="studio-panel-section"><header><strong>Advanced</strong></header><div className="studio-effect-grid">{advancedTextEffects.map((effect) => <button className={selected?.textEffect === effect.value ? "active" : ""} key={effect.value} onClick={() => selected && patchElement(selected.id, { textEffect: effect.value })}><b>Ag</b><span>{effect.name}</span></button>)}</div></div></>}
         {tool === "Effects" && !selectedIsText && <><div className="studio-panel-title"><strong>Effects</strong><button aria-label="Close effects panel" onClick={() => setTool("Templates")}>×</button></div><p>Select a text element to edit text effects.</p></>}
         {tool === "Animate" && selected && <><div className="studio-panel-title"><strong>Animate</strong><button aria-label="Close animate panel" onClick={() => setTool(selectedIsText ? "Text" : "Templates")}>×</button></div><div className="studio-panel-tabs"><button onClick={() => setMessage("Page animation controls are ready for the selected design.")}>Page</button><button className="active" onClick={() => setMessage("Element animation controls are active.")}>Text</button></div><div className="studio-panel-section"><header><strong>Presentation settings</strong></header><label className="studio-switch">Appear on click<input type="checkbox" /></label></div><button className="studio-animation-builder" onClick={() => patchElement(selected.id, { animation: "Custom" })}><b>✦</b><span><strong>Create an Animation</strong><small>Drag elements around the canvas to create your own animations.</small></span></button><div className="studio-panel-section"><header><strong>Suggested</strong></header><div className="studio-effect-grid animation-grid">{textAnimations.map((name) => <button className={selected.animation === name ? "active" : ""} key={name} onClick={() => patchElement(selected.id, { animation: name })}><b>ABC</b><span>{name}</span></button>)}</div></div></>}
-        {tool === "Position" && selected && <><div className="studio-panel-title"><strong>Position</strong><button aria-label="Close position panel" onClick={() => setTool(selectedIsText ? "Text" : "Templates")}>×</button></div><div className="studio-panel-tabs"><button className="active" onClick={() => setMessage("Arrange controls are active.")}>Arrange</button><button onClick={() => setTool("Layers")}>Layers</button></div><div className="studio-arrange-grid"><button onClick={() => reorderLayer(selected.id, "up")}>⇧ Forward</button><button onClick={() => reorderLayer(selected.id, "down")}>⇩ Backward</button><button onClick={() => reorderLayer(selected.id, "front")}>⇱ To front</button><button onClick={() => reorderLayer(selected.id, "back")}>⇲ To back</button></div><div className="studio-panel-section"><header><strong>Align to page</strong></header><div className="studio-arrange-grid"><button onClick={() => alignElement("top")}>▔ Top</button><button onClick={() => alignElement("left")}>▏ Left</button><button onClick={() => alignElement("middle")}>─ Middle</button><button onClick={() => alignElement("center")}>┼ Center</button><button onClick={() => alignElement("bottom")}>▁ Bottom</button><button onClick={() => alignElement("right")}>▕ Right</button></div></div><div className="studio-panel-section"><header><strong>Advanced</strong></header><div className="studio-position-grid"><label>Width<input value={`${selected.width.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { width: Math.max(1, Number(e.target.value.replace(/[^\d.]/g, "")) || selected.width) })} /></label><label>Height<input value={`${selected.height.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { height: Math.max(1, Number(e.target.value.replace(/[^\d.]/g, "")) || selected.height) })} /></label><label>Ratio<button type="button">⌘</button></label><label>X<input value={`${selected.x.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { x: Number(e.target.value.replace(/[^\d.-]/g, "")) || 0 })} /></label><label>Y<input value={`${selected.y.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { y: Number(e.target.value.replace(/[^\d.-]/g, "")) || 0 })} /></label><label>Rotate<input value={`${selected.rotation}°`} onChange={(e) => patchElement(selected.id, { rotation: Number(e.target.value.replace(/[^\d.-]/g, "")) || 0 })} /></label></div></div></>}
+        {tool === "Position" && selected && <><div className="studio-panel-title"><strong>Position</strong><button aria-label="Close position panel" onClick={() => setTool(selectedIsText ? "Text" : "Templates")}>×</button></div><div className="studio-panel-tabs"><button className="active" onClick={() => setMessage("Arrange controls are active.")}>Arrange</button><button onClick={() => setTool("Layers")}>Layers</button></div><div className="studio-arrange-grid"><button onClick={() => reorderLayer(selected.id, "up")}>⇧ Forward</button><button onClick={() => reorderLayer(selected.id, "down")}>⇩ Backward</button><button onClick={() => reorderLayer(selected.id, "front")}>⇱ To front</button><button onClick={() => reorderLayer(selected.id, "back")}>⇲ To back</button></div><div className="studio-panel-section"><header><strong>Align to page</strong></header><div className="studio-arrange-grid"><button onClick={() => alignElement("top")}>▔ Top</button><button onClick={() => alignElement("left")}>▏ Left</button><button onClick={() => alignElement("middle")}>─ Middle</button><button onClick={() => alignElement("center")}>┼ Center</button><button onClick={() => alignElement("bottom")}>▁ Bottom</button><button onClick={() => alignElement("right")}>▕ Right</button></div></div><div className="studio-panel-section"><header><strong>Advanced</strong></header><div className="studio-position-grid"><label>Width<input value={`${selected.width.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { width: Math.max(1, Number(e.target.value.replace(/[^\d.]/g, "")) || selected.width) })} /></label><label>Height<input value={`${selected.height.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { height: Math.max(1, Number(e.target.value.replace(/[^\d.]/g, "")) || selected.height) })} /></label><div className="studio-position-control"><span>Ratio</span><button type="button" disabled aria-label="Aspect ratio is preserved">⌘</button></div><label>X<input value={`${selected.x.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { x: Number(e.target.value.replace(/[^\d.-]/g, "")) || 0 })} /></label><label>Y<input value={`${selected.y.toFixed(1)} px`} onChange={(e) => patchElement(selected.id, { y: Number(e.target.value.replace(/[^\d.-]/g, "")) || 0 })} /></label><label>Rotate<input value={`${selected.rotation}°`} onChange={(e) => patchElement(selected.id, { rotation: Number(e.target.value.replace(/[^\d.-]/g, "")) || 0 })} /></label></div></div></>}
         {tool === "Uploads" && <div className="studio-tool-panel"><div className="studio-command studio-search-command"><b>⌕</b><input placeholder="Search keywords, tags, color" value={search} onChange={(e) => setSearch(e.target.value)} /></div><div className="studio-upload-actions"><button onClick={() => imageInputRef.current?.click()}>Upload files</button><button aria-label="Clear studio uploads" onClick={clearUploads}>×</button></div><div className="studio-tabs"><button className="active" onClick={() => setMessage(`${galleryPhotos.length} images available.`)}>Images</button><button onClick={() => setMessage("Folders will appear when connected asset folders are available.")}>Folders</button></div><p className="studio-panel-note">Tap an image to place or replace it. Desktop users can also drag it onto the canvas.</p><div className="studio-masonry">{galleryPhotos.map((photo: Row, index: number) => <div className={`studio-upload-tile ${index % 3 === 0 ? "wide" : ""}`} key={photo.id}><button className="studio-upload-thumb" draggable onDragStart={(e) => dragStudioItem(e, { kind: "image", src: photo.url })} onClick={() => selected ? patchElement(selected.id, { src: photo.url, type: "image", binding: undefined }) : addElement("image", { src: photo.url, width: doc.width * .38, height: doc.height * .5 })}><img loading="lazy" src={photo.thumbnailUrl || photo.url} alt="" /></button>{photo.source === "studio-upload" && <button className="studio-upload-delete" aria-label={`Delete ${photo.label || "uploaded image"}`} onClick={() => deleteUpload(photo)}>Delete</button>}</div>)}</div></div>}
         {tool === "Tools" && <div className="studio-tool-panel"><div className="studio-property-card"><small>Working property</small><select value={propertyId} onChange={(e) => chooseProperty(e.target.value)}>{!data.properties.length && <option value="">No properties yet</option>}{data.properties.map((item: Row) => <option value={item.id} key={item.id}>{item.reference} - {item.title}</option>)}</select><button onClick={refreshBindings} disabled={!propertyId}>Refresh property data</button><p>{propertyId ? "Bound fields auto-fill from this property until you edit the element yourself." : "Add a property in the workspace to create fact-bound copy, renders and saved exports."}</p></div><div className="studio-panel-section"><header><strong>Property fields</strong></header><div className="studio-chip-grid">{["{{property.title}}", "{{property.price}}", "{{property.suburb}}", "{{property.bedrooms}}", "{{agent.phone}}"].map((binding) => <button key={binding} onClick={() => addElement("propertyField", { binding, text: bindValue(binding, property, data.agency), name: binding })}>{binding}</button>)}</div></div></div>}
         {tool === "Brand" && <div className="studio-tool-panel"><div className="studio-brand-card"><small>Brand kit</small><strong>{data.agency?.name || platform.shortName}</strong><p>{[data.agency?.phone, data.agency?.email].filter(Boolean).join(" · ")}</p></div><div className="studio-swatch-grid"><button onClick={() => selected && patchElement(selected.id, { fill: data.agency?.primaryColor, color: data.agency?.primaryColor })}><i style={{ background: data.agency?.primaryColor || platform.primaryColor }} />Apply primary</button><button onClick={() => selected && patchElement(selected.id, { fill: data.agency?.accentColor, color: data.agency?.accentColor })}><i style={{ background: data.agency?.accentColor || platform.accentColor }} />Apply accent</button></div><p className="studio-panel-note">Select a text, shape, or badge first, then apply a brand color.</p></div>}
@@ -674,18 +683,4 @@ async function rasterizeDocument(doc: DesignDocument, kind: "png" | "jpg") {
     context.restore();
   }
   return await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Preview export failed.")), kind === "png" ? "image/png" : "image/jpeg", .92));
-}
-
-async function rasterizeSvg(svg: string, width: number, height: number, kind: "png" | "jpg") {
-  const image = new Image(), url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
-  try {
-    await new Promise<void>((resolve, reject) => { image.onload = () => resolve(); image.onerror = () => reject(new Error("Preview image could not be prepared.")); image.src = url; });
-    const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
-    const context = canvas.getContext("2d"); if (!context) throw new Error("Preview export is unavailable in this browser.");
-    if (kind === "jpg") { context.fillStyle = "#ffffff"; context.fillRect(0, 0, width, height); }
-    context.drawImage(image, 0, 0, width, height);
-    return await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Preview export failed.")), kind === "png" ? "image/png" : "image/jpeg", .92));
-  } finally {
-    URL.revokeObjectURL(url);
-  }
 }

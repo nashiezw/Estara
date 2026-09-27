@@ -22,8 +22,9 @@ test("major blank states point users to a concrete next action", () => {
   assert.match(contacts, /Every contact starts from real work/);
   assert.match(contacts, /Open capture tools/);
   assert.match(contacts, /Respond to an enquiry, book a viewing or send an approved seller update/);
-  assert.match(integrations, /Create a pending bridge on the left/);
-  assert.match(integrations, /Approve a connection first, then use Export now/);
+  assert.match(integrations, /Create a bridge, then approve it/);
+  assert.match(integrations, /Push properties/);
+  assert.match(integrations, /Pull contacts/);
   assert.match(branchCss, /\.branch-empty/);
   assert.match(toolsCss, /\.doc-empty/);
   assert.match(contactsCss, /\.contact-empty a/);

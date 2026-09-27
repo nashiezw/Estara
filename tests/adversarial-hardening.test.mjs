@@ -27,7 +27,21 @@ test("every API write surface imports identity or uses an explicitly public boun
     const source = await readFile(file, "utf8");
     if (!/export (async )?function (POST|PATCH|DELETE)|async function (POST|PATCH|DELETE)/.test(source)) continue;
     const publicBounded = /api[\\/]public|public-shortlist/.test(file);
-    assert.ok(publicBounded || /getChatGPTUser|requirePlatformUser|requireApiCredential/.test(source), `write route lacks identity boundary: ${file}`);
+    const stripeWebhook = /subscription[\\/]stripe-webhook[\\/]route\.ts$/.test(file);
+    const whatsappWebhook = /integrations[\\/]whatsapp[\\/]route\.ts$/.test(file);
+    const signedWebhook = stripeWebhook || whatsappWebhook;
+    assert.ok(publicBounded || signedWebhook || /getChatGPTUser|requirePlatformUser|requireApiCredential/.test(source), `write route lacks identity boundary: ${file}`);
     if (publicBounded) assert.match(source, /rate|throttle|token|slug/i, `public write lacks bounded intake: ${file}`);
+    if (stripeWebhook) {
+      assert.match(source, /stripe-signature/);
+      assert.match(source, /safeEqualHex/);
+      assert.match(source, /STRIPE_WEBHOOK_SECRET/);
+    }
+    if (whatsappWebhook) {
+      assert.match(source, /x-hub-signature-256/);
+      assert.match(source, /safeEqual/);
+      assert.match(source, /WHATSAPP_APP_SECRET/);
+      assert.match(source, /provider_message_id/);
+    }
   }
 });

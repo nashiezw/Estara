@@ -2,6 +2,7 @@
 import * as Sentry from "@sentry/cloudflare";
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { processAllAutomationEvents } from "../db/automation";
 import { processSubscriptionLifecycle } from "../db/entitlements";
 import { retryAllDueWebhooks } from "../db/webhooks";
 
@@ -51,6 +52,7 @@ const worker = {
     return secure(response,requestId)}catch(error){console.error(JSON.stringify({event:"http.error",requestId,method:request.method,path:url.pathname,durationMs:Date.now()-started,error:error instanceof Error?error.name:"UnknownError",timestamp:new Date().toISOString()}));throw error}
   },
   async scheduled(_controller: unknown, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(processAllAutomationEvents().then(result=>console.log(JSON.stringify({event:"automations.process_scheduled",...result,timestamp:new Date().toISOString()}))).catch(error=>console.error(JSON.stringify({event:"automations.process_scheduled_failed",error:error instanceof Error?error.message:String(error),timestamp:new Date().toISOString()}))));
     ctx.waitUntil(retryAllDueWebhooks().then(result=>console.log(JSON.stringify({event:"webhooks.retry_scheduled",...result,timestamp:new Date().toISOString()}))).catch(error=>console.error(JSON.stringify({event:"webhooks.retry_scheduled_failed",error:error instanceof Error?error.message:String(error),timestamp:new Date().toISOString()}))));
     ctx.waitUntil(processSubscriptionLifecycle("system-scheduler").then(result=>console.log(JSON.stringify({event:"subscriptions.lifecycle_scheduled",...result,timestamp:new Date().toISOString()}))).catch(error=>console.error(JSON.stringify({event:"subscriptions.lifecycle_scheduled_failed",error:error instanceof Error?error.message:String(error),timestamp:new Date().toISOString()}))));
   },

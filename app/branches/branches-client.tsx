@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 type Branch = { id: string; name: string; location: string; phone: string; whatsapp: string; email: string; address: string; description: string; openingHours: string; publicEnabled: number | boolean; managerUserId: string; managerEmail: string; active: number | boolean; properties: number; liveProperties: number; enquiries: number };
 type Member = { userId: string; email: string; role: string };
@@ -34,7 +34,7 @@ export default function BranchesClient({ platform }: { platform: { shortName: st
   const branchProperties = useMemo(() => selected ? properties.filter(property => property.branchId === selected.id) : [], [properties, selected]);
   const assignableProperties = useMemo(() => selected ? properties.filter(property => !property.branchId || property.branchId === selected.id) : [], [properties, selected]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const [b, w, s] = await Promise.all([
       fetch("/api/branches").then(r => r.json()),
       fetch("/api/workspace").then(r => r.json()),
@@ -47,13 +47,13 @@ export default function BranchesClient({ platform }: { platform: { shortName: st
     setMembers(w.members || []);
     setPlan(s.plan || null);
     setSelectedId(id => id && next.some((branch: Branch) => branch.id === id) ? id : next[0]?.id || "");
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
   useEffect(() => {
     if (mode === "edit" && selected) setForm(toForm(selected));
     if (selected) setSelectedProperties(branchProperties.map(property => property.id));
-  }, [selected?.id, mode, branchProperties.length]);
+  }, [branchProperties, mode, selected]);
 
   const update = (patch: Partial<FormState>) => setForm(current => ({ ...current, ...patch }));
   const request = async (body: Record<string, unknown>, method = "PATCH") => {
@@ -115,11 +115,11 @@ export default function BranchesClient({ platform }: { platform: { shortName: st
     <section className="branch-workbench">
       <div className="branch-directory">
         <div className="branch-section-head"><span>OFFICE DIRECTORY</span><button onClick={() => { setMode("create"); setForm(blank); }}>New branch</button></div>
-        {branches.map(branch => <article className={`branch-card ${selected?.id === branch.id ? "selected" : ""} ${!isActive(branch) ? "archived" : ""}`} key={branch.id} onClick={() => setSelectedId(branch.id)}>
-          <i>{initials(branch.name)}</i><div><small>{isActive(branch) ? isPublic(branch) ? "PUBLIC OFFICE" : "INTERNAL OFFICE" : "ARCHIVED"}</small><h2>{branch.name}</h2><p>{branch.location || branch.address || "Location not set"}</p><footer><span>{branch.managerEmail || "No manager"}</span><span>{branch.properties || 0} listings</span></footer></div>
+        {branches.map(branch => <article className={`branch-card ${selected?.id === branch.id ? "selected" : ""} ${!isActive(branch) ? "archived" : ""}`} key={branch.id}>
+          <button type="button" className="branch-card-select" aria-pressed={selected?.id === branch.id} onClick={() => setSelectedId(branch.id)}><i>{initials(branch.name)}</i><span><small>{isActive(branch) ? isPublic(branch) ? "PUBLIC OFFICE" : "INTERNAL OFFICE" : "ARCHIVED"}</small><h2>{branch.name}</h2><p>{branch.location || branch.address || "Location not set"}</p><footer><span>{branch.managerEmail || "No manager"}</span><span>{branch.properties || 0} listings</span></footer></span></button>
           <button onClick={event => { event.stopPropagation(); edit(branch); }}>Edit</button>
         </article>)}
-        {!branches.length && <article className="branch-empty"><span>FIRST OFFICE</span><h2>Create the first branch.</h2><p>Start with the office that owns new listings, then assign managers and public contact details.</p></article>}
+        {!branches.length && <article className="branch-empty"><span>FIRST OFFICE</span><h2>Create the agency's first branch.</h2><p>Start with the office that owns new listings, then assign managers and public contact details.</p><a href="#branch-create">Create the agency's first branch</a></article>}
       </div>
       <form className="branch-editor" id="branch-create" onSubmit={saveBranch}>
         <div className="branch-section-head"><span>{mode === "create" ? "NEW BRANCH" : "EDIT BRANCH"}</span>{mode === "edit" && <button type="button" onClick={() => { setMode("create"); setForm(blank); }}>Cancel edit</button>}</div>
@@ -151,7 +151,7 @@ export default function BranchesClient({ platform }: { platform: { shortName: st
         </section>
         <section className="branch-assignment-panel">
           <div className="branch-section-head"><span>LISTINGS OWNED HERE</span><button type="button" onClick={saveProperties} disabled={busy}>Save listings</button></div>
-          <div className="branch-property-list">{assignableProperties.map(property => <label key={property.id}><input type="checkbox" checked={selectedProperties.includes(property.id)} onChange={() => toggleProperty(property.id)} /><span><b>{property.title}</b><small>{property.ref} / {property.status}</small></span></label>)}{!properties.length && <small>No properties in this workspace yet.</small>}</div>
+          <div className="branch-property-list">{assignableProperties.map(property => <label key={property.id}><input type="checkbox" aria-label={`Assign ${property.title} to ${selected.name}`} checked={selectedProperties.includes(property.id)} onChange={() => toggleProperty(property.id)} /><span><b>{property.title}</b><small>{property.ref} / {property.status}</small></span></label>)}{!properties.length && <small>No properties in this workspace yet.</small>}</div>
         </section>
         <div className="branch-danger-zone"><button onClick={() => toggle(selected)} disabled={busy}>{isActive(selected) ? "Archive branch" : "Reactivate branch"}</button><button onClick={() => remove(selected)} disabled={busy || Number(selected.properties || 0) > 0}>Delete empty branch</button></div>
       </aside>}

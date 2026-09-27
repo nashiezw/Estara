@@ -5,8 +5,9 @@ import test from "node:test";
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("new agencies enter a guided launch flow that leads to the first property", async () => {
-  const [app, css, pickerCss, pickerBridge] = await Promise.all([
+  const [app, agencySettings, css, pickerCss, pickerBridge] = await Promise.all([
     read("../app/estara-app.tsx"),
+    read("../app/agency-settings.tsx"),
     read("../app/globals.css"),
     read("../app/template-picker.css"),
     read("../template-picker.css"),
@@ -24,7 +25,7 @@ test("new agencies enter a guided launch flow that leads to the first property",
   assert.match(app, /Preview each full website style before launch/);
   assert.match(app, /Claim the address clients will open first/);
   assert.match(app, /capture one complete property so the website, enquiries and marketing flow is proven end to end/);
-  assert.match(app, /Control what owners and clients see across the workspace, public website, enquiries and marketing/);
+  assert.match(agencySettings, /Control the agency identity, public website, enquiry response promise and marketing defaults from one governed place/);
   assert.match(app, /Launch workspace and add first property/);
   assert.match(app, /setCapture\(true\);setView\("properties"\)/);
   assert.match(app, /first-property-empty/);

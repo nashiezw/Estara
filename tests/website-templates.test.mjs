@@ -6,11 +6,10 @@ import { WEBSITE_TEMPLATES, isWebsiteTemplateKey, typographyForTemplate } from "
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("agency website templates are numerous, curated and selectable end to end", async () => {
-  const [catalogue, onboarding, settings, app, agencySettings, publicSite, propertyPage, css] = await Promise.all([
+  const [catalogue, onboarding, settings, agencySettings, publicSite, propertyPage, css] = await Promise.all([
     read("../db/website-templates.ts"),
     read("../app/api/onboarding/route.ts"),
     read("../app/api/settings/route.ts"),
-    read("../app/estara-app.tsx"),
     read("../app/agency-settings.tsx"),
     read("../app/site/[slug]/public-website.tsx"),
     read("../app/site/[slug]/properties/[id]/page.tsx"),
