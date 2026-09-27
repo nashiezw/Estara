@@ -39,6 +39,7 @@ test("implemented mobile journeys expose the controls required by the audit", as
     ["mobile auth logout", /\/api\/auth\/logout/],
     ["mobile add-property action", /className="fab"/],
     ["low-data toggle", /aria-label="Toggle low-data mode"/],
+    ["mobile low-data toggle", /className="mobile-low-data-toggle"/],
     ["pressed state for low-data", /aria-pressed=\{lowData\}/],
     ["camera capture", /capture="environment"/],
     ["cross-reload draft protection", /beforeunload/],
