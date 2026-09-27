@@ -292,6 +292,10 @@ export default function SellerOperations({
                   <button className="primary" disabled={busy} onClick={() => act("approve_report", { id: report.id }, true)}>
                     Create missing PDF
                   </button>
+                ) : report.status === "approving" && report.approvalStale ? (
+                  <button className="primary" disabled={busy} onClick={() => act("approve_report", { id: report.id }, true)}>
+                    Retry approval
+                  </button>
                 ) : report.status === "approving" ? (
                   <button className="outline" disabled>Approval in progress</button>
                 ) : (
