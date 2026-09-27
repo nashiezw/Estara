@@ -40,6 +40,9 @@ test("seller reports claim approval, recover missing artifacts and create delive
   assert.match(route, /SET status=\?,approved_by=\?,approval_started_at=NULL/);
   assert.match(operations, /report\.status === "approved" && !report\.hasPdf/);
   assert.match(operations, /Create missing PDF/);
+  assert.match(operations, /const downloadReport = async \(id: string\)/);
+  assert.match(operations, /action: "approve_report", id, propertyId: selectedPropertyId/);
+  assert.match(operations, /body\.recovered \? "Seller PDF recreated and download started\."/);
 });
 
 test("scheduled seller reports are deterministic and compare-and-advance", async () => {

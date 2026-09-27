@@ -218,7 +218,7 @@ async function PATCH(request: Request) {
         await env.DB.prepare("UPDATE seller_reports SET status=?,approved_by=?,approval_started_at=NULL WHERE id=? AND agency_id=? AND status='approving' AND approved_by=? AND approval_started_at=?").bind(failureStatus, failureApprovedBy, id, agencyId, current.user.userId, approvedAt).run();
         throw error;
       }
-      return Response.json({ approved: true, hasPdf: true });
+      return Response.json({ approved: true, hasPdf: true, recovered: recoveringPdf });
     }
 
     if (action === "approve_document") {

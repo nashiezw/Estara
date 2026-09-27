@@ -121,6 +121,29 @@ export default function SellerOperations({
     act(action, payload);
   };
 
+  const downloadReport = async (id: string) => {
+    setBusy(true);
+    try {
+      const response = await fetch("/api/seller-management", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "approve_report", id, propertyId: selectedPropertyId }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error);
+      if (body.recovered) await load();
+      const link = document.createElement("a");
+      link.href = `/api/seller-report-pdf?id=${encodeURIComponent(id)}`;
+      link.download = "";
+      link.click();
+      notify(body.recovered ? "Seller PDF recreated and download started." : "Seller PDF download started.");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Seller PDF could not be downloaded.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="page seller-admin-page">
       <div className="page-heading">
@@ -272,7 +295,11 @@ export default function SellerOperations({
                 ) : report.status === "approving" ? (
                   <button className="outline" disabled>Approval in progress</button>
                 ) : (
-                  report.hasPdf && <a href={`/api/seller-report-pdf?id=${report.id}`}>PDF</a>
+                  report.hasPdf && (
+                    <button className="outline" disabled={busy} onClick={() => downloadReport(report.id)}>
+                      ⇩ PDF
+                    </button>
+                  )
                 )}
               </footer>
             </article>
