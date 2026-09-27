@@ -99,16 +99,25 @@ async function PATCH(request: Request) {
       const status = clean(body.status, 30);
       if (!canTransitionViewing(viewing.status, status)) return Response.json({ error: `Cannot move a viewing from ${viewing.status} to ${status}.` }, { status: 409 });
       if (status === "Completed" && !canCompleteViewing(viewing.startsAt)) return Response.json({ error: "A viewing cannot be completed before its scheduled start time." }, { status: 409 });
-      const statements = [env.DB.prepare("UPDATE viewings SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(status, id, workspace.agencyId)];
+      const transitionToken = crypto.randomUUID();
+      const transitionedAt = new Date().toISOString();
+      const ownsTransition = "EXISTS(SELECT 1 FROM viewings WHERE id=? AND agency_id=? AND status=? AND transition_token=?)";
+      const ownership = [id, workspace.agencyId, status, transitionToken];
+      const statements = [env.DB.prepare("UPDATE viewings SET status=?,transition_token=?,updated_at=? WHERE id=? AND agency_id=? AND status=?").bind(status, transitionToken, transitionedAt, id, workspace.agencyId, viewing.status)];
       if (status === "Completed") statements.push(
-        env.DB.prepare("UPDATE next_actions SET status='complete',completed_at=CURRENT_TIMESTAMP WHERE agency_id=? AND resource_type='viewing' AND resource_id=? AND action_type='viewing_reminder' AND status='open'").bind(workspace.agencyId, id),
-        env.DB.prepare("INSERT INTO next_actions(id,agency_id,resource_type,resource_id,action_type,reason,priority,due_at,status,assigned_user_id) VALUES(?,?,'viewing',?,'capture_feedback','Record buyer feedback after viewing','high',CURRENT_TIMESTAMP,'open',?)").bind(crypto.randomUUID(), workspace.agencyId, id, viewing.assignedUserId),
+        env.DB.prepare(`UPDATE next_actions SET status='complete',completed_at=CURRENT_TIMESTAMP WHERE agency_id=? AND resource_type='viewing' AND resource_id=? AND action_type='viewing_reminder' AND status='open' AND ${ownsTransition}`).bind(workspace.agencyId, id, ...ownership),
+        env.DB.prepare(`INSERT INTO next_actions(id,agency_id,resource_type,resource_id,action_type,reason,priority,due_at,status,assigned_user_id) SELECT ?,?,'viewing',?,'capture_feedback','Record buyer feedback after viewing','high',CURRENT_TIMESTAMP,'open',? WHERE ${ownsTransition} AND NOT EXISTS (SELECT 1 FROM next_actions WHERE agency_id=? AND resource_type='viewing' AND resource_id=? AND action_type='capture_feedback' AND status='open')`).bind(crypto.randomUUID(), workspace.agencyId, id, viewing.assignedUserId, ...ownership, workspace.agencyId, id),
       );
-      if (status === "Cancelled" || status === "No-show") statements.push(env.DB.prepare("UPDATE next_actions SET status='complete',completed_at=CURRENT_TIMESTAMP WHERE agency_id=? AND resource_type='viewing' AND resource_id=? AND status='open'").bind(workspace.agencyId, id));
-      if (viewing.contactId) statements.push(env.DB.prepare("INSERT INTO contact_activities(id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) VALUES(?,?,?,?,?,?,'viewing',?)").bind(crypto.randomUUID(), workspace.agencyId, viewing.contactId, user.userId, "viewing.status_changed", `Viewing moved from ${viewing.status} to ${status}`, id));
-      const event = prepareDomainEvent(workspace.agencyId, `viewing.${status.toLowerCase().replace(/[^a-z]+/g, "_")}`, "viewing", id, { assignedUserId: viewing.assignedUserId, propertyId: viewing.propertyId, resourceType: "viewing", resourceId: id, status });
-      statements.push(event.statement, prepareAudit(workspace, "viewing.status_changed", "viewing", id, { from: viewing.status, to: status }));
-      await env.DB.batch(statements);
+      if (status === "Cancelled" || status === "No-show") statements.push(env.DB.prepare(`UPDATE next_actions SET status='complete',completed_at=CURRENT_TIMESTAMP WHERE agency_id=? AND resource_type='viewing' AND resource_id=? AND status='open' AND ${ownsTransition}`).bind(workspace.agencyId, id, ...ownership));
+      if (viewing.contactId) statements.push(env.DB.prepare(`INSERT INTO contact_activities(id,agency_id,contact_id,actor_user_id,activity_type,summary,resource_type,resource_id) SELECT ?,?,?,?,?,?,'viewing',? WHERE ${ownsTransition}`).bind(crypto.randomUUID(), workspace.agencyId, viewing.contactId, user.userId, "viewing.status_changed", `Viewing moved from ${viewing.status} to ${status}`, id, ...ownership));
+      const eventType = `viewing.${status.toLowerCase().replace(/[^a-z]+/g, "_")}`;
+      const eventPayload = JSON.stringify({ assignedUserId: viewing.assignedUserId, propertyId: viewing.propertyId, resourceType: "viewing", resourceId: id, status });
+      statements.push(
+        env.DB.prepare(`INSERT INTO domain_events(id,agency_id,event_type,aggregate_type,aggregate_id,payload,created_at) SELECT ?,?,?,'viewing',?,?,? WHERE ${ownsTransition}`).bind(crypto.randomUUID(), workspace.agencyId, eventType, id, eventPayload, transitionedAt, ...ownership),
+        env.DB.prepare(`INSERT INTO audit_logs(id,agency_id,actor_user_id,action,resource_type,resource_id,detail) SELECT ?,?,?,?,'viewing',?,? WHERE ${ownsTransition}`).bind(crypto.randomUUID(), workspace.agencyId, workspace.userId, "viewing.status_changed", id, JSON.stringify({ from: viewing.status, to: status }), ...ownership),
+      );
+      const committed = await env.DB.batch(statements);
+      if (!committed[0]?.meta.changes) return Response.json({ error: "This viewing changed while you were updating it. Refresh and try again." }, { status: 409 });
       try { await processAutomationEvents(workspace.agencyId, user.userId); } catch {}
       return Response.json({ status });
     }
