@@ -44,17 +44,17 @@ export async function workspaceMetrics(agencyId: string, role: string) {
 
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
   const [enquiries, members, openActions, viewings, offers, deals, quietListings, expiringMandates] = await Promise.all([
-    env.DB.prepare("SELECT assigned_user_id AS assignedUserId,created_at AS createdAt,contacted_at AS contactedAt,status,source FROM enquiries WHERE agency_id=? AND created_at>=?").bind(agencyId, since).all<EnquiryMetricRow>(),
+    env.DB.prepare("SELECT assigned_user_id AS assignedUserId,created_at AS createdAt,contacted_at AS contactedAt,status,source FROM enquiries WHERE agency_id=? AND datetime(created_at)>=datetime(?)").bind(agencyId, since).all<EnquiryMetricRow>(),
     env.DB.prepare("SELECT user_id AS userId,email,role FROM agency_memberships WHERE agency_id=? ORDER BY created_at").bind(agencyId).all<any>(),
-    env.DB.prepare("SELECT assigned_user_id AS assignedUserId,COUNT(*) AS count FROM next_actions WHERE agency_id=? AND status='open' AND due_at<CURRENT_TIMESTAMP GROUP BY assigned_user_id").bind(agencyId).all<any>(),
-    env.DB.prepare("SELECT COUNT(*) AS count FROM viewings WHERE agency_id=? AND created_at>=?").bind(agencyId, since).first<any>(),
-    env.DB.prepare("SELECT COUNT(*) AS count FROM offers WHERE agency_id=? AND created_at>=?").bind(agencyId, since).first<any>(),
-    env.DB.prepare("SELECT COUNT(*) AS count FROM deals WHERE agency_id=? AND status='won' AND updated_at>=?").bind(agencyId, since).first<any>(),
+    env.DB.prepare("SELECT assigned_user_id AS assignedUserId,COUNT(*) AS count FROM next_actions WHERE agency_id=? AND status='open' AND datetime(due_at)<CURRENT_TIMESTAMP GROUP BY assigned_user_id").bind(agencyId).all<any>(),
+    env.DB.prepare("SELECT COUNT(*) AS count FROM viewings WHERE agency_id=? AND datetime(created_at)>=datetime(?)").bind(agencyId, since).first<any>(),
+    env.DB.prepare("SELECT COUNT(*) AS count FROM offers WHERE agency_id=? AND datetime(created_at)>=datetime(?)").bind(agencyId, since).first<any>(),
+    env.DB.prepare("SELECT COUNT(*) AS count FROM deals WHERE agency_id=? AND status='won' AND datetime(updated_at)>=datetime(?)").bind(agencyId, since).first<any>(),
     env.DB.prepare(`SELECT COUNT(*) AS count FROM properties p WHERE p.agency_id=? AND p.status='Available'
-      AND NOT EXISTS(SELECT 1 FROM enquiries e WHERE e.agency_id=p.agency_id AND e.property_id=p.id AND e.created_at>=?)
-      AND NOT EXISTS(SELECT 1 FROM viewings v WHERE v.agency_id=p.agency_id AND v.property_id=p.id AND v.created_at>=?)
-      AND NOT EXISTS(SELECT 1 FROM public_events pe WHERE pe.agency_id=p.agency_id AND pe.property_id=p.id AND pe.created_at>=?)`).bind(agencyId, since, since, since).first<any>(),
-    env.DB.prepare("SELECT COUNT(*) AS count FROM mandates WHERE agency_id=? AND status='active' AND expires_at BETWEEN CURRENT_TIMESTAMP AND datetime('now','+30 days')").bind(agencyId).first<any>(),
+      AND NOT EXISTS(SELECT 1 FROM enquiries e WHERE e.agency_id=p.agency_id AND e.property_id=p.id AND datetime(e.created_at)>=datetime(?))
+      AND NOT EXISTS(SELECT 1 FROM viewings v WHERE v.agency_id=p.agency_id AND v.property_id=p.id AND datetime(v.created_at)>=datetime(?))
+      AND NOT EXISTS(SELECT 1 FROM public_events pe WHERE pe.agency_id=p.agency_id AND pe.property_id=p.id AND datetime(pe.created_at)>=datetime(?))`).bind(agencyId, since, since, since).first<any>(),
+    env.DB.prepare("SELECT COUNT(*) AS count FROM mandates WHERE agency_id=? AND status='active' AND datetime(expires_at) BETWEEN CURRENT_TIMESTAMP AND datetime('now','+30 days')").bind(agencyId).first<any>(),
   ]);
 
   return {

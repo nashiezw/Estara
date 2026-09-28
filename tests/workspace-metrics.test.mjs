@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { calculateActivation, calculatePrincipalMetrics, metricMedian, responseMinutes } from "../db/workspace-metric-calculations.js";
 
@@ -85,4 +86,21 @@ test("principal accountability uses real response, action and agent evidence", a
   assert.match(workspace, /Listings without activity/);
   assert.match(workspace, /Team accountability/);
   assert.match(workspace, /business\.agents\.map/);
+});
+
+test("principal accountability compares mixed timestamps chronologically", async () => {
+  const metrics = await read("../db/workspace-metrics.ts");
+  for (const column of ["created_at", "updated_at"]) assert.match(metrics, new RegExp(`datetime\\(${column}\\)>=datetime\\(\\?\\)`));
+  for (const column of ["e.created_at", "v.created_at", "pe.created_at"]) assert.match(metrics, new RegExp(`datetime\\(${column.replace(".", "\\.")}\\)>=datetime\\(\\?\\)`));
+  assert.match(metrics, /datetime\(due_at\)<CURRENT_TIMESTAMP/);
+  assert.match(metrics, /datetime\(expires_at\) BETWEEN CURRENT_TIMESTAMP/);
+  assert.doesNotMatch(metrics, /\b(created_at|updated_at)>=\?/);
+
+  const database = new DatabaseSync(":memory:");
+  database.exec("CREATE TABLE next_actions(agency_id TEXT,status TEXT,due_at TEXT); CREATE TABLE enquiries(agency_id TEXT,created_at TEXT);");
+  database.prepare("INSERT INTO next_actions VALUES(?,?,?)").run("agency", "open", "2026-09-28T08:00:00.000Z");
+  database.prepare("INSERT INTO enquiries VALUES(?,?)").run("agency", "2026-09-10 10:00:00");
+  assert.equal(database.prepare("SELECT COUNT(*) count FROM next_actions WHERE agency_id=? AND status='open' AND datetime(due_at)<datetime(?)").get("agency", "2026-09-28T09:00:00.000Z").count, 1);
+  assert.equal(database.prepare("SELECT COUNT(*) count FROM enquiries WHERE agency_id=? AND datetime(created_at)>=datetime(?)").get("agency", "2026-09-01T00:00:00.000Z").count, 1);
+  database.close();
 });

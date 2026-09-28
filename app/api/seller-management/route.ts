@@ -35,11 +35,11 @@ async function prepareDraft(agencyId: string, propertyId: string, userId: string
   const to = end.toISOString();
   const count = async (sql: string) => Number((await env.DB.prepare(sql).bind(agencyId, propertyId, from, to).first<any>())?.count || 0);
   const [views, enquiries, viewings, offers, feedbackRows] = await Promise.all([
-    count("SELECT COUNT(*) count FROM public_events WHERE agency_id=? AND property_id=? AND event_type='property_view' AND created_at BETWEEN ? AND ?"),
-    count("SELECT COUNT(*) count FROM enquiries WHERE agency_id=? AND property_id=? AND created_at BETWEEN ? AND ?"),
-    count("SELECT COUNT(*) count FROM viewings WHERE agency_id=? AND property_id=? AND starts_at BETWEEN ? AND ? AND status IN ('Confirmed','Completed')"),
-    count("SELECT COUNT(*) count FROM offers WHERE agency_id=? AND property_id=? AND submitted_at BETWEEN ? AND ? AND status!='withdrawn'"),
-    env.DB.prepare("SELECT interest_level interestLevel FROM viewings WHERE agency_id=? AND property_id=? AND starts_at BETWEEN ? AND ? AND status='Completed' AND feedback<>'' AND interest_level IN ('interested','unsure','not_interested')").bind(agencyId, propertyId, from, to).all<any>(),
+    count("SELECT COUNT(*) count FROM public_events WHERE agency_id=? AND property_id=? AND event_type='property_view' AND datetime(created_at)>=datetime(?) AND datetime(created_at)<datetime(?)"),
+    count("SELECT COUNT(*) count FROM enquiries WHERE agency_id=? AND property_id=? AND datetime(created_at)>=datetime(?) AND datetime(created_at)<datetime(?)"),
+    count("SELECT COUNT(*) count FROM viewings WHERE agency_id=? AND property_id=? AND datetime(starts_at)>=datetime(?) AND datetime(starts_at)<datetime(?) AND status IN ('Confirmed','Completed')"),
+    count("SELECT COUNT(*) count FROM offers WHERE agency_id=? AND property_id=? AND datetime(submitted_at)>=datetime(?) AND datetime(submitted_at)<datetime(?) AND status!='withdrawn'"),
+    env.DB.prepare("SELECT interest_level interestLevel FROM viewings WHERE agency_id=? AND property_id=? AND datetime(starts_at)>=datetime(?) AND datetime(starts_at)<datetime(?) AND status='Completed' AND feedback<>'' AND interest_level IN ('interested','unsure','not_interested')").bind(agencyId, propertyId, from, to).all<any>(),
   ]);
   const copy = sellerReportCopy(listing.title, views, enquiries, viewings);
   const feedbackSummary = sellerFeedbackSummary(feedbackRows.results);

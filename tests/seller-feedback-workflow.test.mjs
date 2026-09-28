@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { sellerFeedbackSummary } from "../db/seller-policy.ts";
 import { validViewingFeedback, viewingFollowUp } from "../db/viewing-policy.ts";
@@ -89,4 +90,30 @@ test("approved seller reports snapshot aggregate feedback for portal and PDF use
   assert.match(client, /Viewings confirmed or completed/);
   assert.doesNotMatch(client, /"Confirmed viewings"/);
   assert.match(pdf, /VIEWING FEEDBACK/);
+});
+
+test("seller report windows count SQLite and ISO timestamps chronologically", async () => {
+  const management = await read("../app/api/seller-management/route.ts");
+  const countQueries = [...management.matchAll(/count\("([^"]+)"\)/g)].map(match => match[1]);
+  assert.equal(countQueries.length, 4);
+  for (const query of countQueries) {
+    assert.match(query, /datetime\((created_at|starts_at|submitted_at)\)>=datetime\(\?\)/);
+    assert.match(query, /datetime\((created_at|starts_at|submitted_at)\)<datetime\(\?\)/);
+  }
+  assert.match(management, /datetime\(starts_at\)>=datetime\(\?\).*datetime\(starts_at\)<datetime\(\?\).*status='Completed'/);
+
+  const database = new DatabaseSync(":memory:");
+  database.exec(`
+    CREATE TABLE public_events(agency_id TEXT,property_id TEXT,event_type TEXT,created_at TEXT);
+    CREATE TABLE enquiries(agency_id TEXT,property_id TEXT,created_at TEXT);
+    CREATE TABLE viewings(agency_id TEXT,property_id TEXT,starts_at TEXT,status TEXT,feedback TEXT,interest_level TEXT);
+    CREATE TABLE offers(agency_id TEXT,property_id TEXT,submitted_at TEXT,status TEXT);
+    INSERT INTO public_events VALUES('agency','property','property_view','2026-09-10 10:00:00');
+    INSERT INTO enquiries VALUES('agency','property','2026-09-10T10:00:00.000Z');
+    INSERT INTO viewings VALUES('agency','property','2026-09-10 10:00:00','Completed','Ready to offer','interested');
+    INSERT INTO offers VALUES('agency','property','2026-09-10T10:00:00.000Z','submitted');
+  `);
+  const from = "2026-09-01T00:00:00.000Z", to = "2026-10-01T00:00:00.000Z";
+  for (const query of countQueries) assert.equal(database.prepare(query).get("agency", "property", from, to).count, 1);
+  database.close();
 });
