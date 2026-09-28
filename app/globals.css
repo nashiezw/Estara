@@ -101,3 +101,7 @@ button,[role=button]{line-height:1.2;text-align:center}
 
 /* Completed viewings keep feedback readable and sentiment scannable. */
 .viewing-feedback{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;width:100%;padding:10px 12px;border-left:3px solid #87ab9f;border-radius:6px;background:#f4f8f6}.viewing-feedback>span{font-size:8px;font-weight:900;text-transform:uppercase;color:#54736a}.viewing-feedback>p{grid-column:1;margin:0;color:#344e47;font-size:10px;line-height:1.5;overflow-wrap:anywhere}.viewing-sentiment{grid-column:2;grid-row:1/3;align-self:start;padding:5px 7px;border-radius:99px;background:#e8efec;color:#536a63;font-size:8px;font-style:normal;font-weight:900;text-transform:capitalize;white-space:nowrap}.viewing-sentiment.interested{background:#dff1e8;color:#23634f}.viewing-sentiment.unsure{background:#f8efd9;color:#7b5e17}.viewing-sentiment.not_interested{background:#f7e5e1;color:#984435}@media(max-width:560px){.viewing-feedback{grid-template-columns:1fr}.viewing-sentiment{grid-column:1;grid-row:auto;justify-self:start}}
+
+/* Display titles need enough leading for serif descenders at every viewport. */
+body :is(h1,h2,h3){line-height:1.08!important}
+.estara-home .home-hero h1,.demo-page .demo-hero h1{line-height:1.08!important}

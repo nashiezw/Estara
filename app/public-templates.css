@@ -137,6 +137,9 @@
 @media(max-width:620px){.public-footer-mark{width:max-content!important;max-width:100%;gap:13px!important}.public-footer-mark .public-brand-icon{width:54px!important;height:54px!important}.public-footer-mark .public-brand-logo{height:34px!important;max-width:220px!important}}
 .public-footer{grid-template-columns:minmax(300px,1.02fr) minmax(150px,.46fr) minmax(170px,.5fr) minmax(190px,.56fr)!important;gap:clamp(30px,4.2vw,58px)!important;align-items:start!important;padding:clamp(48px,6vw,72px) clamp(20px,7vw,112px) 20px!important}
 .public-footer h2{max-width:520px!important;margin:24px 0 12px!important;font:clamp(30px,3.4vw,48px)/1.02 Georgia,serif!important;letter-spacing:0!important}
+
+/* Keep agency-site display titles clear across every template and breakpoint. */
+.public-site :is(h1,h2,h3){line-height:1.08!important}
 .public-footer-brand p{max-width:500px!important;font-size:12px!important;line-height:1.65!important;margin:0!important}
 .public-footer h3{margin:0 0 22px!important;font-size:9px!important;line-height:1!important;letter-spacing:.18em!important}
 .public-footer-nav,.public-footer-services,.public-footer-contact{padding-top:10px!important;gap:0!important}
