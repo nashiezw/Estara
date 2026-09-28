@@ -23,10 +23,20 @@ test("enquiry and viewing defaults follow the signed-in user", async () => {
 });
 
 test("recording contact refreshes stage and action accountability", async () => {
-  const workspace = await read("../app/estara-app.tsx");
+  const [workspace, route] = await Promise.all([
+    read("../app/estara-app.tsx"),
+    read("../app/api/workspace/route.ts"),
+  ]);
 
   assert.match(workspace, /await Promise\.all\(\[loadWorkspace\(\),loadOps\(\)\]\)/);
   assert.match(workspace, /status:"Contacted",stage:"Contacted",time:"Contacted"/);
+  assert.match(route, /e\.source,e\.response_due_at AS responseDueAt/);
+  assert.match(workspace, /Reply on WhatsApp/);
+  assert.match(workspace, /Record replied/);
+  assert.match(workspace, /Record contacted/);
+  assert.match(workspace, /https:\/\/wa\.me\/\$\{phone\}\?text=/);
+  assert.match(workspace, /r\.source==="WhatsApp"/);
+  assert.doesNotMatch(workspace, /onClick=\{\(\)=>contact\(rows\.indexOf\(r\)\)\}>Contact now/);
 });
 
 test("booking a linked viewing advances the enquiry and retires stale work", async () => {

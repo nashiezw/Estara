@@ -64,6 +64,30 @@ test("WhatsApp follow-up messages reuse the matching active enquiry", async () =
   assert.equal(database.prepare(conversationSql).get("agency-a", "contact-a", "", "", "").id, "general");
 });
 
+test("concurrent WhatsApp messages keep one open response action", async () => {
+  const [route, migration, schema] = await Promise.all([
+    read("../app/api/integrations/whatsapp/route.ts"),
+    read("../drizzle/0051_unique_open_enquiry_response.sql"),
+    read("../db/schema.ts"),
+  ]);
+  const database = new DatabaseSync(":memory:");
+  database.exec(`CREATE TABLE next_actions(
+    id TEXT PRIMARY KEY,agency_id TEXT NOT NULL,resource_type TEXT NOT NULL,resource_id TEXT NOT NULL,
+    action_type TEXT NOT NULL,status TEXT NOT NULL,completed_at TEXT,created_at TEXT NOT NULL
+  );`);
+  const insert = database.prepare("INSERT INTO next_actions VALUES(?,?,?,?,?,?,?,?)");
+  insert.run("first", "agency-a", "enquiry", "enquiry-a", "respond", "open", null, "2026-09-27T08:00:00Z");
+  insert.run("duplicate", "agency-a", "enquiry", "enquiry-a", "respond", "open", null, "2026-09-27T08:01:00Z");
+  database.exec(migration);
+  assert.equal(database.prepare("SELECT COUNT(*) count FROM next_actions WHERE agency_id='agency-a' AND resource_id='enquiry-a' AND action_type='respond' AND status='open'").get().count, 1);
+  assert.equal(database.prepare("SELECT status FROM next_actions WHERE id='duplicate'").get().status, "complete");
+  assert.equal(database.prepare("INSERT OR IGNORE INTO next_actions VALUES(?,?,?,?,?,?,?,?)").run("racing", "agency-a", "enquiry", "enquiry-a", "respond", "open", null, "2026-09-27T08:02:00Z").changes, 0);
+  assert.match(route, /INSERT OR IGNORE INTO next_actions/);
+  assert.doesNotMatch(route, /const openResponse/);
+  assert.match(schema, /idx_unique_open_enquiry_response/);
+  database.close();
+});
+
 test("signed WhatsApp intake creates the complete enquiry workflow", async () => {
   const [route, migration, routingMigration, integrations, client, providers, backup, schema, automation, webhooks] = await Promise.all([
     read("../app/api/integrations/whatsapp/route.ts"),
@@ -93,7 +117,7 @@ test("signed WhatsApp intake creates the complete enquiry workflow", async () =>
   assert.match(route, /requirements=CASE WHEN TRIM\(requirements\)='' THEN \? ELSE requirements END/);
   assert.doesNotMatch(route, /SET full_name=\?,roles=\?,requirements=\?/);
   assert.match(route, /status NOT IN \('Won','Lost','Closed'\)/);
-  assert.match(route, /action_type='respond' AND status='open'/);
+  assert.match(route, /INSERT OR IGNORE INTO next_actions/);
   assert.match(route, /enquiry\.whatsapp_message_received/);
   assert.match(route, /continued: Boolean\(conversation\)/);
   assert.match(route, /INSERT INTO contacts/);
