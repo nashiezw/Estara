@@ -37,14 +37,48 @@ test("property media deletion is tenant scoped, permission checked, persisted an
 
   assert.match(deletion, /WHERE id=\? AND agency_id=\?/);
   assert.match(deletion, /asset\.kind !== "property_photo"/);
-  assert.match(deletion, /requirePermission\(c\.workspace, "property\.media\.manage"\)/);
+  assert.match(deletion, /context\("property\.media\.manage"\)/);
   assert.match(deletion, /requirePropertyBranchAccess\(c\.workspace, asset\.propertyId\)/);
-  assert.match(deletion, /kind='property_photo' AND id<>\?/);
-  assert.match(deletion, /UPDATE properties SET photo_count=\?,completeness=\?/);
+  assert.match(deletion, /INSERT INTO media_cleanup_jobs/);
+  assert.match(deletion, /photo_count=\(SELECT COUNT\(\*\) FROM media_assets/);
+  assert.match(deletion, /completeness=CASE WHEN/);
   assert.match(deletion, /item_key='photos'/);
-  assert.match(deletion, /bucket\(\)\.delete/);
-  assert.match(deletion, /"media\.deleted"/);
+  assert.match(deletion, /prepareAudit\(c\.workspace, "media\.deleted"/);
+  assert.match(deletion, /await env\.DB\.batch\(statements\);[\s\S]*processMediaCleanupJob/);
+  assert.match(deletion, /json_extract\(detail,'\$\.propertyId'\).*action='media\.deleted'.*resource_id=\?/);
+  assert.match(deletion, /requirePropertyBranchAccess\(c\.workspace, deleted\.propertyId\)/);
+  assert.match(deletion, /alreadyDeleted: true/);
+  assert.match(deletion, /processMediaCleanupJob\(cleanupId, storage\)\.catch/);
+  assert.match(deletion, /cacheInvalidationPending/);
   assert.match(deletion, /invalidatePublicSite/);
+});
+
+test("property photo object deletion is durable and retried after storage failure", async () => {
+  const [migration, cleanup, worker, schema] = await Promise.all([
+    read("../drizzle/0052_media_cleanup_queue.sql"),
+    read("../db/media-cleanup.ts"),
+    read("../worker/index.ts"),
+    read("../db/schema.ts"),
+  ]);
+  assert.match(migration, /CREATE TABLE media_cleanup_jobs/);
+  assert.match(migration, /next_attempt_at TEXT NOT NULL/);
+  assert.match(cleanup, /storage\.delete\(objectKeys\)/);
+  assert.match(cleanup, /UPDATE media_cleanup_jobs SET attempts=\?,last_error=\?,next_attempt_at=datetime/);
+  assert.match(cleanup, /processDueMediaCleanupJobs/);
+  assert.match(worker, /processDueMediaCleanupJobs\(\)/);
+  assert.match(schema, /mediaCleanupJobs=sqliteTable\("media_cleanup_jobs"/);
+});
+
+test("media upload commits audit and replacement cleanup before reporting success", async () => {
+  const route = await read("../app/api/media/route.ts");
+  const upload = route.match(/async function POST[\s\S]*?async function DELETE/)?.[0] || "";
+  assert.match(upload, /SELECT id,object_key AS objectKey,thumbnail_object_key AS thumbnailObjectKey/);
+  assert.match(upload, /previous\.map\(asset => \(\{ id: crypto\.randomUUID\(\), asset \}\)\)/);
+  assert.match(upload, /INSERT INTO media_cleanup_jobs/);
+  assert.match(upload, /prepareAudit\(c\.workspace, "media\.uploaded"/);
+  assert.match(upload, /await env\.DB\.batch\(statements\)/);
+  assert.doesNotMatch(upload, /await writeAudit/);
+  assert.match(upload, /cacheInvalidationPending/);
 });
 
 test("workspace and full property record expose confirmed photo removal controls", async () => {

@@ -5,6 +5,7 @@ import handler from "vinext/server/app-router-entry";
 import { processAllAutomationEvents } from "../db/automation";
 import { processSubscriptionLifecycle } from "../db/entitlements";
 import { retryAllDueWebhooks } from "../db/webhooks";
+import { processDueMediaCleanupJobs } from "../db/media-cleanup";
 
 interface Env {
   ASSETS: Fetcher;
@@ -55,6 +56,7 @@ const worker = {
     ctx.waitUntil(processAllAutomationEvents().then(result=>console.log(JSON.stringify({event:"automations.process_scheduled",...result,timestamp:new Date().toISOString()}))).catch(error=>console.error(JSON.stringify({event:"automations.process_scheduled_failed",error:error instanceof Error?error.message:String(error),timestamp:new Date().toISOString()}))));
     ctx.waitUntil(retryAllDueWebhooks().then(result=>console.log(JSON.stringify({event:"webhooks.retry_scheduled",...result,timestamp:new Date().toISOString()}))).catch(error=>console.error(JSON.stringify({event:"webhooks.retry_scheduled_failed",error:error instanceof Error?error.message:String(error),timestamp:new Date().toISOString()}))));
     ctx.waitUntil(processSubscriptionLifecycle("system-scheduler").then(result=>console.log(JSON.stringify({event:"subscriptions.lifecycle_scheduled",...result,timestamp:new Date().toISOString()}))).catch(error=>console.error(JSON.stringify({event:"subscriptions.lifecycle_scheduled_failed",error:error instanceof Error?error.message:String(error),timestamp:new Date().toISOString()}))));
+    ctx.waitUntil(processDueMediaCleanupJobs().then(result=>console.log(JSON.stringify({event:"media.cleanup_scheduled",...result,timestamp:new Date().toISOString()}))).catch(error=>console.error(JSON.stringify({event:"media.cleanup_scheduled_failed",error:error instanceof Error?error.message:String(error),timestamp:new Date().toISOString()}))));
   },
 };
 
