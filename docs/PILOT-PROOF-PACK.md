@@ -15,11 +15,11 @@ Turn real pilot operation into evidence without manufacturing testimonials or ov
 ## Evidence captured weekly
 
 - Pilot scorecard CSV exported at the same weekday and time.
-- Activation milestone status and weekly active users.
+- Activation milestone status and weekly active users, including the eligible-user denominator.
 - Unanswered enquiry count and median response time.
 - Due and completed follow-up actions.
 - Enquiry-to-viewing and enquiry-to-offer counts.
-- Approved seller reports and approval time.
+- Approved seller reports, active sales-mandate coverage and approval time.
 - Product defects, outages, staffing changes and data-quality gaps.
 - One observed mobile workflow, including device and network conditions.
 

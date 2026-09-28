@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 const money = (minor: number) => `USD ${(Number(minor || 0) / 100).toLocaleString()}`;
 const metric = (value: number | null, suffix = "") => value === null ? "No data" : `${value}${suffix}`;
+const ratio = (rate: number, numerator: number, denominator: number) => `${rate}% (${numerator}/${denominator})`;
 
 export default function ReportsClient({ platform }: { platform: { shortName: string } }) {
   const [data, setData] = useState<any>(null);
@@ -21,13 +22,16 @@ export default function ReportsClient({ platform }: { platform: { shortName: str
   if (!data) return <main className="report-empty"><h1>Preparing verified business reports...</h1></main>;
 
   const pilotMetrics = pilot ? [
-    ["Answer rate", `${pilot.currentPeriod.answerRate}%`, `${pilot.baselinePeriod.answerRate}%`],
+    ["Weekly active team", ratio(pilot.adoption.currentWeek.activeRate, pilot.adoption.currentWeek.activeUsers, pilot.adoption.currentWeek.eligibleUsers), ratio(pilot.adoption.priorWeek.activeRate, pilot.adoption.priorWeek.activeUsers, pilot.adoption.priorWeek.eligibleUsers)],
+    ["Answer rate", ratio(pilot.currentPeriod.answerRate, pilot.currentPeriod.answered, pilot.currentPeriod.enquiries), ratio(pilot.baselinePeriod.answerRate, pilot.baselinePeriod.answered, pilot.baselinePeriod.enquiries)],
     ["Median response", metric(pilot.currentPeriod.medianResponseMinutes, " min"), metric(pilot.baselinePeriod.medianResponseMinutes, " min")],
-    ["Follow-up completion", `${pilot.currentPeriod.followUpCompletionRate}%`, `${pilot.baselinePeriod.followUpCompletionRate}%`],
-    ["Enquiry to viewing", `${pilot.currentPeriod.enquiryToViewingRate}%`, `${pilot.baselinePeriod.enquiryToViewingRate}%`],
-    ["Enquiry to offer", `${pilot.currentPeriod.enquiryToOfferRate}%`, `${pilot.baselinePeriod.enquiryToOfferRate}%`],
+    ["Follow-up completion", ratio(pilot.currentPeriod.followUpCompletionRate, pilot.currentPeriod.followUpsCompleted, pilot.currentPeriod.followUpsDue), ratio(pilot.baselinePeriod.followUpCompletionRate, pilot.baselinePeriod.followUpsCompleted, pilot.baselinePeriod.followUpsDue)],
+    ["Enquiry to viewing", ratio(pilot.currentPeriod.enquiryToViewingRate, pilot.currentPeriod.enquiriesWithViewing, pilot.currentPeriod.enquiries), ratio(pilot.baselinePeriod.enquiryToViewingRate, pilot.baselinePeriod.enquiriesWithViewing, pilot.baselinePeriod.enquiries)],
+    ["Enquiry to offer", ratio(pilot.currentPeriod.enquiryToOfferRate, pilot.currentPeriod.enquiriesWithOffer, pilot.currentPeriod.enquiries), ratio(pilot.baselinePeriod.enquiryToOfferRate, pilot.baselinePeriod.enquiriesWithOffer, pilot.baselinePeriod.enquiries)],
     ["Won deals", pilot.currentPeriod.wonDeals, pilot.baselinePeriod.wonDeals],
-    ["WhatsApp share", `${pilot.currentPeriod.whatsappShare}%`, `${pilot.baselinePeriod.whatsappShare}%`],
+    ["WhatsApp share", ratio(pilot.currentPeriod.whatsappShare, pilot.currentPeriod.whatsappEnquiries, pilot.currentPeriod.enquiries), ratio(pilot.baselinePeriod.whatsappShare, pilot.baselinePeriod.whatsappEnquiries, pilot.baselinePeriod.enquiries)],
+    ["Approved seller reports", pilot.currentPeriod.sellerReportsApproved, pilot.baselinePeriod.sellerReportsApproved],
+    ["Seller report coverage", ratio(pilot.currentPeriod.sellerReportCoverageRate, pilot.currentPeriod.salesMandatesReported, pilot.currentPeriod.activeSalesMandates), ratio(pilot.baselinePeriod.sellerReportCoverageRate, pilot.baselinePeriod.salesMandatesReported, pilot.baselinePeriod.activeSalesMandates)],
     ["Seller report approval", metric(pilot.currentPeriod.medianSellerReportApprovalMinutes, " min"), metric(pilot.baselinePeriod.medianSellerReportApprovalMinutes, " min")],
   ] : [];
 
@@ -35,9 +39,9 @@ export default function ReportsClient({ platform }: { platform: { shortName: str
     <nav><a href="/deals">Deal desk</a><strong>{platform.shortName} <small>Business intelligence</small></strong><a href="/workspace">Workspace</a></nav>
     <header><span>VERIFIED BUSINESS PERFORMANCE</span><h1>Know what is moving, who is converting and what is likely to close.</h1><div><article><small>WEIGHTED PIPELINE</small><strong>{money(data.totals.projectedMinor)}</strong></article><article><small>WON COMMISSION</small><strong>{money(data.totals.commissionMinor)}</strong></article><article><small>30-DAY ENQUIRIES</small><strong>{data.activity.enquiries}</strong></article><article><small>30-DAY VIEWINGS</small><strong>{data.activity.viewings}</strong></article></div></header>
     {pilot && <section className="report-card pilot-scorecard">
-      <div className="pilot-scorecard-title"><div><span>PILOT EVIDENCE</span><h2>Current 30 days against baseline</h2><p>Operational outcomes calculated from live enquiry, action, viewing, offer, deal and seller-report records.</p></div><a href="/api/pilot-scorecard?export=csv">Export scorecard CSV</a></div>
+      <div className="pilot-scorecard-title"><div><span>PILOT EVIDENCE</span><h2>Current 30 days against baseline</h2><p>Operational outcomes calculated from live records. Percentages retain their raw numerator and denominator; weekly activity is based on agency audit events.</p></div><a href="/api/pilot-scorecard?export=csv">Export scorecard CSV</a></div>
       <div className="pilot-scorecard-head"><span>Metric</span><span>Current</span><span>Baseline</span></div>
-      {pilotMetrics.map(([label, current, baseline]) => <article key={String(label)}><strong>{label}</strong><b>{current}</b><span>{baseline}</span></article>)}
+      {pilotMetrics.map(([label, current, baseline]) => <article key={String(label)}><strong>{label}</strong><b><small>Current</small>{current}</b><span><small>Baseline</small>{baseline}</span></article>)}
     </section>}
     <section className="report-grid">
       <div className="report-card"><h2>Deal pipeline</h2>{data.pipeline.map((row: any) => <article key={row.id}><span><strong>{row.name}</strong><small>{row.dealCount} deals · {row.probability}% probability</small></span><b>{money(row.valueMinor)}</b></article>)}</div>

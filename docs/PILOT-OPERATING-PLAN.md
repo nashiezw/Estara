@@ -40,12 +40,13 @@ Select for committed behavior and measurable workflow, not prestige or team size
 The in-product pilot scorecard compares the current 30 days with the preceding 30 days:
 
 - Enquiries received, answered, and unanswered.
+- Weekly active team users, measured from agency audit events, with eligible-user counts.
 - Answer rate and median first-response time.
 - Due and completed response/follow-up actions.
 - Enquiry-to-viewing and enquiry-to-offer conversion.
 - Won deals.
 - WhatsApp enquiry count and share.
-- Approved seller reports and median creation-to-approval time.
+- Approved seller reports, active sales-mandate coverage and median creation-to-approval time.
 
 Principals export the scorecard CSV from Reports at the same time each week. Qualitative notes must explain operational events, staffing changes, marketing campaigns, outages, and data-quality gaps; they must not replace the measured evidence.
 

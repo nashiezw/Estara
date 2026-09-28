@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { calculatePilotPeriod } from "../db/workspace-metric-calculations.js";
+import { calculatePilotAdoption, calculatePilotPeriod } from "../db/workspace-metric-calculations.js";
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -20,6 +20,8 @@ test("pilot period calculations expose exact adoption and outcome measures", () 
     offerConversions: 1,
     wonDeals: 1,
     sellerReports: [{ createdAt: "2026-09-01T08:00:00Z", approvedAt: "2026-09-01T09:00:00Z" }],
+    activeSalesMandates: 3,
+    salesMandatesReported: 2,
   });
   assert.deepEqual({ answerRate: result.answerRate, medianResponseMinutes: result.medianResponseMinutes, followUpCompletionRate: result.followUpCompletionRate }, { answerRate: 75, medianResponseMinutes: 20, followUpCompletionRate: 67 });
   assert.equal(result.enquiryToViewingRate, 50);
@@ -30,6 +32,9 @@ test("pilot period calculations expose exact adoption and outcome measures", () 
   assert.equal(result.enquiriesWithOffer, 1);
   assert.equal(result.whatsappShare, 50);
   assert.equal(result.medianSellerReportApprovalMinutes, 60);
+  assert.equal(result.sellerReportCoverageRate, 67);
+  assert.deepEqual(calculatePilotAdoption(5, 4), { eligibleUsers: 5, activeUsers: 4, activeRate: 80 });
+  assert.deepEqual(calculatePilotAdoption(2, 4), { eligibleUsers: 2, activeUsers: 2, activeRate: 100 });
 });
 
 test("pilot scorecard is principal-only, tenant-scoped and exportable", async () => {
@@ -38,13 +43,26 @@ test("pilot scorecard is principal-only, tenant-scoped and exportable", async ()
   assert.match(query, /baselineStart/);
   assert.match(query, /COUNT\(DISTINCT enquiry_id\) AS converted/);
   assert.match(query, /COUNT\(DISTINCT enquiry_id\) AS converted FROM offers/);
-  assert.match(query, /submitted_at>=\? AND submitted_at<\?/);
+  assert.match(query, /datetime\(submitted_at\)>=datetime\(\?\)/);
+  assert.match(query, /datetime\(created_at\)>=datetime\(\?\)/);
+  assert.match(query, /COUNT\(DISTINCT m\.user_id\) AS eligibleUsers/);
+  assert.match(query, /l\.actor_user_id=m\.user_id/);
+  assert.match(query, /COUNT\(DISTINCT m\.property_id\) AS active/);
+  assert.match(query, /activeSalesMandates/);
   assert.match(route, /\["principal", "admin"\]/);
   assert.match(route, /export\.manage/);
   assert.match(route, /pilot_scorecard\.exported/);
   assert.match(route, /safeCsv/);
+  assert.match(route, /weeklyActiveRate/);
+  assert.match(route, /periodStartsAt/);
+  assert.match(route, /weeklyStartsAt/);
   assert.match(client, /Current 30 days against baseline/);
   assert.match(client, /Export scorecard CSV/);
+  assert.match(client, /Weekly active team/);
+  assert.match(client, /Seller report coverage/);
+  assert.match(client, /Approved seller reports/);
+  assert.match(client, /ratio\(pilot\.currentPeriod\.answerRate/);
+  assert.match(client, /<small>Current<\/small>/);
   assert.match(plan, /3-5 agencies/);
   assert.match(plan, /60-90 days/);
   assert.match(plan, /No unresolved severity-one/);

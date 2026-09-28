@@ -79,7 +79,17 @@ export function calculatePrincipalMetrics({ enquiries, members, overdueActions, 
   };
 }
 
-export function calculatePilotPeriod({ enquiries, followUps, viewings, viewingConversions = viewings, offers, offerConversions = offers, wonDeals, sellerReports }) {
+export function calculatePilotAdoption(eligibleUsers, activeUsers) {
+  const eligible = Math.max(0, Number(eligibleUsers || 0));
+  const active = Math.min(eligible, Math.max(0, Number(activeUsers || 0)));
+  return {
+    eligibleUsers: eligible,
+    activeUsers: active,
+    activeRate: eligible ? Math.round(active / eligible * 100) : 0,
+  };
+}
+
+export function calculatePilotPeriod({ enquiries, followUps, viewings, viewingConversions = viewings, offers, offerConversions = offers, wonDeals, sellerReports, activeSalesMandates = 0, salesMandatesReported = 0 }) {
   const answered = enquiries.filter(row => row.contactedAt);
   const completedFollowUps = followUps.filter(row => row.completedAt).length;
   const reportApprovalMinutes = sellerReports.map(row => responseMinutes({ createdAt: row.createdAt, contactedAt: row.approvedAt })).filter(value => value !== null);
@@ -104,5 +114,8 @@ export function calculatePilotPeriod({ enquiries, followUps, viewings, viewingCo
     whatsappShare: percentage(enquiries.filter(row => String(row.source).toLowerCase().includes("whatsapp")).length, enquiries.length),
     sellerReportsApproved: sellerReports.filter(row => row.approvedAt).length,
     medianSellerReportApprovalMinutes: metricMedian(reportApprovalMinutes),
+    activeSalesMandates,
+    salesMandatesReported,
+    sellerReportCoverageRate: percentage(salesMandatesReported, activeSalesMandates),
   };
 }

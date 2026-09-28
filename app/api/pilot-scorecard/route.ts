@@ -19,8 +19,15 @@ export async function GET(request: Request) {
     if (new URL(request.url).searchParams.get("export") === "csv") {
       await requirePermission(workspace, "export.manage");
       const rows = [
-        ["metric", "baseline_30_days", "current_30_days"],
+        ["metric", "baseline", "current"],
+        ["periodStartsAt", scorecard.baselinePeriod.startsAt, scorecard.currentPeriod.startsAt],
+        ["periodEndsAt", scorecard.baselinePeriod.endsAt, scorecard.currentPeriod.endsAt],
         ...Object.keys(scorecard.currentPeriod).filter(key => !["startsAt", "endsAt"].includes(key)).map(key => [key, (scorecard.baselinePeriod as any)[key], (scorecard.currentPeriod as any)[key]]),
+        ["weeklyStartsAt", scorecard.adoption.priorWeek.startsAt, scorecard.adoption.currentWeek.startsAt],
+        ["weeklyEndsAt", scorecard.adoption.priorWeek.endsAt, scorecard.adoption.currentWeek.endsAt],
+        ["weeklyActiveUsers", scorecard.adoption.priorWeek.activeUsers, scorecard.adoption.currentWeek.activeUsers],
+        ["weeklyEligibleUsers", scorecard.adoption.priorWeek.eligibleUsers, scorecard.adoption.currentWeek.eligibleUsers],
+        ["weeklyActiveRate", scorecard.adoption.priorWeek.activeRate, scorecard.adoption.currentWeek.activeRate],
       ];
       await writeAudit(workspace, "pilot_scorecard.exported", "agency", workspace.agencyId, { generatedAt: scorecard.generatedAt });
       return new Response(rows.map(row => row.map(safeCsv).join(",")).join("\r\n"), { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": "attachment; filename=estara-pilot-scorecard.csv", "cache-control": "private, no-store" } });
