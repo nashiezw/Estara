@@ -5,6 +5,7 @@ import { AuthorizationError, requirePermission, writeAudit } from "../../../db/a
 import { requirePropertyBranchAccess } from "../../../db/access-scope";
 import { PHOTO_CATEGORIES, optimizedMediaObjectKey, safeDownloadName, validateMediaFile } from "../../../db/media-policy";
 import { invalidatePublicSite } from "../../../db/public-cache";
+import { propertyCompleteness } from "../../../db/property-policy";
 
 const dynamic = "force-dynamic";
 const headers = { "cache-control": "private, max-age=3600, stale-while-revalidate=86400", "x-content-type-options": "nosniff" };
@@ -28,6 +29,12 @@ async function context(permission?: string) {
   const workspace = await requireWorkspace(user);
   if (permission) await requirePermission(workspace,permission);
   return { user, workspace };
+}
+
+async function propertyMediaState(agencyId: string, propertyId: string, photoCount: number) {
+  const property = await env.DB.prepare(`SELECT title,transaction_type AS transactionType,property_type AS propertyType,price_minor AS priceMinor,currency,bedrooms,bathrooms,country,city,suburb,address,description,owner_contact_id AS ownerContactId,listing_agent_id AS listingAgentId,mandate_id AS mandateId,land_size AS landSize FROM properties WHERE id=? AND agency_id=?`).bind(propertyId, agencyId).first<any>();
+  if (!property) return null;
+  return propertyCompleteness({ ...property, photoCount });
 }
 
 async function processImage(bytes: ArrayBuffer, sourceMimeType: string, width: number, quality: number): Promise<ProcessedImage> {
@@ -101,6 +108,7 @@ async function POST(request: Request) {
     const thumbKey = thumb ? optimizedMediaObjectKey(c.workspace.agencyId, id, "thumb") : null;
     const previous = kind === "agency_logo" || kind === "agency_icon" || kind === "agency_footer_logo" || kind === "agency_footer_icon" ? await env.DB.prepare("SELECT object_key AS objectKey,thumbnail_object_key AS thumbnailObjectKey FROM media_assets WHERE agency_id=? AND kind=? LIMIT 1").bind(c.workspace.agencyId, kind).first<any>() : null;
     const sort = kind === "property_photo" ? await env.DB.prepare("SELECT COUNT(*) AS count FROM media_assets WHERE agency_id=? AND property_id=? AND kind='property_photo'").bind(c.workspace.agencyId, propertyId).first<any>() : { count: 0 };
+    const completeness = kind === "property_photo" ? await propertyMediaState(c.workspace.agencyId, propertyId, Number(sort?.count || 0) + 1) : null;
 
     await bucket().put(key, main.bytes, { httpMetadata: { contentType: main.mimeType }, customMetadata: { agencyId: c.workspace.agencyId, assetId: id, variant: "main", optimized: String(main.optimized) } });
     if (thumb && thumbKey) await bucket().put(thumbKey, thumb.bytes, { httpMetadata: { contentType: thumb.mimeType }, customMetadata: { agencyId: c.workspace.agencyId, assetId: id, variant: "thumb", optimized: String(thumb.optimized) } });
@@ -111,7 +119,7 @@ async function POST(request: Request) {
         await env.DB.batch([env.DB.prepare("DELETE FROM media_assets WHERE agency_id=? AND kind=?").bind(c.workspace.agencyId, kind), insert]);
       } else {
         const statements = [insert];
-        if (kind === "property_photo") statements.push(env.DB.prepare("UPDATE properties SET photo_count=(SELECT COUNT(*) FROM media_assets WHERE agency_id=? AND property_id=? AND kind='property_photo'),updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(c.workspace.agencyId, propertyId, propertyId, c.workspace.agencyId));
+        if (kind === "property_photo") statements.push(env.DB.prepare("UPDATE properties SET photo_count=?,completeness=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(Number(sort?.count || 0) + 1, completeness?.percentage || 0, propertyId, c.workspace.agencyId));
         if (kind === "agent_photo") statements.push(env.DB.prepare("UPDATE agent_profiles SET profile_photo_media_id=?,updated_at=CURRENT_TIMESTAMP WHERE agency_id=? AND user_id=?").bind(id, c.workspace.agencyId, userId));
         await env.DB.batch(statements);
       }
@@ -132,19 +140,27 @@ async function POST(request: Request) {
 
 async function DELETE(request: Request) {
   try {
-    const c = await context("property.media.manage");
+    const c = await context();
     if (!c) return Response.json({ error: "Sign in is required." }, { status: 401 });
     const id = new URL(request.url).searchParams.get("id") || "";
     const asset = await env.DB.prepare("SELECT id,object_key AS objectKey,thumbnail_object_key AS thumbnailObjectKey,property_id AS propertyId,kind,category FROM media_assets WHERE id=? AND agency_id=?").bind(id, c.workspace.agencyId).first<any>();
     if (!asset) return Response.json({ error: "Media was not found." }, { status: 404 });
-    if (asset.propertyId) await requirePropertyBranchAccess(c.workspace, asset.propertyId);
+    if (asset.kind !== "property_photo") return Response.json({ error: "Only property photos can be removed here." }, { status: 400 });
+    await requirePermission(c.workspace, "property.media.manage");
+    if (!asset.propertyId) return Response.json({ error: "Property photo is not attached to a property." }, { status: 409 });
+    await requirePropertyBranchAccess(c.workspace, asset.propertyId);
+    const remaining = asset.propertyId ? await env.DB.prepare("SELECT COUNT(*) AS count FROM media_assets WHERE agency_id=? AND property_id=? AND kind='property_photo' AND id<>?").bind(c.workspace.agencyId, asset.propertyId, id).first<any>() : null;
+    const completeness = asset.propertyId ? await propertyMediaState(c.workspace.agencyId, asset.propertyId, Number(remaining?.count || 0)) : null;
     await bucket().delete([asset.objectKey, ...asset.thumbnailObjectKey ? [asset.thumbnailObjectKey] : []]);
     const statements = [env.DB.prepare("DELETE FROM media_assets WHERE id=? AND agency_id=?").bind(id, c.workspace.agencyId)];
-    if (asset.propertyId) statements.push(env.DB.prepare("UPDATE properties SET photo_count=(SELECT COUNT(*) FROM media_assets WHERE agency_id=? AND property_id=? AND kind='property_photo'),updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(c.workspace.agencyId, asset.propertyId, asset.propertyId, c.workspace.agencyId));
+    if (asset.propertyId) {
+      statements.push(env.DB.prepare("UPDATE properties SET photo_count=?,completeness=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND agency_id=?").bind(Number(remaining?.count || 0), completeness?.percentage || 0, asset.propertyId, c.workspace.agencyId));
+      if (Number(remaining?.count || 0) < Number(completeness?.photoRequirement || 1)) statements.push(env.DB.prepare("UPDATE property_verification_items SET verified=0,verified_by=NULL,verified_at=NULL,note='Photo set changed; verify again.' WHERE agency_id=? AND property_id=? AND item_key='photos'").bind(c.workspace.agencyId, asset.propertyId));
+    }
     await env.DB.batch(statements);
     await writeAudit(c.workspace, "media.deleted", "media_asset", id, { kind: asset.kind, category: asset.category, propertyId: asset.propertyId });
     await invalidatePublicSite(c.workspace.agencyId,asset.propertyId||null);
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, propertyId: asset.propertyId || null, photoCount: Number(remaining?.count || 0), completeness: completeness?.percentage ?? null });
   } catch (error) {
     if (error instanceof AuthorizationError) return Response.json({ error: error.message }, { status: 403 });
     return Response.json({ error: "Image could not be removed." }, { status: 500 });
